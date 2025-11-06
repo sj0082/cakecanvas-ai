@@ -44,7 +44,7 @@ const StyleSelection = () => {
         </div>
         {loading ? <div className="text-center py-12">{t('style.loading')}</div> : (
           <div className="grid md:grid-cols-3 gap-6 mb-8">
-            {styles.map((style) => <StyleCard key={style.id} {...style} paletteRange={style.palette_range} shapeTemplate={style.shape_template} isSelected={selectedStyle === style.id} onClick={() => setSelectedStyle(style.id)} />)}
+            {styles.map((style) => <StyleCard key={style.id} {...style} isSelected={selectedStyle === style.id} onClick={() => setSelectedStyle(style.id)} />)}
           </div>
         )}
         <div className="flex justify-between">

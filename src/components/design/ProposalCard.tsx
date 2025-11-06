@@ -11,13 +11,14 @@ import { useTranslation } from "react-i18next";
 interface ProposalCardProps {
   id: string;
   variant: "conservative" | "standard" | "bold";
-  imageUrl: string;
-  specJson: {
+  image_url: string;
+  spec_json: {
     tiers?: string;
     palette?: string;
     accents?: string[];
   };
-  priceRange: [number, number];
+  price_range_min: number;
+  price_range_max: number;
   badges: string[];
   isSelected: boolean;
   onSelect: () => void;
@@ -25,9 +26,10 @@ interface ProposalCardProps {
 
 export const ProposalCard = ({
   variant,
-  imageUrl,
-  specJson,
-  priceRange,
+  image_url,
+  spec_json,
+  price_range_min,
+  price_range_max,
   badges,
   isSelected,
   onSelect,
@@ -45,7 +47,7 @@ export const ProposalCard = ({
       <CardHeader className="p-0">
         <div className="aspect-square relative overflow-hidden rounded-t-lg bg-muted">
           <img
-            src={imageUrl}
+            src={image_url}
             alt={`${variant} proposal`}
             className="w-full h-full object-cover"
           />
@@ -58,17 +60,17 @@ export const ProposalCard = ({
         <div>
           <CardTitle className="text-lg mb-2 capitalize">{variant}</CardTitle>
           <CardDescription className="space-y-1">
-            {specJson.tiers && <div>Tiers: {specJson.tiers}</div>}
-            {specJson.palette && <div>Palette: {specJson.palette}</div>}
-            {specJson.accents && specJson.accents.length > 0 && (
-              <div>Accents: {specJson.accents.join(", ")}</div>
+            {spec_json.tiers && <div>Tiers: {spec_json.tiers}</div>}
+            {spec_json.palette && <div>Palette: {spec_json.palette}</div>}
+            {spec_json.accents && spec_json.accents.length > 0 && (
+              <div>Accents: {spec_json.accents.join(", ")}</div>
             )}
           </CardDescription>
         </div>
 
         <div className="space-y-2">
           <div className="text-sm font-medium">
-            {t('proposals.priceRange')}: ${priceRange[0]} - ${priceRange[1]}
+            {t('proposals.priceRange')}: ${price_range_min} - ${price_range_max}
           </div>
           
           {badges.length > 0 && (

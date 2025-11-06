@@ -17,10 +17,12 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 interface SizeCategory {
   id: string;
   name: string;
-  tiers_spec: { tiers: number; diameter: string; height: string };
-  serving: number;
-  base_price: number;
-  lead_time: number;
+  tiers_spec: any;
+  serving_min: number;
+  serving_max: number;
+  base_price_min: number;
+  base_price_max: number;
+  lead_time_days: number;
 }
 
 const SizeSelection = () => {
@@ -32,7 +34,7 @@ const SizeSelection = () => {
 
   useEffect(() => {
     const fetchSizes = async () => {
-      const { data, error } = await supabase.from("size_categories").select("*").order("serving", { ascending: true });
+      const { data, error } = await supabase.from("size_categories").select("*").order("serving_min", { ascending: true });
       if (!error) setSizes(data || []);
       setLoading(false);
     };
@@ -51,7 +53,21 @@ const SizeSelection = () => {
         </div>
         {loading ? <div className="text-center py-12">{t('size.loading')}</div> : (
           <div className="grid md:grid-cols-3 gap-6 mb-8">
-            {sizes.map((size) => <SizeCard key={size.id} {...size} isSelected={selectedSize === size.id} onClick={() => setSelectedSize(size.id)} />)}
+            {sizes.map((size) => (
+              <SizeCard 
+                key={size.id}
+                id={size.id}
+                name={size.name}
+                tiersSpec={size.tiers_spec}
+                servingMin={size.serving_min}
+                servingMax={size.serving_max}
+                basePriceMin={size.base_price_min}
+                basePriceMax={size.base_price_max}
+                leadTime={size.lead_time_days}
+                isSelected={selectedSize === size.id}
+                onClick={() => setSelectedSize(size.id)}
+              />
+            ))}
           </div>
         )}
         <div className="flex justify-end">

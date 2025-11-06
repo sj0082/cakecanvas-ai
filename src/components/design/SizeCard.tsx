@@ -10,13 +10,11 @@ import { useTranslation } from "react-i18next";
 interface SizeCardProps {
   id: string;
   name: string;
-  tiersSpec: {
-    tiers: number;
-    diameter: string;
-    height: string;
-  };
-  serving: number;
-  basePrice: number;
+  tiersSpec: any;
+  servingMin: number;
+  servingMax: number;
+  basePriceMin: number;
+  basePriceMax: number;
   leadTime: number;
   isSelected: boolean;
   onClick: () => void;
@@ -25,8 +23,10 @@ interface SizeCardProps {
 export const SizeCard = ({
   name,
   tiersSpec,
-  serving,
-  basePrice,
+  servingMin,
+  servingMax,
+  basePriceMin,
+  basePriceMax,
   leadTime,
   isSelected,
   onClick,
@@ -46,17 +46,17 @@ export const SizeCard = ({
           {isSelected && <Badge variant="default">✓</Badge>}
         </CardTitle>
         <CardDescription>
-          {tiersSpec.tiers} Tier • {tiersSpec.diameter} • {tiersSpec.height}
+          {tiersSpec?.tiers} Tier • {tiersSpec?.diameter} • {tiersSpec?.height}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t('size.servings')}</span>
-          <span className="font-semibold">{serving}</span>
+          <span className="font-semibold">{servingMin}-{servingMax}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t('size.priceFrom')}</span>
-          <span className="font-semibold">${basePrice}</span>
+          <span className="font-semibold">${basePriceMin}-${basePriceMax}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t('size.leadTime')}</span>

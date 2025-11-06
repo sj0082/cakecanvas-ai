@@ -10,8 +10,8 @@ interface StyleCardProps {
   id: string;
   name: string;
   images: string[];
-  paletteRange: string;
-  shapeTemplate: string;
+  palette_range: any;
+  shape_template: string;
   isSelected: boolean;
   onClick: () => void;
 }
@@ -19,8 +19,8 @@ interface StyleCardProps {
 export const StyleCard = ({
   name,
   images,
-  paletteRange,
-  shapeTemplate,
+  palette_range,
+  shape_template,
   isSelected,
   onClick,
 }: StyleCardProps) => {
@@ -49,10 +49,10 @@ export const StyleCard = ({
         <CardTitle className="text-lg mb-2">{name}</CardTitle>
         <CardDescription className="space-y-1">
           <div className="text-xs">
-            <span className="font-medium">Palette:</span> {paletteRange}
+            <span className="font-medium">Palette:</span> {JSON.stringify(palette_range)}
           </div>
           <div className="text-xs">
-            <span className="font-medium">Shape:</span> {shapeTemplate}
+            <span className="font-medium">Shape:</span> {shape_template}
           </div>
         </CardDescription>
       </CardContent>
