@@ -29,7 +29,7 @@ const Index = () => {
             backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(${heroImage})`
           }}
         />
-        <div className="relative z-10 text-center text-white px-6 max-w-4xl mx-auto">
+        <div className="relative z-10 text-center text-white px-6 max-w-4xl mx-auto pt-32">
           <Badge variant="secondary" className="mb-6 text-lg">
             {t('home.badge')}
           </Badge>
