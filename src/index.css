@@ -114,18 +114,43 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-black text-foreground;
+    @apply bg-black text-foreground overflow-hidden;
   }
   
-  /* Brabben.House style scrolling frame */
-  .scroll-container {
-    height: 100vh;
-    overflow-y: scroll;
-    scroll-snap-type: y proximity;
+  /* Brabben.House style - Fixed black frame with scrolling content inside */
+  .fixed-frame {
+    position: fixed;
+    inset: 0;
+    background: black;
+    padding: 1rem;
+    overflow: hidden;
   }
   
-  .content-box {
-    @apply bg-background rounded-[3rem] m-4 md:m-6 shadow-2xl;
-    scroll-snap-align: start;
+  .scrolling-content {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: hsl(var(--background));
+    border-radius: 2.5rem;
+    scroll-behavior: smooth;
+  }
+  
+  /* Hide scrollbar but keep functionality */
+  .scrolling-content::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .scrolling-content {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  @media (min-width: 768px) {
+    .fixed-frame {
+      padding: 1.5rem;
+    }
+    .scrolling-content {
+      border-radius: 3rem;
+    }
   }
 }
