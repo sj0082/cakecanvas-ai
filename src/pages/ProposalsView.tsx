@@ -33,33 +33,49 @@ const ProposalsView = () => {
     return () => { supabase.removeChannel(channel); };
   }, [requestId]);
 
-  if (loading || !request) return <div className="min-h-screen py-12 px-6"><div className="max-w-6xl mx-auto"><div className="text-center py-20"><p className="text-muted-foreground">{loading ? t('proposals.loading') : t('common.error')}</p></div></div></div>;
+  if (loading || !request) return (
+    <div className="fixed-frame">
+      <div className="scrolling-content">
+        <div className="min-h-full py-12 px-6">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center py-20">
+              <p className="text-muted-foreground">{loading ? t('proposals.loading') : t('common.error')}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen py-12 px-6">
-      <div className="fixed top-4 right-4 z-50"><LanguageSelector /></div>
-      <div className="max-w-6xl mx-auto">
-        <DesignStepper />
-        <div className="text-center mb-12">
-          <Badge variant="secondary" className="mb-4">{t('proposals.badge')}</Badge>
-          <h1 className="text-4xl font-bold mb-4">{t('proposals.title')}</h1>
-          <p className="text-xl text-muted-foreground">{t('proposals.subtitle')}</p>
-        </div>
-        {request.status === "GENERATING" && request.proposals.length === 0 ? (
-          <div className="text-center py-12"><p className="text-muted-foreground">{t('proposals.status.generating')}</p></div>
-        ) : request.proposals.length > 0 ? (
-          <>
-            <div className="grid md:grid-cols-3 gap-6 mb-8">
-              {request.proposals.map((proposal: any) => <ProposalCard key={proposal.id} {...proposal} isSelected={selectedProposal === proposal.id} onSelect={() => setSelectedProposal(proposal.id)} />)}
+    <div className="fixed-frame">
+      <div className="scrolling-content">
+        <div className="min-h-full py-12 px-6">
+          <div className="absolute top-6 right-6 z-50"><LanguageSelector /></div>
+          <div className="max-w-6xl mx-auto">
+            <DesignStepper />
+            <div className="text-center mb-12">
+              <Badge variant="secondary" className="mb-4">{t('proposals.badge')}</Badge>
+              <h1 className="text-4xl font-bold mb-4">{t('proposals.title')}</h1>
+              <p className="text-xl text-muted-foreground">{t('proposals.subtitle')}</p>
             </div>
-            {selectedProposal && (
-              <div className="text-center p-6 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground mb-2">{t('proposals.contactInfo')} {request.contact_email}</p>
-                <p className="text-xs text-muted-foreground">{t('proposals.next')}</p>
-              </div>
-            )}
-          </>
-        ) : <div className="text-center py-12"><p className="text-muted-foreground">{t('proposals.status.failed')}</p></div>}
+            {request.status === "GENERATING" && request.proposals.length === 0 ? (
+              <div className="text-center py-12"><p className="text-muted-foreground">{t('proposals.status.generating')}</p></div>
+            ) : request.proposals.length > 0 ? (
+              <>
+                <div className="grid md:grid-cols-3 gap-6 mb-8">
+                  {request.proposals.map((proposal: any) => <ProposalCard key={proposal.id} {...proposal} isSelected={selectedProposal === proposal.id} onSelect={() => setSelectedProposal(proposal.id)} />)}
+                </div>
+                {selectedProposal && (
+                  <div className="text-center p-6 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-2">{t('proposals.contactInfo')} {request.contact_email}</p>
+                    <p className="text-xs text-muted-foreground">{t('proposals.next')}</p>
+                  </div>
+                )}
+              </>
+            ) : <div className="text-center py-12"><p className="text-muted-foreground">{t('proposals.status.failed')}</p></div>}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -42,38 +42,42 @@ const SizeSelection = () => {
   }, []);
 
   return (
-    <div className="min-h-screen py-12 px-6">
-      <div className="fixed top-4 right-4 z-50"><LanguageSelector /></div>
-      <div className="max-w-6xl mx-auto">
-        <DesignStepper />
-        <div className="text-center mb-12">
-          <Badge variant="secondary" className="mb-4">{t('size.badge')}</Badge>
-          <h1 className="text-4xl font-bold mb-4">{t('size.title')}</h1>
-          <p className="text-xl text-muted-foreground">{t('size.subtitle')}</p>
-        </div>
-        {loading ? <div className="text-center py-12">{t('size.loading')}</div> : (
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
-            {sizes.map((size) => (
-              <SizeCard 
-                key={size.id}
-                id={size.id}
-                name={size.name}
-                tiersSpec={size.tiers_spec}
-                servingMin={size.serving_min}
-                servingMax={size.serving_max}
-                basePriceMin={size.base_price_min}
-                basePriceMax={size.base_price_max}
-                leadTime={size.lead_time_days}
-                isSelected={selectedSize === size.id}
-                onClick={() => setSelectedSize(size.id)}
-              />
-            ))}
+    <div className="fixed-frame">
+      <div className="scrolling-content">
+        <div className="min-h-full py-12 px-6">
+          <div className="absolute top-6 right-6 z-50"><LanguageSelector /></div>
+          <div className="max-w-6xl mx-auto">
+            <DesignStepper />
+            <div className="text-center mb-12">
+              <Badge variant="secondary" className="mb-4">{t('size.badge')}</Badge>
+              <h1 className="text-4xl font-bold mb-4">{t('size.title')}</h1>
+              <p className="text-xl text-muted-foreground">{t('size.subtitle')}</p>
+            </div>
+            {loading ? <div className="text-center py-12">{t('size.loading')}</div> : (
+              <div className="grid md:grid-cols-3 gap-6 mb-8">
+                {sizes.map((size) => (
+                  <SizeCard 
+                    key={size.id}
+                    id={size.id}
+                    name={size.name}
+                    tiersSpec={size.tiers_spec}
+                    servingMin={size.serving_min}
+                    servingMax={size.serving_max}
+                    basePriceMin={size.base_price_min}
+                    basePriceMax={size.base_price_max}
+                    leadTime={size.lead_time_days}
+                    isSelected={selectedSize === size.id}
+                    onClick={() => setSelectedSize(size.id)}
+                  />
+                ))}
+              </div>
+            )}
+            <div className="flex justify-end">
+              <Button size="lg" onClick={() => selectedSize && navigate(`/design/style?size=${selectedSize}`)} disabled={!selectedSize} className="px-8">
+                {t('size.next')}<ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
           </div>
-        )}
-        <div className="flex justify-end">
-          <Button size="lg" onClick={() => selectedSize && navigate(`/design/style?size=${selectedSize}`)} disabled={!selectedSize} className="px-8">
-            {t('size.next')}<ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
         </div>
       </div>
     </div>

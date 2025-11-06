@@ -55,45 +55,49 @@ const DesignDetails = () => {
   };
 
   return (
-    <div className="min-h-screen py-12 px-6">
-      <div className="fixed top-4 right-4 z-50"><LanguageSelector /></div>
-      <div className="max-w-4xl mx-auto">
-        <DesignStepper />
-        <div className="text-center mb-12">
-          <Badge variant="secondary" className="mb-4">{t('details.badge')}</Badge>
-          <h1 className="text-4xl font-bold mb-4">{t('details.title')}</h1>
-          <p className="text-xl text-muted-foreground">{t('details.subtitle')}</p>
-        </div>
-        <Card className="mb-8">
-          <CardHeader><CardTitle>{t('details.design.title')}</CardTitle><CardDescription>{t('details.design.description')}</CardDescription></CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="user-text">{t('details.design.label')}</Label>
-              <Textarea id="user-text" placeholder={t('details.design.placeholder')} value={userText} onChange={(e) => setUserText(e.target.value)} rows={5} />
-              <p className="text-sm text-muted-foreground">{t('details.design.help')}</p>
+    <div className="fixed-frame">
+      <div className="scrolling-content">
+        <div className="min-h-full py-12 px-6">
+          <div className="absolute top-6 right-6 z-50"><LanguageSelector /></div>
+          <div className="max-w-4xl mx-auto">
+            <DesignStepper />
+            <div className="text-center mb-12">
+              <Badge variant="secondary" className="mb-4">{t('details.badge')}</Badge>
+              <h1 className="text-4xl font-bold mb-4">{t('details.title')}</h1>
+              <p className="text-xl text-muted-foreground">{t('details.subtitle')}</p>
             </div>
-          </CardContent>
-        </Card>
-        <Card className="mb-8">
-          <CardHeader><CardTitle>{t('details.contact.title')}</CardTitle><CardDescription>{t('details.contact.description')}</CardDescription></CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">{t('details.contact.email.label')} *</Label>
-              <Input id="email" type="email" placeholder={t('details.contact.email.placeholder')} value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} required />
+            <Card className="mb-8">
+              <CardHeader><CardTitle>{t('details.design.title')}</CardTitle><CardDescription>{t('details.design.description')}</CardDescription></CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="user-text">{t('details.design.label')}</Label>
+                  <Textarea id="user-text" placeholder={t('details.design.placeholder')} value={userText} onChange={(e) => setUserText(e.target.value)} rows={5} />
+                  <p className="text-sm text-muted-foreground">{t('details.design.help')}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="mb-8">
+              <CardHeader><CardTitle>{t('details.contact.title')}</CardTitle><CardDescription>{t('details.contact.description')}</CardDescription></CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">{t('details.contact.email.label')} *</Label>
+                  <Input id="email" type="email" placeholder={t('details.contact.email.placeholder')} value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">{t('details.contact.phone.label')}</Label>
+                  <Input id="phone" type="tel" placeholder={t('details.contact.phone.placeholder')} value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} />
+                </div>
+              </CardContent>
+            </Card>
+            <div className="flex justify-between">
+              <Button variant="outline" size="lg" onClick={() => navigate(`/design/style?size=${sizeId}`)} disabled={loading} className="px-8">
+                <ArrowLeft className="mr-2 h-5 w-5" />{t('details.prev')}
+              </Button>
+              <Button size="lg" onClick={handleSubmit} disabled={loading || !contactEmail} className="px-8">
+                {loading ? t('details.submitting') : <>{t('details.submit')}<Sparkles className="ml-2 h-5 w-5" /></>}
+              </Button>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">{t('details.contact.phone.label')}</Label>
-              <Input id="phone" type="tel" placeholder={t('details.contact.phone.placeholder')} value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} />
-            </div>
-          </CardContent>
-        </Card>
-        <div className="flex justify-between">
-          <Button variant="outline" size="lg" onClick={() => navigate(`/design/style?size=${sizeId}`)} disabled={loading} className="px-8">
-            <ArrowLeft className="mr-2 h-5 w-5" />{t('details.prev')}
-          </Button>
-          <Button size="lg" onClick={handleSubmit} disabled={loading || !contactEmail} className="px-8">
-            {loading ? t('details.submitting') : <>{t('details.submit')}<Sparkles className="ml-2 h-5 w-5" /></>}
-          </Button>
+          </div>
         </div>
       </div>
     </div>

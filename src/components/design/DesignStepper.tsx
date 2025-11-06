@@ -3,7 +3,7 @@
 // Technical Building Block: P01 - Stepper Navigation (Size → Style → Details → Review)
 // =============================================================================
 
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 interface Step {
@@ -21,6 +21,7 @@ const steps: Step[] = [
 
 export const DesignStepper = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const getCurrentStep = () => {
     const currentStep = steps.find((step) => location.pathname.startsWith(step.path));
@@ -29,6 +30,17 @@ export const DesignStepper = () => {
 
   const current = getCurrentStep();
 
+  const canNavigateToStep = (targetStep: number) => {
+    // Can only navigate to completed steps or current step
+    return targetStep <= current;
+  };
+
+  const handleStepClick = (step: Step) => {
+    if (canNavigateToStep(step.number)) {
+      navigate(step.path);
+    }
+  };
+
   return (
     <div className="w-full max-w-3xl mx-auto mb-8">
       <div className="flex items-center justify-between">
@@ -36,11 +48,13 @@ export const DesignStepper = () => {
           <div key={step.number} className="flex items-center flex-1">
             <div className="flex flex-col items-center">
               <div
+                onClick={() => handleStepClick(step)}
                 className={cn(
-                  "w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-colors",
+                  "w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all",
                   current >= step.number
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground"
+                    : "bg-muted text-muted-foreground",
+                  canNavigateToStep(step.number) && "cursor-pointer hover:scale-110"
                 )}
               >
                 {step.number}
