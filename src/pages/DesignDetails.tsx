@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, Sparkles, Upload, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { DesignStepper } from "@/components/design/DesignStepper";
@@ -22,6 +22,8 @@ const DesignDetails = () => {
   const [userText, setUserText] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -30,6 +32,85 @@ const DesignDetails = () => {
 
   const sizeId = searchParams.get("size");
   const styleId = searchParams.get("style");
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    const newImageUrls: string[] = [];
+
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          toast({ 
+            title: t('common.error'), 
+            description: `${file.name} is not an image file`, 
+            variant: "destructive" 
+          });
+          continue;
+        }
+
+        // Validate file size (10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          toast({ 
+            title: t('common.error'), 
+            description: `${file.name} is too large (max 10MB)`, 
+            variant: "destructive" 
+          });
+          continue;
+        }
+
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}-${file.name}`;
+        const filePath = `inspiration/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('cake-inspiration')
+          .upload(filePath, file);
+
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          toast({ 
+            title: t('common.error'), 
+            description: `Failed to upload ${file.name}`, 
+            variant: "destructive" 
+          });
+          continue;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('cake-inspiration')
+          .getPublicUrl(filePath);
+
+        newImageUrls.push(publicUrl);
+      }
+
+      if (newImageUrls.length > 0) {
+        setUploadedImages([...uploadedImages, ...newImageUrls]);
+        toast({ 
+          title: t('common.success'), 
+          description: `${newImageUrls.length} image(s) uploaded successfully` 
+        });
+      }
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      toast({ 
+        title: t('common.error'), 
+        description: 'Failed to upload images', 
+        variant: "destructive" 
+      });
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  const removeImage = (indexToRemove: number) => {
+    setUploadedImages(uploadedImages.filter((_, index) => index !== indexToRemove));
+  };
 
   const handleSubmit = async () => {
     if (!sizeId || !styleId || !contactEmail) {
@@ -40,8 +121,13 @@ const DesignDetails = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.from("requests").insert({
-        size_category_id: sizeId, stylepack_id: styleId, user_text: userText || null,
-        contact_email: contactEmail, contact_phone: contactPhone || null, status: "GENERATING"
+        size_category_id: sizeId, 
+        stylepack_id: styleId, 
+        user_text: userText || null,
+        user_images: uploadedImages.length > 0 ? uploadedImages : null,
+        contact_email: contactEmail, 
+        contact_phone: contactPhone || null, 
+        status: "GENERATING"
       }).select().single();
 
       if (error) throw error;
@@ -73,6 +159,50 @@ const DesignDetails = () => {
                   <Label htmlFor="user-text">{t('details.design.label')}</Label>
                   <Textarea id="user-text" placeholder={t('details.design.placeholder')} value={userText} onChange={(e) => setUserText(e.target.value)} rows={5} />
                   <p className="text-sm text-muted-foreground">{t('details.design.help')}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Inspiration Images</Label>
+                  <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary transition-colors">
+                    <input
+                      type="file"
+                      id="image-upload"
+                      className="hidden"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageUpload}
+                      disabled={uploading}
+                    />
+                    <label htmlFor="image-upload" className="cursor-pointer">
+                      <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
+                      <p className="text-sm font-medium mb-1">
+                        {uploading ? 'Uploading...' : 'Upload cake inspiration images'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        PNG, JPG, WEBP up to 10MB each
+                      </p>
+                    </label>
+                  </div>
+
+                  {uploadedImages.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                      {uploadedImages.map((url, index) => (
+                        <div key={index} className="relative group aspect-square rounded-xl overflow-hidden bg-muted">
+                          <img
+                            src={url}
+                            alt={`Inspiration ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            onClick={() => removeImage(index)}
+                            className="absolute top-2 right-2 bg-destructive text-destructive-foreground rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
