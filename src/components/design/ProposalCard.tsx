@@ -43,46 +43,44 @@ export const ProposalCard = ({
   };
 
   return (
-    <Card className={`${isSelected ? "ring-2 ring-primary shadow-lg" : ""}`}>
+    <Card className={`overflow-hidden transition-transform duration-200 ease-smooth hover:scale-[1.01] ${isSelected ? "ring-2 ring-brand shadow-elegant" : ""}`}>
       <CardHeader className="p-0">
-        <div className="aspect-square relative overflow-hidden rounded-t-lg bg-muted">
+        <div className="aspect-square relative bg-muted">
           <img
             src={image_url}
             alt={`${variant} proposal`}
             className="w-full h-full object-cover"
           />
-          <div className="absolute top-2 left-2">
+          <div className="absolute top-3 left-3">
             <Badge variant="default">{t(`proposals.variant.${variant}`)}</Badge>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-4 space-y-4">
-        <div>
-          <CardTitle className="text-lg mb-2 capitalize">{variant}</CardTitle>
-          <CardDescription className="space-y-1">
-            {spec_json.tiers && <div>Tiers: {spec_json.tiers}</div>}
-            {spec_json.palette && <div>Palette: {spec_json.palette}</div>}
-            {spec_json.accents && spec_json.accents.length > 0 && (
-              <div>Accents: {spec_json.accents.join(", ")}</div>
-            )}
-          </CardDescription>
+      <CardContent className="p-5">
+        <div className="flex items-center justify-between mb-3">
+          <CardTitle className="text-lg capitalize">{variant}</CardTitle>
+          <span className="text-sm text-muted-foreground font-semibold">
+            ${price_range_min} - ${price_range_max}
+          </span>
         </div>
-
-        <div className="space-y-2">
-          <div className="text-sm font-medium">
-            {t('proposals.priceRange')}: ${price_range_min} - ${price_range_max}
-          </div>
-          
-          {badges.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {badges.map((badge, idx) => (
-                <Badge key={idx} variant={getBadgeVariant(badge) as any} className="text-xs">
-                  {t(`proposals.badges.${badge}`) || badge}
-                </Badge>
-              ))}
-            </div>
+        
+        <CardDescription className="space-y-1 mb-4">
+          {spec_json.tiers && <div>Tiers: {spec_json.tiers}</div>}
+          {spec_json.palette && <div>Palette: {spec_json.palette}</div>}
+          {spec_json.accents && spec_json.accents.length > 0 && (
+            <div>Accents: {spec_json.accents.join(", ")}</div>
           )}
-        </div>
+        </CardDescription>
+        
+        {badges.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {badges.map((badge, idx) => (
+              <Badge key={idx} variant={getBadgeVariant(badge) as any}>
+                {t(`proposals.badges.${badge}`) || badge}
+              </Badge>
+            ))}
+          </div>
+        )}
 
         <Button
           onClick={onSelect}
