@@ -1,0 +1,134 @@
+{
+  "nav": {
+    "home": "Inicio",
+    "design": "Diseño"
+  },
+  "home": {
+    "badge": "Diseño de Pasteles con IA",
+    "title": "Crea el Pastel de tus Sueños",
+    "subtitle": "Diseño profesional de pasteles con IA en 3 simples pasos. Selecciona tu tamaño y estilo, y obtén 3 propuestas personalizadas en minutos.",
+    "cta": "Comenzar Diseño",
+    "features": {
+      "title": "Por Qué Elegirnos",
+      "ai": {
+        "title": "Diseño con IA",
+        "description": "La IA de última generación crea diseños de pasteles hermosos y realistas"
+      },
+      "proposals": {
+        "title": "3 Propuestas Únicas",
+        "description": "Obtén opciones de diseño conservadoras, estándar y audaces para elegir"
+      },
+      "fast": {
+        "title": "Respuesta Rápida",
+        "description": "Recibe tus propuestas personalizadas en minutos, no en días"
+      }
+    },
+    "how": {
+      "title": "Cómo Funciona",
+      "step1": {
+        "title": "Seleccionar Tamaño",
+        "description": "Elige el tamaño del pastel y los requisitos de servicio"
+      },
+      "step2": {
+        "title": "Elegir Estilo",
+        "description": "Selecciona de nuestros paquetes de estilo curados"
+      },
+      "step3": {
+        "title": "Añadir Detalles",
+        "description": "Describe tu visión y sube imágenes de inspiración"
+      },
+      "step4": {
+        "title": "Obtener Propuestas",
+        "description": "Revisa 3 diseños generados por IA y coloca tu depósito"
+      }
+    }
+  },
+  "size": {
+    "badge": "Paso 1",
+    "title": "Selecciona el Tamaño del Pastel",
+    "subtitle": "Elige el tamaño perfecto para tu evento",
+    "loading": "Cargando tamaños...",
+    "servings": "porciones",
+    "priceFrom": "Desde",
+    "leadTime": "Tiempo de entrega",
+    "days": "días",
+    "next": "Siguiente: Selección de Estilo",
+    "selectFirst": "Por favor selecciona un tamaño primero"
+  },
+  "style": {
+    "badge": "Paso 2",
+    "title": "Elige Tu Estilo",
+    "subtitle": "Selecciona la estética que coincida con tu visión",
+    "loading": "Cargando estilos...",
+    "prev": "Anterior: Selección de Tamaño",
+    "next": "Siguiente: Detalles del Diseño",
+    "selectFirst": "Por favor selecciona un estilo primero"
+  },
+  "details": {
+    "badge": "Paso 3",
+    "title": "Añadir Detalles Adicionales",
+    "subtitle": "Cuéntanos más sobre tu pastel soñado (opcional)",
+    "design": {
+      "title": "Requisitos de Diseño",
+      "description": "Describe temas, colores, mensajes o solicitudes especiales",
+      "label": "Requisitos de Diseño",
+      "placeholder": "Ejemplo: Colores rosa y dorado, decoraciones de rosas, mensaje 'Feliz Cumpleaños'",
+      "help": "Cuanto más específico seas, mejor podremos cumplir tu visión"
+    },
+    "contact": {
+      "title": "Información de Contacto",
+      "description": "Ingresa tus datos de contacto para recibir propuestas de diseño e información de pago",
+      "email": {
+        "label": "Correo Electrónico",
+        "placeholder": "tu@email.com"
+      },
+      "phone": {
+        "label": "Número de Teléfono (Opcional)",
+        "placeholder": "010-1234-5678"
+      }
+    },
+    "prev": "Anterior: Selección de Estilo",
+    "submit": "Generar Diseño con IA",
+    "submitting": "Generando...",
+    "error": {
+      "missingParams": "Por favor selecciona tamaño y estilo primero",
+      "missingEmail": "Por favor ingresa tu correo electrónico",
+      "failed": "Ocurrió un error al procesar tu solicitud"
+    },
+    "success": {
+      "title": "¡Solicitud Enviada!",
+      "description": "La IA está generando tus diseños. Por favor espera un momento."
+    }
+  },
+  "proposals": {
+    "badge": "Paso Final",
+    "title": "Tus Propuestas de Diseño",
+    "subtitle": "Revisa los diseños generados por IA y selecciona tu favorito",
+    "loading": "Generando tus diseños personalizados...",
+    "status": {
+      "generating": "La IA está creando tus propuestas...",
+      "ready": "¡Tus propuestas están listas!",
+      "failed": "La generación falló. Por favor intenta de nuevo."
+    },
+    "variant": {
+      "conservative": "Conservador",
+      "standard": "Estándar",
+      "bold": "Audaz"
+    },
+    "priceRange": "Rango de Precio",
+    "badges": {
+      "support_required": "Estructura de Soporte Requerida",
+      "transport_risk": "Riesgo de Transporte",
+      "allergen_warning": "Advertencia de Alérgenos"
+    },
+    "select": "Seleccionar Este Diseño",
+    "selected": "Seleccionado",
+    "contactInfo": "Te contactaremos en",
+    "next": "Completar Pedido"
+  },
+  "common": {
+    "error": "Error",
+    "success": "Éxito",
+    "loading": "Cargando..."
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "nav": {
+    "home": "Home",
+    "design": "Design"
+  },
+  "home": {
+    "badge": "AI-Powered Cake Design",
+    "title": "Create Your Dream Cake",
+    "subtitle": "Professional AI-powered cake design in 3 simple steps. Select your size and style, and get 3 custom proposals in minutes.",
+    "cta": "Start Design",
+    "features": {
+      "title": "Why Choose Our Service",
+      "ai": {
+        "title": "AI-Powered Design",
+        "description": "State-of-the-art AI creates beautiful, realistic cake designs"
+      },
+      "proposals": {
+        "title": "3 Unique Proposals",
+        "description": "Get conservative, standard, and bold design options to choose from"
+      },
+      "fast": {
+        "title": "Quick Turnaround",
+        "description": "Receive your custom proposals in minutes, not days"
+      }
+    },
+    "how": {
+      "title": "How It Works",
+      "step1": {
+        "title": "Select Size",
+        "description": "Choose your cake size and serving requirements"
+      },
+      "step2": {
+        "title": "Pick Style",
+        "description": "Select from our curated style packs"
+      },
+      "step3": {
+        "title": "Add Details",
+        "description": "Describe your vision and upload inspiration images"
+      },
+      "step4": {
+        "title": "Get Proposals",
+        "description": "Review 3 AI-generated designs and place your deposit"
+      }
+    }
+  },
+  "size": {
+    "badge": "Step 1",
+    "title": "Select Your Cake Size",
+    "subtitle": "Choose the perfect size for your event",
+    "loading": "Loading sizes...",
+    "servings": "servings",
+    "priceFrom": "From",
+    "leadTime": "Lead time",
+    "days": "days",
+    "next": "Next: Style Selection",
+    "selectFirst": "Please select a size first"
+  },
+  "style": {
+    "badge": "Step 2",
+    "title": "Choose Your Style",
+    "subtitle": "Select the aesthetic that matches your vision",
+    "loading": "Loading styles...",
+    "prev": "Previous: Size Selection",
+    "next": "Next: Design Details",
+    "selectFirst": "Please select a style first"
+  },
+  "details": {
+    "badge": "Step 3",
+    "title": "Add Additional Details",
+    "subtitle": "Tell us more about your dream cake (optional)",
+    "design": {
+      "title": "Design Requirements",
+      "description": "Feel free to describe themes, colors, messages, or special requests",
+      "label": "Design Requirements",
+      "placeholder": "Example: Pink and gold colors, rose decorations, 'Happy Birthday' message",
+      "help": "The more specific you are, the better we can match your vision"
+    },
+    "contact": {
+      "title": "Contact Information",
+      "description": "Enter your contact details to receive design proposals and payment information",
+      "email": {
+        "label": "Email Address",
+        "placeholder": "your@email.com"
+      },
+      "phone": {
+        "label": "Phone Number (Optional)",
+        "placeholder": "010-1234-5678"
+      }
+    },
+    "prev": "Previous: Style Selection",
+    "submit": "Generate AI Design",
+    "submitting": "Generating...",
+    "error": {
+      "missingParams": "Please select size and style first",
+      "missingEmail": "Please enter your email address",
+      "failed": "An error occurred while processing your request"
+    },
+    "success": {
+      "title": "Request Submitted!",
+      "description": "AI is generating your designs. Please wait a moment."
+    }
+  },
+  "proposals": {
+    "badge": "Final Step",
+    "title": "Your Design Proposals",
+    "subtitle": "Review AI-generated designs and select your favorite",
+    "loading": "Generating your custom designs...",
+    "status": {
+      "generating": "AI is creating your proposals...",
+      "ready": "Your proposals are ready!",
+      "failed": "Generation failed. Please try again."
+    },
+    "variant": {
+      "conservative": "Conservative",
+      "standard": "Standard",
+      "bold": "Bold"
+    },
+    "priceRange": "Price Range",
+    "badges": {
+      "support_required": "Support Structure Required",
+      "transport_risk": "Transport Risk",
+      "allergen_warning": "Allergen Warning"
+    },
+    "select": "Select This Design",
+    "selected": "Selected",
+    "contactInfo": "We'll contact you at",
+    "next": "Complete Order"
+  },
+  "common": {
+    "error": "Error",
+    "success": "Success",
+    "loading": "Loading..."
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "nav": {
+    "home": "홈",
+    "design": "디자인"
+  },
+  "home": {
+    "badge": "AI 기반 케이크 디자인",
+    "title": "꿈의 케이크를 만들어보세요",
+    "subtitle": "3단계로 간단하게 전문적인 AI 케이크 디자인을 받아보세요. 사이즈와 스타일을 선택하고 몇 분 안에 3가지 맞춤 제안을 받으세요.",
+    "cta": "디자인 시작하기",
+    "features": {
+      "title": "왜 저희 서비스를 선택해야 할까요",
+      "ai": {
+        "title": "AI 기반 디자인",
+        "description": "최첨단 AI가 아름답고 현실적인 케이크 디자인을 생성합니다"
+      },
+      "proposals": {
+        "title": "3가지 독특한 제안",
+        "description": "보수적, 표준, 대담한 디자인 옵션 중에서 선택하세요"
+      },
+      "fast": {
+        "title": "빠른 처리",
+        "description": "며칠이 아닌 몇 분 안에 맞춤 제안을 받아보세요"
+      }
+    },
+    "how": {
+      "title": "이용 방법",
+      "step1": {
+        "title": "사이즈 선택",
+        "description": "케이크 사이즈와 서빙 요구사항을 선택하세요"
+      },
+      "step2": {
+        "title": "스타일 선택",
+        "description": "엄선된 스타일 팩 중에서 선택하세요"
+      },
+      "step3": {
+        "title": "세부사항 추가",
+        "description": "비전을 설명하고 영감 이미지를 업로드하세요"
+      },
+      "step4": {
+        "title": "제안 받기",
+        "description": "AI가 생성한 3가지 디자인을 검토하고 예약금을 결제하세요"
+      }
+    }
+  },
+  "size": {
+    "badge": "1단계",
+    "title": "케이크 사이즈 선택",
+    "subtitle": "행사에 완벽한 사이즈를 선택하세요",
+    "loading": "사이즈 불러오는 중...",
+    "servings": "인분",
+    "priceFrom": "최저",
+    "leadTime": "제작 기간",
+    "days": "일",
+    "next": "다음: 스타일 선택",
+    "selectFirst": "먼저 사이즈를 선택해주세요"
+  },
+  "style": {
+    "badge": "2단계",
+    "title": "스타일 선택",
+    "subtitle": "비전에 맞는 미학을 선택하세요",
+    "loading": "스타일 불러오는 중...",
+    "prev": "이전: 사이즈 선택",
+    "next": "다음: 디자인 세부사항",
+    "selectFirst": "먼저 스타일을 선택해주세요"
+  },
+  "details": {
+    "badge": "3단계",
+    "title": "추가 정보 입력",
+    "subtitle": "원하는 케이크에 대해 더 자세히 알려주세요 (선택사항)",
+    "design": {
+      "title": "케이크 디자인 요청사항",
+      "description": "테마, 색상, 문구, 특별한 요청사항 등을 자유롭게 작성해주세요",
+      "label": "디자인 요청사항",
+      "placeholder": "예: 핑크와 골드 컬러로, 장미 장식, '생일 축하합니다' 문구 포함",
+      "help": "구체적으로 작성할수록 더 정확한 디자인을 받을 수 있습니다"
+    },
+    "contact": {
+      "title": "연락처 정보",
+      "description": "디자인 제안과 결제 정보를 받을 연락처를 입력해주세요",
+      "email": {
+        "label": "이메일 주소",
+        "placeholder": "your@email.com"
+      },
+      "phone": {
+        "label": "전화번호 (선택)",
+        "placeholder": "010-1234-5678"
+      }
+    },
+    "prev": "이전: 스타일 선택",
+    "submit": "AI 디자인 생성",
+    "submitting": "생성 중...",
+    "error": {
+      "missingParams": "사이즈와 스타일을 먼저 선택해주세요",
+      "missingEmail": "이메일 주소를 입력해주세요",
+      "failed": "요청 처리 중 오류가 발생했습니다"
+    },
+    "success": {
+      "title": "요청이 접수되었습니다!",
+      "description": "AI가 디자인을 생성하고 있습니다. 잠시만 기다려주세요."
+    }
+  },
+  "proposals": {
+    "badge": "최종 단계",
+    "title": "디자인 제안",
+    "subtitle": "AI가 생성한 디자인을 검토하고 가장 마음에 드는 것을 선택하세요",
+    "loading": "맞춤 디자인 생성 중...",
+    "status": {
+      "generating": "AI가 제안을 생성하고 있습니다...",
+      "ready": "제안이 준비되었습니다!",
+      "failed": "생성에 실패했습니다. 다시 시도해주세요."
+    },
+    "variant": {
+      "conservative": "보수적",
+      "standard": "표준",
+      "bold": "대담한"
+    },
+    "priceRange": "가격 범위",
+    "badges": {
+      "support_required": "지지대 필요",
+      "transport_risk": "운송 리스크",
+      "allergen_warning": "알레르겐 경고"
+    },
+    "select": "이 디자인 선택",
+    "selected": "선택됨",
+    "contactInfo": "다음 연락처로 연락드리겠습니다",
+    "next": "주문 완료"
+  },
+  "common": {
+    "error": "오류",
+    "success": "성공",
+    "loading": "로딩 중..."
+  }
+}
