@@ -114,6 +114,18 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-black text-foreground;
+  }
+  
+  /* Brabben.House style scrolling frame */
+  .scroll-container {
+    height: 100vh;
+    overflow-y: scroll;
+    scroll-snap-type: y proximity;
+  }
+  
+  .content-box {
+    @apply bg-background rounded-[3rem] m-4 md:m-6 shadow-2xl;
+    scroll-snap-align: start;
   }
 }
