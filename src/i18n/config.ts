@@ -17,8 +17,8 @@ i18n
       es: { translation: es },
       ko: { translation: ko },
     },
-    lng: localStorage.getItem('language') || 'ko',
-    fallbackLng: 'ko',
+    lng: localStorage.getItem('language') || 'en',
+    fallbackLng: 'en',
     interpolation: {
       escapeValue: false,
     },
