@@ -130,5 +130,10 @@
     "error": "Error",
     "success": "Success",
     "loading": "Loading..."
+  },
+  "seo": {
+    "title": "AI-Powered Custom Cake Design | Create Your Dream Cake",
+    "description": "Design your perfect custom cake with AI in minutes. Choose size and style, get 3 unique proposals. Professional cake design made simple and fast.",
+    "keywords": "custom cake design, AI cake design, cake proposals, wedding cake, birthday cake, custom cakes"
   }
 }

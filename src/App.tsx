@@ -13,8 +13,32 @@ import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import AdminRoute from "@/components/AdminRoute";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { useSEO } from "@/hooks/useSEO";
 
 const queryClient = new QueryClient();
+
+const AppContent = () => {
+  useSEO();
+  
+  return (
+    <>
+      <div className="fixed top-8 right-8 z-50">
+        <LanguageSelector />
+      </div>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/design/size" element={<SizeSelection />} />
+        <Route path="/design/style" element={<StyleSelection />} />
+        <Route path="/design/details" element={<DesignDetails />} />
+        <Route path="/design/proposals/:requestId" element={<ProposalsView />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -22,20 +46,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <div className="fixed top-8 right-8 z-50">
-          <LanguageSelector />
-        </div>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/design/size" element={<SizeSelection />} />
-          <Route path="/design/style" element={<StyleSelection />} />
-          <Route path="/design/details" element={<DesignDetails />} />
-          <Route path="/design/proposals/:requestId" element={<ProposalsView />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AppContent />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
