@@ -7,7 +7,6 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
 import { ProposalCard } from "@/components/design/ProposalCard";
 import { DesignStepper } from "@/components/design/DesignStepper";
 
@@ -38,36 +37,49 @@ const ProposalsView = () => {
         return;
       }
 
-      // Fetch request with token validation
-      const { data: requestData, error: requestError } = await supabase
-        .from("requests")
-        .select("*")
-        .eq("id", requestId)
-        .eq("access_token", accessToken)
-        .single();
+      try {
+        // Construct Edge Function URL
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const functionUrl = `${supabaseUrl}/functions/v1/get-request?requestId=${requestId}&token=${accessToken}`;
+        
+        const response = await fetch(functionUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
 
-      if (requestError || !requestData) {
-        setError('Invalid access token or request not found');
+        if (!response.ok) {
+          const errorData = await response.json();
+          setError(errorData.error || 'Failed to fetch request');
+          setLoading(false);
+          return;
+        }
+
+        const requestData = await response.json();
+        setRequest(requestData);
+        setError(null);
         setLoading(false);
-        return;
+      } catch (err) {
+        console.error('Error fetching request:', err);
+        setError('Failed to load request data');
+        setLoading(false);
       }
-
-      // Fetch proposals for this request
-      const { data: proposalsData } = await supabase
-        .from("proposals")
-        .select("*")
-        .eq("request_id", requestId)
-        .order("created_at");
-      
-      setRequest({ ...requestData, proposals: proposalsData || [] });
-      setError(null);
-      setLoading(false);
     };
 
     fetchRequest();
-    const channel = supabase.channel(`request-${requestId}`).on("postgres_changes", { event: "*", schema: "public", table: "proposals", filter: `request_id=eq.${requestId}` }, fetchRequest).subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [requestId, accessToken]);
+
+    // Poll for updates every 5 seconds while request is GENERATING
+    const pollInterval = setInterval(() => {
+      if (request?.status === "GENERATING") {
+        fetchRequest();
+      }
+    }, 5000);
+
+    return () => {
+      clearInterval(pollInterval);
+    };
+  }, [requestId, accessToken, request?.status]);
 
   if (loading || !request || error) return (
     <div className="fixed-frame">

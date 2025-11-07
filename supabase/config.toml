@@ -1,1 +1,7 @@
 project_id = "tnavetydxwkguwohcrcp"
+
+[functions.create-request]
+verify_jwt = false
+
+[functions.get-request]
+verify_jwt = false

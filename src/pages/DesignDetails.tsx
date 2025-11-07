@@ -120,21 +120,27 @@ const DesignDetails = () => {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.from("requests").insert({
-        size_category_id: sizeId, 
-        stylepack_id: styleId, 
-        user_text: userText || null,
-        user_images: uploadedImages.length > 0 ? uploadedImages : null,
-        contact_email: contactEmail, 
-        contact_phone: contactPhone || null, 
-        status: "GENERATING",
-        access_token: crypto.randomUUID()
-      }).select().single();
+      const { data, error } = await supabase.functions.invoke('create-request', {
+        body: {
+          size_category_id: sizeId,
+          stylepack_id: styleId,
+          user_text: userText || null,
+          user_images: uploadedImages.length > 0 ? uploadedImages : null,
+          contact_email: contactEmail,
+          contact_phone: contactPhone || null,
+          status: "GENERATING"
+        }
+      });
 
       if (error) throw error;
+      if (!data || !data.id || !data.access_token) {
+        throw new Error('Invalid response from server');
+      }
+
       toast({ title: t('common.success'), description: t('details.success.description') });
       navigate(`/design/proposals/${data.id}?token=${data.access_token}`);
     } catch (error) {
+      console.error('Error creating request:', error);
       toast({ title: t('common.error'), description: t('details.error.failed'), variant: "destructive" });
     } finally {
       setLoading(false);
