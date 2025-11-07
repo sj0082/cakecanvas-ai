@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +15,7 @@ type AdminView = "dashboard" | "stylepacks" | "sizes" | "rules" | "requests" | "
 const Admin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [currentView, setCurrentView] = useState<AdminView>("dashboard");
 
   const handleSignOut = async () => {
@@ -22,13 +24,13 @@ const Admin = () => {
       if (error) throw error;
       
       toast({
-        title: "Signed out successfully",
+        title: t("admin.toast.signOutSuccess"),
       });
       navigate('/auth');
     } catch (error) {
       toast({
-        title: "Error signing out",
-        description: error instanceof Error ? error.message : "An error occurred",
+        title: t("admin.toast.signOutError"),
+        description: error instanceof Error ? error.message : t("admin.toast.errorOccurred"),
         variant: "destructive",
       });
     }
@@ -41,11 +43,11 @@ const Admin = () => {
           <div className="flex justify-between items-center">
             <Button onClick={() => setCurrentView("dashboard")} variant="outline">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
+              {t("admin.backToDashboard")}
             </Button>
             <Button onClick={handleSignOut} variant="outline">
               <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
+              {t("admin.signOut")}
             </Button>
           </div>
 
@@ -62,98 +64,98 @@ const Admin = () => {
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-4xl font-bold">Admin Dashboard</h1>
+            <h1 className="text-4xl font-bold">{t("admin.title")}</h1>
             <p className="text-muted-foreground mt-2">
-              Manage your cake design system
+              {t("admin.subtitle")}
             </p>
           </div>
           <Button onClick={handleSignOut} variant="outline">
             <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
+            {t("admin.signOut")}
           </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setCurrentView("stylepacks")}>
             <CardHeader>
-              <CardTitle>Style Packs</CardTitle>
+              <CardTitle>{t("admin.stylePacks.title")}</CardTitle>
               <CardDescription>
-                Manage design styles and templates
+                {t("admin.stylePacks.description")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Button className="w-full" variant="secondary">
-                Manage
+                {t("admin.manage")}
               </Button>
             </CardContent>
           </Card>
 
           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setCurrentView("sizes")}>
             <CardHeader>
-              <CardTitle>Size Categories</CardTitle>
+              <CardTitle>{t("admin.sizeCategories.title")}</CardTitle>
               <CardDescription>
-                Manage cake sizes and pricing
+                {t("admin.sizeCategories.description")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Button className="w-full" variant="secondary">
-                Manage
+                {t("admin.manage")}
               </Button>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Deposit Settings</CardTitle>
+              <CardTitle>{t("admin.depositSettings.title")}</CardTitle>
               <CardDescription>
-                Configure payment deposit rules
+                {t("admin.depositSettings.description")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Button className="w-full" variant="secondary" disabled>
-                Coming Soon
+                {t("admin.comingSoon")}
               </Button>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Customer Requests</CardTitle>
+              <CardTitle>{t("admin.customerRequests.title")}</CardTitle>
               <CardDescription>
-                View and manage customer requests
+                {t("admin.customerRequests.description")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Button className="w-full" variant="secondary" disabled>
-                Coming Soon
+                {t("admin.comingSoon")}
               </Button>
             </CardContent>
           </Card>
 
           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setCurrentView("rules")}>
             <CardHeader>
-              <CardTitle>Reality Rules</CardTitle>
+              <CardTitle>{t("admin.realityRules.title")}</CardTitle>
               <CardDescription>
-                Configure feasibility validation rules
+                {t("admin.realityRules.description")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Button className="w-full" variant="secondary">
-                Manage
+                {t("admin.manage")}
               </Button>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Admin Users</CardTitle>
+              <CardTitle>{t("admin.adminUsers.title")}</CardTitle>
               <CardDescription>
-                Manage admin email whitelist
+                {t("admin.adminUsers.description")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Button className="w-full" variant="secondary" disabled>
-                Coming Soon
+                {t("admin.comingSoon")}
               </Button>
             </CardContent>
           </Card>
