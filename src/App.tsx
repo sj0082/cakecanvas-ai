@@ -19,7 +19,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <div className="fixed top-6 right-6 z-50">
+        <div className="fixed top-8 right-8 z-50">
           <LanguageSelector />
         </div>
         <Routes>
