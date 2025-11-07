@@ -171,6 +171,150 @@
       "signOutSuccess": "로그아웃되었습니다",
       "signOutError": "로그아웃 오류",
       "errorOccurred": "오류가 발생했습니다"
+    },
+    "stylePacksManager": {
+      "title": "스타일 팩 관리",
+      "addButton": "스타일 팩 추가",
+      "table": {
+        "name": "이름",
+        "shapeTemplate": "모양 템플릿",
+        "images": "이미지",
+        "active": "활성",
+        "actions": "동작",
+        "imageCount": "개 이미지",
+        "activeStatus": "활성",
+        "inactiveStatus": "비활성"
+      },
+      "dialog": {
+        "editTitle": "스타일 팩 수정",
+        "addTitle": "스타일 팩 추가",
+        "editDescription": "스타일 팩 정보 수정",
+        "addDescription": "새 스타일 팩 생성",
+        "name": "이름",
+        "description": "설명",
+        "images": "이미지 (쉼표로 구분된 URL)",
+        "imagesPlaceholder": "https://example.com/image1.jpg, https://example.com/image2.jpg",
+        "shapeTemplate": "모양 템플릿",
+        "loraRef": "LoRA 참조",
+        "allowedAccents": "허용된 액센트 (쉼표로 구분)",
+        "allowedAccentsPlaceholder": "금색, 은색, 청동색",
+        "bannedTerms": "금지 용어 (쉼표로 구분)",
+        "paletteRange": "팔레트 범위 (JSON)",
+        "paletteRangePlaceholder": "{\"primary\": \"#000000\", \"secondary\": \"#ffffff\"}",
+        "active": "활성",
+        "cancel": "취소",
+        "save": "저장"
+      },
+      "deleteDialog": {
+        "title": "정말 삭제하시겠습니까?",
+        "description": "스타일 팩 \"{{name}}\"을(를) 영구적으로 삭제합니다. 이 작업은 되돌릴 수 없습니다.",
+        "cancel": "취소",
+        "delete": "삭제"
+      },
+      "toast": {
+        "fetchError": "스타일 팩을 불러오는 중 오류가 발생했습니다",
+        "updateSuccess": "스타일 팩이 성공적으로 수정되었습니다",
+        "createSuccess": "스타일 팩이 성공적으로 생성되었습니다",
+        "saveError": "스타일 팩을 저장하는 중 오류가 발생했습니다",
+        "deleteSuccess": "스타일 팩이 성공적으로 삭제되었습니다",
+        "deleteError": "스타일 팩을 삭제하는 중 오류가 발생했습니다"
+      }
+    },
+    "sizeCategoriesManager": {
+      "title": "사이즈 카테고리 관리",
+      "addButton": "사이즈 카테고리 추가",
+      "table": {
+        "code": "코드",
+        "name": "이름",
+        "servings": "인분",
+        "priceRange": "가격 범위",
+        "leadTime": "제작 기간",
+        "active": "활성",
+        "actions": "동작",
+        "days": "일",
+        "activeStatus": "활성",
+        "inactiveStatus": "비활성"
+      },
+      "dialog": {
+        "editTitle": "사이즈 카테고리 수정",
+        "addTitle": "사이즈 카테고리 추가",
+        "editDescription": "사이즈 카테고리 정보 수정",
+        "addDescription": "새 사이즈 카테고리 생성",
+        "code": "코드",
+        "name": "이름",
+        "minServings": "최소 인분",
+        "maxServings": "최대 인분",
+        "minPrice": "최소 가격",
+        "maxPrice": "최대 가격",
+        "leadTime": "제작 기간 (일)",
+        "deliveryRadius": "배달 반경 (마일)",
+        "tiersSpec": "계층 사양 (JSON)",
+        "tiersSpecPlaceholder": "{\"tier1\": {...}, \"tier2\": {...}}",
+        "active": "활성",
+        "cancel": "취소",
+        "save": "저장"
+      },
+      "deleteDialog": {
+        "title": "정말 삭제하시겠습니까?",
+        "description": "사이즈 카테고리 \"{{name}}\"을(를) 영구적으로 삭제합니다. 이 작업은 되돌릴 수 없습니다.",
+        "cancel": "취소",
+        "delete": "삭제"
+      },
+      "toast": {
+        "fetchError": "사이즈 카테고리를 불러오는 중 오류가 발생했습니다",
+        "updateSuccess": "사이즈 카테고리가 성공적으로 수정되었습니다",
+        "createSuccess": "사이즈 카테고리가 성공적으로 생성되었습니다",
+        "saveError": "사이즈 카테고리를 저장하는 중 오류가 발생했습니다",
+        "deleteSuccess": "사이즈 카테고리가 성공적으로 삭제되었습니다",
+        "deleteError": "사이즈 카테고리를 삭제하는 중 오류가 발생했습니다"
+      }
+    },
+    "realityRulesManager": {
+      "title": "현실성 규칙 관리",
+      "addButton": "현실성 규칙 추가",
+      "table": {
+        "key": "키",
+        "message": "메시지",
+        "severity": "심각도",
+        "threshold": "임계값",
+        "active": "활성",
+        "actions": "동작",
+        "activeStatus": "활성",
+        "inactiveStatus": "비활성"
+      },
+      "dialog": {
+        "editTitle": "현실성 규칙 수정",
+        "addTitle": "현실성 규칙 추가",
+        "editDescription": "현실성 규칙 정보 수정",
+        "addDescription": "새 현실성 규칙 생성",
+        "key": "키",
+        "keyPlaceholder": "예: max_height, complexity_limit",
+        "message": "메시지",
+        "messagePlaceholder": "규칙 위반 설명",
+        "severity": "심각도",
+        "severityInfo": "정보",
+        "severityWarning": "경고",
+        "severityError": "오류",
+        "thresholdValue": "임계값",
+        "thresholdPlaceholder": "예: 100, 5.5",
+        "active": "활성",
+        "cancel": "취소",
+        "save": "저장"
+      },
+      "deleteDialog": {
+        "title": "정말 삭제하시겠습니까?",
+        "description": "현실성 규칙 \"{{name}}\"을(를) 영구적으로 삭제합니다. 이 작업은 되돌릴 수 없습니다.",
+        "cancel": "취소",
+        "delete": "삭제"
+      },
+      "toast": {
+        "fetchError": "현실성 규칙을 불러오는 중 오류가 발생했습니다",
+        "updateSuccess": "현실성 규칙이 성공적으로 수정되었습니다",
+        "createSuccess": "현실성 규칙이 성공적으로 생성되었습니다",
+        "saveError": "현실성 규칙을 저장하는 중 오류가 발생했습니다",
+        "deleteSuccess": "현실성 규칙이 성공적으로 삭제되었습니다",
+        "deleteError": "현실성 규칙을 삭제하는 중 오류가 발생했습니다"
+      }
     }
   }
 }

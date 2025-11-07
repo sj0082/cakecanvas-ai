@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -51,6 +52,7 @@ interface RealityRule {
 }
 
 export const RealityRulesManager = () => {
+  const { t } = useTranslation();
   const [rules, setRules] = useState<RealityRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -80,8 +82,8 @@ export const RealityRulesManager = () => {
       setRules(data || []);
     } catch (error) {
       toast({
-        title: "Error fetching reality rules",
-        description: error instanceof Error ? error.message : "An error occurred",
+        title: t("admin.realityRulesManager.toast.fetchError"),
+        description: error instanceof Error ? error.message : t("admin.toast.errorOccurred"),
         variant: "destructive",
       });
     } finally {
@@ -129,20 +131,20 @@ export const RealityRulesManager = () => {
           .eq("id", selectedRule.id);
 
         if (error) throw error;
-        toast({ title: "Reality rule updated successfully" });
+        toast({ title: t("admin.realityRulesManager.toast.updateSuccess") });
       } else {
         const { error } = await supabase.from("rules_reality").insert([data]);
 
         if (error) throw error;
-        toast({ title: "Reality rule created successfully" });
+        toast({ title: t("admin.realityRulesManager.toast.createSuccess") });
       }
 
       setDialogOpen(false);
       fetchRules();
     } catch (error) {
       toast({
-        title: "Error saving reality rule",
-        description: error instanceof Error ? error.message : "An error occurred",
+        title: t("admin.realityRulesManager.toast.saveError"),
+        description: error instanceof Error ? error.message : t("admin.toast.errorOccurred"),
         variant: "destructive",
       });
     }
@@ -159,13 +161,13 @@ export const RealityRulesManager = () => {
 
       if (error) throw error;
 
-      toast({ title: "Reality rule deleted successfully" });
+      toast({ title: t("admin.realityRulesManager.toast.deleteSuccess") });
       setDeleteDialogOpen(false);
       fetchRules();
     } catch (error) {
       toast({
-        title: "Error deleting reality rule",
-        description: error instanceof Error ? error.message : "An error occurred",
+        title: t("admin.realityRulesManager.toast.deleteError"),
+        description: error instanceof Error ? error.message : t("admin.toast.errorOccurred"),
         variant: "destructive",
       });
     }
@@ -182,10 +184,10 @@ export const RealityRulesManager = () => {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Reality Rules Management</h2>
+        <h2 className="text-2xl font-bold">{t("admin.realityRulesManager.title")}</h2>
         <Button onClick={() => handleOpenDialog()}>
           <Plus className="h-4 w-4 mr-2" />
-          Add Reality Rule
+          {t("admin.realityRulesManager.addButton")}
         </Button>
       </div>
 
@@ -193,12 +195,12 @@ export const RealityRulesManager = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Key</TableHead>
-              <TableHead>Message</TableHead>
-              <TableHead>Severity</TableHead>
-              <TableHead>Threshold</TableHead>
-              <TableHead>Active</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>{t("admin.realityRulesManager.table.key")}</TableHead>
+              <TableHead>{t("admin.realityRulesManager.table.message")}</TableHead>
+              <TableHead>{t("admin.realityRulesManager.table.severity")}</TableHead>
+              <TableHead>{t("admin.realityRulesManager.table.threshold")}</TableHead>
+              <TableHead>{t("admin.realityRulesManager.table.active")}</TableHead>
+              <TableHead className="text-right">{t("admin.realityRulesManager.table.actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -228,7 +230,7 @@ export const RealityRulesManager = () => {
                         : "bg-gray-100 text-gray-800"
                     }`}
                   >
-                    {rule.is_active ? "Active" : "Inactive"}
+                    {rule.is_active ? t("admin.realityRulesManager.table.activeStatus") : t("admin.realityRulesManager.table.inactiveStatus")}
                   </span>
                 </TableCell>
                 <TableCell className="text-right space-x-2">
@@ -260,40 +262,40 @@ export const RealityRulesManager = () => {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>
-              {selectedRule ? "Edit Reality Rule" : "Add Reality Rule"}
+              {selectedRule ? t("admin.realityRulesManager.dialog.editTitle") : t("admin.realityRulesManager.dialog.addTitle")}
             </DialogTitle>
             <DialogDescription>
               {selectedRule
-                ? "Update the reality rule details"
-                : "Create a new reality rule"}
+                ? t("admin.realityRulesManager.dialog.editDescription")
+                : t("admin.realityRulesManager.dialog.addDescription")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
-              <Label htmlFor="key">Key *</Label>
+              <Label htmlFor="key">{t("admin.realityRulesManager.dialog.key")} *</Label>
               <Input
                 id="key"
                 value={formData.key}
                 onChange={(e) => setFormData({ ...formData, key: e.target.value })}
-                placeholder="e.g., max_height, complexity_limit"
+                placeholder={t("admin.realityRulesManager.dialog.keyPlaceholder")}
               />
             </div>
 
             <div>
-              <Label htmlFor="message">Message *</Label>
+              <Label htmlFor="message">{t("admin.realityRulesManager.dialog.message")} *</Label>
               <Textarea
                 id="message"
                 value={formData.message}
                 onChange={(e) =>
                   setFormData({ ...formData, message: e.target.value })
                 }
-                placeholder="Description of the rule violation"
+                placeholder={t("admin.realityRulesManager.dialog.messagePlaceholder")}
               />
             </div>
 
             <div>
-              <Label htmlFor="severity">Severity *</Label>
+              <Label htmlFor="severity">{t("admin.realityRulesManager.dialog.severity")} *</Label>
               <Select
                 value={formData.severity}
                 onValueChange={(value) =>
@@ -304,22 +306,22 @@ export const RealityRulesManager = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="info">Info</SelectItem>
-                  <SelectItem value="warning">Warning</SelectItem>
-                  <SelectItem value="error">Error</SelectItem>
+                  <SelectItem value="info">{t("admin.realityRulesManager.dialog.severityInfo")}</SelectItem>
+                  <SelectItem value="warning">{t("admin.realityRulesManager.dialog.severityWarning")}</SelectItem>
+                  <SelectItem value="error">{t("admin.realityRulesManager.dialog.severityError")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label htmlFor="threshold_value">Threshold Value</Label>
+              <Label htmlFor="threshold_value">{t("admin.realityRulesManager.dialog.thresholdValue")}</Label>
               <Input
                 id="threshold_value"
                 value={formData.threshold_value}
                 onChange={(e) =>
                   setFormData({ ...formData, threshold_value: e.target.value })
                 }
-                placeholder="e.g., 100, 5.5"
+                placeholder={t("admin.realityRulesManager.dialog.thresholdPlaceholder")}
               />
             </div>
 
@@ -331,15 +333,15 @@ export const RealityRulesManager = () => {
                   setFormData({ ...formData, is_active: checked })
                 }
               />
-              <Label htmlFor="is_active">Active</Label>
+              <Label htmlFor="is_active">{t("admin.realityRulesManager.dialog.active")}</Label>
             </div>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancel
+              {t("admin.realityRulesManager.dialog.cancel")}
             </Button>
-            <Button onClick={handleSave}>Save</Button>
+            <Button onClick={handleSave}>{t("admin.realityRulesManager.dialog.save")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -347,15 +349,14 @@ export const RealityRulesManager = () => {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>{t("admin.realityRulesManager.deleteDialog.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the reality rule "{selectedRule?.key}".
-              This action cannot be undone.
+              {t("admin.realityRulesManager.deleteDialog.description", { name: selectedRule?.key })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            <AlertDialogCancel>{t("admin.realityRulesManager.deleteDialog.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>{t("admin.realityRulesManager.deleteDialog.delete")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

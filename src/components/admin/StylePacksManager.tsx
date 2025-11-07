@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -48,6 +49,7 @@ interface StylePack {
 }
 
 export const StylePacksManager = () => {
+  const { t } = useTranslation();
   const [stylePacks, setStylePacks] = useState<StylePack[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -81,8 +83,8 @@ export const StylePacksManager = () => {
       setStylePacks(data || []);
     } catch (error) {
       toast({
-        title: "Error fetching style packs",
-        description: error instanceof Error ? error.message : "An error occurred",
+        title: t("admin.stylePacksManager.toast.fetchError"),
+        description: error instanceof Error ? error.message : t("admin.toast.errorOccurred"),
         variant: "destructive",
       });
     } finally {
@@ -142,20 +144,20 @@ export const StylePacksManager = () => {
           .eq("id", selectedPack.id);
 
         if (error) throw error;
-        toast({ title: "Style pack updated successfully" });
+        toast({ title: t("admin.stylePacksManager.toast.updateSuccess") });
       } else {
         const { error } = await supabase.from("stylepacks").insert([data]);
 
         if (error) throw error;
-        toast({ title: "Style pack created successfully" });
+        toast({ title: t("admin.stylePacksManager.toast.createSuccess") });
       }
 
       setDialogOpen(false);
       fetchStylePacks();
     } catch (error) {
       toast({
-        title: "Error saving style pack",
-        description: error instanceof Error ? error.message : "An error occurred",
+        title: t("admin.stylePacksManager.toast.saveError"),
+        description: error instanceof Error ? error.message : t("admin.toast.errorOccurred"),
         variant: "destructive",
       });
     }
@@ -172,13 +174,13 @@ export const StylePacksManager = () => {
 
       if (error) throw error;
 
-      toast({ title: "Style pack deleted successfully" });
+      toast({ title: t("admin.stylePacksManager.toast.deleteSuccess") });
       setDeleteDialogOpen(false);
       fetchStylePacks();
     } catch (error) {
       toast({
-        title: "Error deleting style pack",
-        description: error instanceof Error ? error.message : "An error occurred",
+        title: t("admin.stylePacksManager.toast.deleteError"),
+        description: error instanceof Error ? error.message : t("admin.toast.errorOccurred"),
         variant: "destructive",
       });
     }
@@ -195,10 +197,10 @@ export const StylePacksManager = () => {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Style Packs Management</h2>
+        <h2 className="text-2xl font-bold">{t("admin.stylePacksManager.title")}</h2>
         <Button onClick={() => handleOpenDialog()}>
           <Plus className="h-4 w-4 mr-2" />
-          Add Style Pack
+          {t("admin.stylePacksManager.addButton")}
         </Button>
       </div>
 
@@ -206,11 +208,11 @@ export const StylePacksManager = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Shape Template</TableHead>
-              <TableHead>Images</TableHead>
-              <TableHead>Active</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>{t("admin.stylePacksManager.table.name")}</TableHead>
+              <TableHead>{t("admin.stylePacksManager.table.shapeTemplate")}</TableHead>
+              <TableHead>{t("admin.stylePacksManager.table.images")}</TableHead>
+              <TableHead>{t("admin.stylePacksManager.table.active")}</TableHead>
+              <TableHead className="text-right">{t("admin.stylePacksManager.table.actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -218,7 +220,7 @@ export const StylePacksManager = () => {
               <TableRow key={pack.id}>
                 <TableCell className="font-medium">{pack.name}</TableCell>
                 <TableCell>{pack.shape_template}</TableCell>
-                <TableCell>{pack.images.length} image(s)</TableCell>
+                <TableCell>{pack.images.length} {t("admin.stylePacksManager.table.imageCount")}</TableCell>
                 <TableCell>
                   <span
                     className={`px-2 py-1 rounded text-xs ${
@@ -227,7 +229,7 @@ export const StylePacksManager = () => {
                         : "bg-gray-100 text-gray-800"
                     }`}
                   >
-                    {pack.is_active ? "Active" : "Inactive"}
+                    {pack.is_active ? t("admin.stylePacksManager.table.activeStatus") : t("admin.stylePacksManager.table.inactiveStatus")}
                   </span>
                 </TableCell>
                 <TableCell className="text-right space-x-2">
@@ -259,18 +261,18 @@ export const StylePacksManager = () => {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {selectedPack ? "Edit Style Pack" : "Add Style Pack"}
+              {selectedPack ? t("admin.stylePacksManager.dialog.editTitle") : t("admin.stylePacksManager.dialog.addTitle")}
             </DialogTitle>
             <DialogDescription>
               {selectedPack
-                ? "Update the style pack details"
-                : "Create a new style pack"}
+                ? t("admin.stylePacksManager.dialog.editDescription")
+                : t("admin.stylePacksManager.dialog.addDescription")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
-              <Label htmlFor="name">Name *</Label>
+              <Label htmlFor="name">{t("admin.stylePacksManager.dialog.name")} *</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -279,7 +281,7 @@ export const StylePacksManager = () => {
             </div>
 
             <div>
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t("admin.stylePacksManager.dialog.description")}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
@@ -290,19 +292,19 @@ export const StylePacksManager = () => {
             </div>
 
             <div>
-              <Label htmlFor="images">Images (comma-separated URLs) *</Label>
+              <Label htmlFor="images">{t("admin.stylePacksManager.dialog.images")} *</Label>
               <Textarea
                 id="images"
                 value={formData.images}
                 onChange={(e) =>
                   setFormData({ ...formData, images: e.target.value })
                 }
-                placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
+                placeholder={t("admin.stylePacksManager.dialog.imagesPlaceholder")}
               />
             </div>
 
             <div>
-              <Label htmlFor="shape_template">Shape Template *</Label>
+              <Label htmlFor="shape_template">{t("admin.stylePacksManager.dialog.shapeTemplate")} *</Label>
               <Input
                 id="shape_template"
                 value={formData.shape_template}
@@ -313,7 +315,7 @@ export const StylePacksManager = () => {
             </div>
 
             <div>
-              <Label htmlFor="lora_ref">LoRA Reference</Label>
+              <Label htmlFor="lora_ref">{t("admin.stylePacksManager.dialog.loraRef")}</Label>
               <Input
                 id="lora_ref"
                 value={formData.lora_ref}
@@ -324,19 +326,19 @@ export const StylePacksManager = () => {
             </div>
 
             <div>
-              <Label htmlFor="allowed_accents">Allowed Accents (comma-separated)</Label>
+              <Label htmlFor="allowed_accents">{t("admin.stylePacksManager.dialog.allowedAccents")}</Label>
               <Input
                 id="allowed_accents"
                 value={formData.allowed_accents}
                 onChange={(e) =>
                   setFormData({ ...formData, allowed_accents: e.target.value })
                 }
-                placeholder="gold, silver, bronze"
+                placeholder={t("admin.stylePacksManager.dialog.allowedAccentsPlaceholder")}
               />
             </div>
 
             <div>
-              <Label htmlFor="banned_terms">Banned Terms (comma-separated)</Label>
+              <Label htmlFor="banned_terms">{t("admin.stylePacksManager.dialog.bannedTerms")}</Label>
               <Input
                 id="banned_terms"
                 value={formData.banned_terms}
@@ -347,14 +349,14 @@ export const StylePacksManager = () => {
             </div>
 
             <div>
-              <Label htmlFor="palette_range">Palette Range (JSON)</Label>
+              <Label htmlFor="palette_range">{t("admin.stylePacksManager.dialog.paletteRange")}</Label>
               <Textarea
                 id="palette_range"
                 value={formData.palette_range}
                 onChange={(e) =>
                   setFormData({ ...formData, palette_range: e.target.value })
                 }
-                placeholder='{"primary": "#000000", "secondary": "#ffffff"}'
+                placeholder={t("admin.stylePacksManager.dialog.paletteRangePlaceholder")}
               />
             </div>
 
@@ -366,15 +368,15 @@ export const StylePacksManager = () => {
                   setFormData({ ...formData, is_active: checked })
                 }
               />
-              <Label htmlFor="is_active">Active</Label>
+              <Label htmlFor="is_active">{t("admin.stylePacksManager.dialog.active")}</Label>
             </div>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancel
+              {t("admin.stylePacksManager.dialog.cancel")}
             </Button>
-            <Button onClick={handleSave}>Save</Button>
+            <Button onClick={handleSave}>{t("admin.stylePacksManager.dialog.save")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -382,15 +384,14 @@ export const StylePacksManager = () => {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>{t("admin.stylePacksManager.deleteDialog.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the style pack "{selectedPack?.name}".
-              This action cannot be undone.
+              {t("admin.stylePacksManager.deleteDialog.description", { name: selectedPack?.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            <AlertDialogCancel>{t("admin.stylePacksManager.deleteDialog.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>{t("admin.stylePacksManager.deleteDialog.delete")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

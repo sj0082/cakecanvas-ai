@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -49,6 +50,7 @@ interface SizeCategory {
 }
 
 export const SizeCategoriesManager = () => {
+  const { t } = useTranslation();
   const [categories, setCategories] = useState<SizeCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -83,8 +85,8 @@ export const SizeCategoriesManager = () => {
       setCategories(data || []);
     } catch (error) {
       toast({
-        title: "Error fetching size categories",
-        description: error instanceof Error ? error.message : "An error occurred",
+        title: t("admin.sizeCategoriesManager.toast.fetchError"),
+        description: error instanceof Error ? error.message : t("admin.toast.errorOccurred"),
         variant: "destructive",
       });
     } finally {
@@ -149,20 +151,20 @@ export const SizeCategoriesManager = () => {
           .eq("id", selectedCategory.id);
 
         if (error) throw error;
-        toast({ title: "Size category updated successfully" });
+        toast({ title: t("admin.sizeCategoriesManager.toast.updateSuccess") });
       } else {
         const { error } = await supabase.from("size_categories").insert([data]);
 
         if (error) throw error;
-        toast({ title: "Size category created successfully" });
+        toast({ title: t("admin.sizeCategoriesManager.toast.createSuccess") });
       }
 
       setDialogOpen(false);
       fetchCategories();
     } catch (error) {
       toast({
-        title: "Error saving size category",
-        description: error instanceof Error ? error.message : "An error occurred",
+        title: t("admin.sizeCategoriesManager.toast.saveError"),
+        description: error instanceof Error ? error.message : t("admin.toast.errorOccurred"),
         variant: "destructive",
       });
     }
@@ -179,13 +181,13 @@ export const SizeCategoriesManager = () => {
 
       if (error) throw error;
 
-      toast({ title: "Size category deleted successfully" });
+      toast({ title: t("admin.sizeCategoriesManager.toast.deleteSuccess") });
       setDeleteDialogOpen(false);
       fetchCategories();
     } catch (error) {
       toast({
-        title: "Error deleting size category",
-        description: error instanceof Error ? error.message : "An error occurred",
+        title: t("admin.sizeCategoriesManager.toast.deleteError"),
+        description: error instanceof Error ? error.message : t("admin.toast.errorOccurred"),
         variant: "destructive",
       });
     }
@@ -202,10 +204,10 @@ export const SizeCategoriesManager = () => {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Size Categories Management</h2>
+        <h2 className="text-2xl font-bold">{t("admin.sizeCategoriesManager.title")}</h2>
         <Button onClick={() => handleOpenDialog()}>
           <Plus className="h-4 w-4 mr-2" />
-          Add Size Category
+          {t("admin.sizeCategoriesManager.addButton")}
         </Button>
       </div>
 
@@ -213,13 +215,13 @@ export const SizeCategoriesManager = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Code</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Servings</TableHead>
-              <TableHead>Price Range</TableHead>
-              <TableHead>Lead Time</TableHead>
-              <TableHead>Active</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>{t("admin.sizeCategoriesManager.table.code")}</TableHead>
+              <TableHead>{t("admin.sizeCategoriesManager.table.name")}</TableHead>
+              <TableHead>{t("admin.sizeCategoriesManager.table.servings")}</TableHead>
+              <TableHead>{t("admin.sizeCategoriesManager.table.priceRange")}</TableHead>
+              <TableHead>{t("admin.sizeCategoriesManager.table.leadTime")}</TableHead>
+              <TableHead>{t("admin.sizeCategoriesManager.table.active")}</TableHead>
+              <TableHead className="text-right">{t("admin.sizeCategoriesManager.table.actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -233,7 +235,7 @@ export const SizeCategoriesManager = () => {
                 <TableCell>
                   ${category.base_price_min}-${category.base_price_max}
                 </TableCell>
-                <TableCell>{category.lead_time_days} days</TableCell>
+                <TableCell>{category.lead_time_days} {t("admin.sizeCategoriesManager.table.days")}</TableCell>
                 <TableCell>
                   <span
                     className={`px-2 py-1 rounded text-xs ${
@@ -242,7 +244,7 @@ export const SizeCategoriesManager = () => {
                         : "bg-gray-100 text-gray-800"
                     }`}
                   >
-                    {category.is_active ? "Active" : "Inactive"}
+                    {category.is_active ? t("admin.sizeCategoriesManager.table.activeStatus") : t("admin.sizeCategoriesManager.table.inactiveStatus")}
                   </span>
                 </TableCell>
                 <TableCell className="text-right space-x-2">
@@ -274,19 +276,19 @@ export const SizeCategoriesManager = () => {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {selectedCategory ? "Edit Size Category" : "Add Size Category"}
+              {selectedCategory ? t("admin.sizeCategoriesManager.dialog.editTitle") : t("admin.sizeCategoriesManager.dialog.addTitle")}
             </DialogTitle>
             <DialogDescription>
               {selectedCategory
-                ? "Update the size category details"
-                : "Create a new size category"}
+                ? t("admin.sizeCategoriesManager.dialog.editDescription")
+                : t("admin.sizeCategoriesManager.dialog.addDescription")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="code">Code *</Label>
+                <Label htmlFor="code">{t("admin.sizeCategoriesManager.dialog.code")} *</Label>
                 <Input
                   id="code"
                   value={formData.code}
@@ -294,7 +296,7 @@ export const SizeCategoriesManager = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="name">Name *</Label>
+                <Label htmlFor="name">{t("admin.sizeCategoriesManager.dialog.name")} *</Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -305,7 +307,7 @@ export const SizeCategoriesManager = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="serving_min">Min Servings *</Label>
+                <Label htmlFor="serving_min">{t("admin.sizeCategoriesManager.dialog.minServings")} *</Label>
                 <Input
                   id="serving_min"
                   type="number"
@@ -316,7 +318,7 @@ export const SizeCategoriesManager = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="serving_max">Max Servings *</Label>
+                <Label htmlFor="serving_max">{t("admin.sizeCategoriesManager.dialog.maxServings")} *</Label>
                 <Input
                   id="serving_max"
                   type="number"
@@ -330,7 +332,7 @@ export const SizeCategoriesManager = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="base_price_min">Min Price *</Label>
+                <Label htmlFor="base_price_min">{t("admin.sizeCategoriesManager.dialog.minPrice")} *</Label>
                 <Input
                   id="base_price_min"
                   type="number"
@@ -342,7 +344,7 @@ export const SizeCategoriesManager = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="base_price_max">Max Price *</Label>
+                <Label htmlFor="base_price_max">{t("admin.sizeCategoriesManager.dialog.maxPrice")} *</Label>
                 <Input
                   id="base_price_max"
                   type="number"
@@ -357,7 +359,7 @@ export const SizeCategoriesManager = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="lead_time_days">Lead Time (days) *</Label>
+                <Label htmlFor="lead_time_days">{t("admin.sizeCategoriesManager.dialog.leadTime")} *</Label>
                 <Input
                   id="lead_time_days"
                   type="number"
@@ -368,7 +370,7 @@ export const SizeCategoriesManager = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="delivery_radius_miles">Delivery Radius (miles)</Label>
+                <Label htmlFor="delivery_radius_miles">{t("admin.sizeCategoriesManager.dialog.deliveryRadius")}</Label>
                 <Input
                   id="delivery_radius_miles"
                   type="number"
@@ -381,14 +383,14 @@ export const SizeCategoriesManager = () => {
             </div>
 
             <div>
-              <Label htmlFor="tiers_spec">Tiers Specification (JSON)</Label>
+              <Label htmlFor="tiers_spec">{t("admin.sizeCategoriesManager.dialog.tiersSpec")}</Label>
               <Textarea
                 id="tiers_spec"
                 value={formData.tiers_spec}
                 onChange={(e) =>
                   setFormData({ ...formData, tiers_spec: e.target.value })
                 }
-                placeholder='{"tier1": {...}, "tier2": {...}}'
+                placeholder={t("admin.sizeCategoriesManager.dialog.tiersSpecPlaceholder")}
               />
             </div>
 
@@ -400,15 +402,15 @@ export const SizeCategoriesManager = () => {
                   setFormData({ ...formData, is_active: checked })
                 }
               />
-              <Label htmlFor="is_active">Active</Label>
+              <Label htmlFor="is_active">{t("admin.sizeCategoriesManager.dialog.active")}</Label>
             </div>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancel
+              {t("admin.sizeCategoriesManager.dialog.cancel")}
             </Button>
-            <Button onClick={handleSave}>Save</Button>
+            <Button onClick={handleSave}>{t("admin.sizeCategoriesManager.dialog.save")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -416,15 +418,14 @@ export const SizeCategoriesManager = () => {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>{t("admin.sizeCategoriesManager.deleteDialog.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the size category "{selectedCategory?.name}".
-              This action cannot be undone.
+              {t("admin.sizeCategoriesManager.deleteDialog.description", { name: selectedCategory?.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            <AlertDialogCancel>{t("admin.sizeCategoriesManager.deleteDialog.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>{t("admin.sizeCategoriesManager.deleteDialog.delete")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
