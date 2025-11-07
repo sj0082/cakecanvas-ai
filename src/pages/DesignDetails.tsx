@@ -132,7 +132,7 @@ const DesignDetails = () => {
 
       if (error) throw error;
       toast({ title: t('common.success'), description: t('details.success.description') });
-      navigate(`/design/proposals/${data.id}`);
+      navigate(`/design/proposals/${data.id}?token=${data.access_token}`);
     } catch (error) {
       toast({ title: t('common.error'), description: t('details.error.failed'), variant: "destructive" });
     } finally {

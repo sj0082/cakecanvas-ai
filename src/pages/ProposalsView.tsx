@@ -17,29 +17,67 @@ const ProposalsView = () => {
   const [request, setRequest] = useState<any>(null);
   const [selectedProposal, setSelectedProposal] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { t } = useTranslation();
+  
+  // Get access token from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const accessToken = urlParams.get('token');
 
   useEffect(() => {
     const fetchRequest = async () => {
-      if (!requestId) return;
-      const { data: requestData } = await supabase.from("requests").select("*").eq("id", requestId).single();
-      const { data: proposalsData } = await supabase.from("proposals").select("*").eq("request_id", requestId).order("created_at");
+      if (!requestId) {
+        setError('Request ID is missing');
+        setLoading(false);
+        return;
+      }
+
+      if (!accessToken) {
+        setError('Access token is required');
+        setLoading(false);
+        return;
+      }
+
+      // Fetch request with token validation
+      const { data: requestData, error: requestError } = await supabase
+        .from("requests")
+        .select("*")
+        .eq("id", requestId)
+        .eq("access_token", accessToken)
+        .single();
+
+      if (requestError || !requestData) {
+        setError('Invalid access token or request not found');
+        setLoading(false);
+        return;
+      }
+
+      // Fetch proposals for this request
+      const { data: proposalsData } = await supabase
+        .from("proposals")
+        .select("*")
+        .eq("request_id", requestId)
+        .order("created_at");
+      
       setRequest({ ...requestData, proposals: proposalsData || [] });
+      setError(null);
       setLoading(false);
     };
 
     fetchRequest();
     const channel = supabase.channel(`request-${requestId}`).on("postgres_changes", { event: "*", schema: "public", table: "proposals", filter: `request_id=eq.${requestId}` }, fetchRequest).subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [requestId]);
+  }, [requestId, accessToken]);
 
-  if (loading || !request) return (
+  if (loading || !request || error) return (
     <div className="fixed-frame">
       <div className="scrolling-content">
         <div className="min-h-full py-12 px-6">
           <div className="max-w-6xl mx-auto">
             <div className="text-center py-20">
-              <p className="text-muted-foreground">{loading ? t('proposals.loading') : t('common.error')}</p>
+              <p className="text-muted-foreground">
+                {loading ? t('proposals.loading') : error || t('common.error')}
+              </p>
             </div>
           </div>
         </div>

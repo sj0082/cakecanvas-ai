@@ -153,6 +153,7 @@ export type Database = {
       }
       requests: {
         Row: {
+          access_token: string
           consent_marketing: boolean | null
           consent_terms: boolean | null
           contact_email: string | null
@@ -171,6 +172,7 @@ export type Database = {
           user_text: string | null
         }
         Insert: {
+          access_token: string
           consent_marketing?: boolean | null
           consent_terms?: boolean | null
           contact_email?: string | null
@@ -189,6 +191,7 @@ export type Database = {
           user_text?: string | null
         }
         Update: {
+          access_token?: string
           consent_marketing?: boolean | null
           consent_terms?: boolean | null
           contact_email?: string | null
