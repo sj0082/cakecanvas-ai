@@ -29,7 +29,7 @@ const Index = () => {
               onClick={() => navigate('/auth')}
               variant="ghost"
               size="sm"
-              className="absolute top-8 right-8 z-20 gap-2"
+              className="absolute top-8 left-8 z-20 gap-2 opacity-0 hover:opacity-100 transition-opacity duration-300"
             >
               <LogIn className="h-4 w-4" />
               Admin
