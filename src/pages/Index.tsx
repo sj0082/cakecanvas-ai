@@ -6,7 +6,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Sparkles, Timer, Layers } from "lucide-react";
+import { ArrowRight, Sparkles, Timer, Layers, LogIn } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -25,6 +25,16 @@ const Index = () => {
 
           {/* Hero Section */}
           <section className="min-h-screen flex items-center justify-center overflow-hidden relative px-6 py-32">
+            <Button
+              onClick={() => navigate('/auth')}
+              variant="ghost"
+              size="sm"
+              className="absolute top-8 right-8 z-20 gap-2"
+            >
+              <LogIn className="h-4 w-4" />
+              Admin
+            </Button>
+            
             <div className="absolute inset-0 opacity-20">
               <img src={heroImage} alt="Hero" className="w-full h-full object-cover" />
             </div>

@@ -9,6 +9,9 @@ import StyleSelection from "./pages/StyleSelection";
 import DesignDetails from "./pages/DesignDetails";
 import ProposalsView from "./pages/ProposalsView";
 import NotFound from "./pages/NotFound";
+import Auth from "./pages/Auth";
+import Admin from "./pages/Admin";
+import AdminRoute from "@/components/AdminRoute";
 import { LanguageSelector } from "@/components/LanguageSelector";
 
 const queryClient = new QueryClient();
@@ -28,6 +31,8 @@ const App = () => (
           <Route path="/design/style" element={<StyleSelection />} />
           <Route path="/design/details" element={<DesignDetails />} />
           <Route path="/design/proposals/:requestId" element={<ProposalsView />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
