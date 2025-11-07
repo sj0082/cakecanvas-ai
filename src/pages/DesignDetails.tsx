@@ -127,7 +127,8 @@ const DesignDetails = () => {
         user_images: uploadedImages.length > 0 ? uploadedImages : null,
         contact_email: contactEmail, 
         contact_phone: contactPhone || null, 
-        status: "GENERATING"
+        status: "GENERATING",
+        access_token: crypto.randomUUID()
       }).select().single();
 
       if (error) throw error;
