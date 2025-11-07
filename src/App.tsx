@@ -9,6 +9,7 @@ import StyleSelection from "./pages/StyleSelection";
 import DesignDetails from "./pages/DesignDetails";
 import ProposalsView from "./pages/ProposalsView";
 import NotFound from "./pages/NotFound";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 const queryClient = new QueryClient();
 
@@ -18,6 +19,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <div className="fixed top-6 right-6 z-50">
+          <LanguageSelector />
+        </div>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/design/size" element={<SizeSelection />} />

@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { ProposalCard } from "@/components/design/ProposalCard";
 import { DesignStepper } from "@/components/design/DesignStepper";
-import { LanguageSelector } from "@/components/LanguageSelector";
+
 
 const ProposalsView = () => {
   const { requestId } = useParams<{ requestId: string }>();
@@ -51,7 +51,7 @@ const ProposalsView = () => {
     <div className="fixed-frame">
       <div className="scrolling-content">
         <div className="min-h-full py-12 px-6">
-          <div className="absolute top-6 right-6 z-50"><LanguageSelector /></div>
+          
           <div className="max-w-6xl mx-auto">
             <DesignStepper />
             <div className="text-center mb-12">

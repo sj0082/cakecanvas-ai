@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Sparkles, Timer, Layers } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { LanguageSelector } from "@/components/LanguageSelector";
+
 import heroImage from "@/assets/hero-cake.jpg";
 
 const Index = () => {
@@ -22,10 +22,6 @@ const Index = () => {
       <div className="fixed-frame">
         {/* Scrolling Content Inside Fixed Frame */}
         <div className="scrolling-content">
-          {/* Language Selector - Top Right */}
-          <div className="absolute top-8 right-8 z-50">
-            <LanguageSelector />
-          </div>
 
           {/* Hero Section */}
           <section className="min-h-screen flex items-center justify-center overflow-hidden relative px-6 py-32">

@@ -16,7 +16,7 @@ import { ArrowLeft, Sparkles, Upload, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { DesignStepper } from "@/components/design/DesignStepper";
-import { LanguageSelector } from "@/components/LanguageSelector";
+
 
 const DesignDetails = () => {
   const [userText, setUserText] = useState("");
@@ -142,7 +142,7 @@ const DesignDetails = () => {
 
   return (
     <div className="fixed-frame">
-      <div className="fixed top-6 right-6 z-50"><LanguageSelector /></div>
+      
       <div className="scrolling-content">
         <div className="min-h-full py-12 px-6">
           <div className="max-w-4xl mx-auto">
