@@ -142,9 +142,9 @@ const DesignDetails = () => {
 
   return (
     <div className="fixed-frame">
+      <div className="fixed top-6 right-6 z-50"><LanguageSelector /></div>
       <div className="scrolling-content">
         <div className="min-h-full py-12 px-6">
-          <div className="absolute top-6 right-6 z-50"><LanguageSelector /></div>
           <div className="max-w-4xl mx-auto">
             <DesignStepper />
             <div className="text-center mb-12">
