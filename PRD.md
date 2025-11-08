@@ -109,6 +109,19 @@
 [NEGATIVE]: {policy_forbidden} + (floating, impossible structure, logo, licensed character)
 ```
 
+### 6.4 이미지 생성 모델
+- **선택된 모델**: Google Gemini 2.5 Flash Image (`google/gemini-2.5-flash-image-preview`)
+- **접근 방식**: Lovable AI Gateway를 통한 API 호출 (`https://ai.gateway.lovable.dev/v1/chat/completions`)
+- **선택 이유**:
+  - Lovable AI Gateway를 통한 간편한 연동 (LOVABLE_API_KEY 자동 제공, 별도 API 키 설정 불필요)
+  - 텍스트 프롬프트 기반 고품질 이미지 생성
+  - StylePack 제약 조건과 사용자 입력을 프롬프트로 통합 가능
+  - Base64 인코딩으로 즉시 사용 가능, Supabase Storage에 업로드 후 URL 제공
+  - Edge Function 기반 구현으로 인프라 구축 불필요
+- **대안 검토**: Stable Diffusion (자체 호스팅 필요, GPU 인프라 구축 복잡도 증가로 제외)
+- **구현 위치**: Supabase Edge Function (`generate-proposals`)
+- **출력 형식**: Base64 이미지 → Supabase Storage 업로드 → 공개 URL
+
 ---
 
 ## 7. 데이터 모델(요약)

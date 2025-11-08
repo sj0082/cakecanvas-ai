@@ -9,8 +9,8 @@
 | Lane / Scene | Scene 01 — 고객 요청 생성 | Scene 02 — 요청 검토/생성 처리 | Scene 03 — 제안 확인 & 예약금 결제 | Scene 04 — 결제 후 상태 동기화 |
 | ----- | ----- | ----- | ----- | ----- |
 | **Actions (User/Baker)** | 고객이 임베드 UI에서 사이즈·스타일팩 선택 → 텍스트/영감 이미지 업로드 → “생성” 요청 제출 | 워커가 제안안 3종 생성(제약/정책 가드 적용) | 고객이 선호안 1개 선택 → 결제(예약금) 진행 | QBO 결제 완료 → 상태 동기화 → 관리자 알림 |
-| **Application Logic** | 입력 검증(사이즈·스타일팩 미선택 시 차단), 업로드 서명 URL 발급, 요청 생성(202) 및 큐 등록 | 비동기 작업 실행(LoRA/ControlNet/Negative 프롬프트), R2 저장, 콜백으로 Proposal upsert, 현실성/정책 룰 평가 및 배지 생성 | 선택 멱등 처리, QBO 결제 링크 생성·노출·이메일 전송, 폴링/웹훅 대기 | 웹훅 HMAC 검증, 요청 상태 `DEPOSIT_PAID/FAILED/VOID` 업데이트, 감사 로그 기록 |
-| **System** | Next.js App Router(API), Supabase, R2, Upstash QStash | Cloud Run \+ FastAPI \+ Diffusers, R2, Supabase | Next.js(API, Node runtime), QBO API, SendGrid | Next.js(API, Node runtime), QBO Webhook, Supabase |
+| **Application Logic** | 입력 검증(사이즈·스타일팩 미선택 시 차단), 업로드 서명 URL 발급, 요청 생성(202) 및 큐 등록 | 비동기 작업 실행(Lovable AI Gateway 호출, StylePack 제약 프롬프트 적용), Supabase Storage 저장, 콜백으로 Proposal upsert, 현실성/정책 룰 평가 및 배지 생성 | 선택 멱등 처리, QBO 결제 링크 생성·노출·이메일 전송, 폴링/웹훅 대기 | 웹훅 HMAC 검증, 요청 상태 `DEPOSIT_PAID/FAILED/VOID` 업데이트, 감사 로그 기록 |
+| **System** | Next.js App Router(API), Supabase, Supabase Storage | Lovable AI Gateway \+ Edge Functions, Supabase Storage, Supabase | Next.js(API, Node runtime), QBO API, SendGrid | Next.js(API, Node runtime), QBO Webhook, Supabase |
 | **Required Data** | StylePack, SizeCategory, 사용자 입력/이미지, 동의 플래그 | Request, Proposal(3안), RulesReality, LogsAudit | Proposal 선택, 금액 산식, 고객 연락처 | QBO invoice/payment id, 결제 상태, 감사 로그 |
 
 ---
@@ -69,7 +69,7 @@
 | **P05** | Next.js Admin UI \+ Supabase | 운영자가 규칙/데이터를 직접 관리 |
 | **A01** | Upstash RateLimit, Redis, Idempotency-Key 저장 | 재시도/중복 방지, 남용 보호 |
 | **A02** | file-type 검사, Pillow/ExifTool, 1600px 변환 | 보안/품질 표준화, 불필요 메타 제거 |
-| **A03** | Cloud Run \+ FastAPI \+ Diffusers, QStash | 확장성/비동기, 모델 교체 용이 |
+| **A03** | Lovable AI Gateway \+ Gemini 2.5 Flash Image, Edge Functions, Supabase Storage | API 기반 이미지 생성, 인프라 관리 불필요, LOVABLE_API_KEY 자동 제공, Edge Function으로 비동기 처리 |
 | **A04** | RulesReality 테이블 \+ 배지 생성 로직 | 제작 가능성/정책 준수 자동화 |
 | **A05** | QBO Payment Link API (또는 PG 대안 고려) \+ SendGrid | 회계 동기화/예약금 UX, 대안 PG로 전환 가능성 |
 | **A06** | Node runtime 라우트, HMAC+Timestamp+Nonce 검증 | 위변조/리플레이 방지, 감사 가능 |
