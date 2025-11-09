@@ -306,48 +306,62 @@ export type Database = {
       }
       stylepacks: {
         Row: {
-          allowed_accents: string[]
-          banned_terms: string[]
+          allowed_accents: string[] | null
+          banned_terms: string[] | null
           created_at: string
           description: string | null
           id: string
-          images: string[]
+          images: string[] | null
           is_active: boolean
+          is_category: boolean
           lora_ref: string | null
           name: string
-          palette_range: Json
-          shape_template: string
+          palette_range: Json | null
+          parent_id: string | null
+          shape_template: string | null
           updated_at: string
         }
         Insert: {
-          allowed_accents?: string[]
-          banned_terms?: string[]
+          allowed_accents?: string[] | null
+          banned_terms?: string[] | null
           created_at?: string
           description?: string | null
           id?: string
-          images?: string[]
+          images?: string[] | null
           is_active?: boolean
+          is_category?: boolean
           lora_ref?: string | null
           name: string
-          palette_range?: Json
-          shape_template: string
+          palette_range?: Json | null
+          parent_id?: string | null
+          shape_template?: string | null
           updated_at?: string
         }
         Update: {
-          allowed_accents?: string[]
-          banned_terms?: string[]
+          allowed_accents?: string[] | null
+          banned_terms?: string[] | null
           created_at?: string
           description?: string | null
           id?: string
-          images?: string[]
+          images?: string[] | null
           is_active?: boolean
+          is_category?: boolean
           lora_ref?: string | null
           name?: string
-          palette_range?: Json
-          shape_template?: string
+          palette_range?: Json | null
+          parent_id?: string | null
+          shape_template?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "stylepacks_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "stylepacks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

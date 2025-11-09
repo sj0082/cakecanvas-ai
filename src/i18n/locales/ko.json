@@ -173,7 +173,15 @@
       "errorOccurred": "오류가 발생했습니다"
     },
     "stylePacksManager": {
-      "title": "스타일 팩 관리",
+      "title": {
+        "categories": "스타일 팩 카테고리",
+        "stylePacks": "스타일 팩"
+      },
+      "breadcrumb": {
+        "categories": "카테고리"
+      },
+      "addCategory": "카테고리 추가",
+      "addStylePack": "스타일 팩 추가",
       "addButton": "스타일 팩 추가",
       "table": {
         "name": "이름",
@@ -183,13 +191,19 @@
         "actions": "동작",
         "imageCount": "개 이미지",
         "activeStatus": "활성",
-        "inactiveStatus": "비활성"
+        "inactiveStatus": "비활성",
+        "noCategories": "생성된 카테고리가 없습니다",
+        "noStylePacks": "이 카테고리에 스타일 팩이 없습니다"
       },
       "dialog": {
         "editTitle": "스타일 팩 수정",
         "addTitle": "스타일 팩 추가",
         "editDescription": "스타일 팩 정보 수정",
         "addDescription": "새 스타일 팩 생성",
+        "editCategory": "카테고리 수정",
+        "addCategory": "카테고리 추가",
+        "editCategoryDescription": "카테고리 정보 수정",
+        "addCategoryDescription": "새 카테고리 생성",
         "name": "이름",
         "description": "설명",
         "images": "이미지 (쉼표로 구분된 URL)",
