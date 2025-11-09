@@ -73,13 +73,18 @@ const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
 ### 영향
 - **A03 구현 단순화**: Edge Function 기반으로 구현 (Cloud Run + FastAPI + GPU 인프라 불필요)
 - **개발 기간 단축**: W2 목표 달성 가능
-- **문서 업데이트**: PRD.md, APPDEV.md에 모델 선택 내용 반영
+- **문서 업데이트**: PRD.md, APPDEV.md, TRD.md에 모델 선택 내용 반영
 - **향후 전환 가능성**: Edge Function 레이어만 수정하면 다른 AI 모델로 전환 가능
 
 ### 재검토 시점
 - MVP 완료 후 사용자 피드백 수집 시
 - 이미지 품질 또는 제약 조건 표현에 한계가 발견될 경우
 - 비용 효율성 재평가 필요 시
+
+### 관련 문서
+- **PRD.md**: Section 6.4 이미지 생성 모델
+- **APPDEV.md**: Section 4 (A03 기술 스택), Section 1 (Scene 02 시스템)
+- **TRD.md**: Section 6.4 이미지 생성 모델, Section 17.3 AI/이미지 생성 기술 스택
 
 ---
 
