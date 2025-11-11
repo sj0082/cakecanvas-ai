@@ -3,6 +3,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 
 interface AdvancedTabProps {
   loraRef: string;
@@ -31,6 +32,18 @@ export const AdvancedTab = ({
   onPaletteRangeChange,
   isUnpredictable,
 }: AdvancedTabProps) => {
+  // Parse LoRA ref into model name and weight
+  const loraModel = loraRef.split(':')[0] || 'cake_design_v2';
+  const loraWeight = parseFloat(loraRef.split(':')[1] || '0.75');
+
+  const handleLoraModelChange = (model: string) => {
+    onLoraRefChange(`${model}:${loraWeight}`);
+  };
+
+  const handleLoraWeightChange = (weight: number) => {
+    onLoraRefChange(`${loraModel}:${weight.toFixed(2)}`);
+  };
+
   return (
     <div className="space-y-6 py-4">
       {isUnpredictable && (
@@ -45,20 +58,44 @@ export const AdvancedTab = ({
         </div>
       )}
 
-      <div>
-        <Label htmlFor="lora_ref" className="text-sm font-medium">
-          LoRA Reference
-        </Label>
-        <p className="text-xs text-muted-foreground mb-2">
-          Format: model_name:weight (e.g., cake_design_v2:0.75). Safe range: 0.5-1.0
-        </p>
-        <Textarea
-          id="lora_ref"
-          value={loraRef}
-          onChange={(e) => onLoraRefChange(e.target.value)}
-          placeholder="cake_design_v2:0.75"
-          rows={3}
-        />
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="lora_model" className="text-sm font-medium">
+            LoRA Model Name
+          </Label>
+          <p className="text-xs text-muted-foreground mb-2">
+            Model identifier for style generation
+          </p>
+          <Input
+            id="lora_model"
+            value={loraModel}
+            onChange={(e) => handleLoraModelChange(e.target.value)}
+            placeholder="cake_design_v2"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="lora_weight" className="text-sm font-medium">
+            Initial Weight: {loraWeight.toFixed(2)}
+          </Label>
+          <p className="text-xs text-muted-foreground mb-2">
+            Safe range: 0.5-1.0. Higher values = stronger style influence
+          </p>
+          <Slider
+            id="lora_weight"
+            value={[loraWeight]}
+            onValueChange={([value]) => handleLoraWeightChange(value)}
+            min={0.1}
+            max={1.5}
+            step={0.05}
+            className="mt-2"
+          />
+          <div className="flex justify-between text-xs text-muted-foreground mt-1">
+            <span>0.1</span>
+            <span className="text-primary font-medium">Safe: 0.5-1.0</span>
+            <span>1.5</span>
+          </div>
+        </div>
       </div>
 
       <div>

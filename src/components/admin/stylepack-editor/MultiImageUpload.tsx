@@ -84,24 +84,25 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
       return;
     }
 
-    const newImages = validFiles.map(file => ({
+    // Create temporary IDs for tracking
+    const tempImages = validFiles.map((file, idx) => ({
       url: URL.createObjectURL(file),
-      key: '',
+      key: `temp-${Date.now()}-${idx}`,
       uploading: true
     }));
 
-    onImagesChange([...images, ...newImages]);
+    onImagesChange([...images, ...tempImages]);
 
     const uploadPromises = validFiles.map(uploadFile);
     const results = await Promise.all(uploadPromises);
 
-    const updatedImages = images.concat(
-      results.filter((r): r is ImageData => r !== null && !r.error)
-    );
+    // Filter out failed uploads and replace temp images with successful ones
+    const successfulUploads = results.filter((r): r is ImageData => r !== null && !r.error);
+    const finalImages = [...images, ...successfulUploads];
 
-    onImagesChange(updatedImages);
+    onImagesChange(finalImages);
 
-    const successCount = results.filter(r => r && !r.error).length;
+    const successCount = successfulUploads.length;
     const failCount = results.length - successCount;
 
     if (successCount > 0) {
