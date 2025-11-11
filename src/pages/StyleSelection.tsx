@@ -100,7 +100,10 @@ const StyleSelection = () => {
                   categories.map((category) => (
                     <StyleCard
                       key={category.id}
-                      {...category}
+                      id={category.id}
+                      name={category.name}
+                      description={category.description}
+                      images={category.images || []}
                       isSelected={false}
                       onClick={() => handleCategorySelect(category.id)}
                     />
@@ -110,7 +113,10 @@ const StyleSelection = () => {
                   stylePacks.map((style) => (
                     <StyleCard
                       key={style.id}
-                      {...style}
+                      id={style.id}
+                      name={style.name}
+                      description={style.description}
+                      images={style.images || []}
                       isSelected={selectedStyle === style.id}
                       onClick={() => setSelectedStyle(style.id)}
                     />

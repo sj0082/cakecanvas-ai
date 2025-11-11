@@ -136,7 +136,7 @@ export const StylePacksManager = () => {
       setFormData({
         name: pack.name,
         description: pack.description || "",
-        images: isLevel1 ? "" : (pack.images?.join(", ") || ""),
+        images: pack.images?.join(", ") || "",
         lora_ref: isLevel1 ? "" : (pack.lora_ref || ""),
         shape_template: isLevel1 ? "" : (pack.shape_template || ""),
         allowed_accents: isLevel1 ? "" : (pack.allowed_accents?.join(", ") || ""),
@@ -174,11 +174,12 @@ export const StylePacksManager = () => {
 
       let data;
       if (isLevel1) {
-        // Level 1 category - only basic fields
+        // Level 1 category - basic fields + images
         data = {
           ...baseData,
           is_category: true,
           parent_id: null,
+          images: formData.images.split(",").map((s) => s.trim()).filter(Boolean),
         };
       } else {
         // Level 2 style pack - all fields
@@ -436,6 +437,18 @@ export const StylePacksManager = () => {
               />
             </div>
 
+            <div>
+              <Label htmlFor="images">{t("admin.stylePacksManager.dialog.images")} *</Label>
+              <Textarea
+                id="images"
+                value={formData.images}
+                onChange={(e) =>
+                  setFormData({ ...formData, images: e.target.value })
+                }
+                placeholder={t("admin.stylePacksManager.dialog.imagesPlaceholder")}
+              />
+            </div>
+
             {/* Only show style pack fields for level 2 (when parent_id exists) */}
             {((selectedPack && selectedPack.parent_id !== null) || (!selectedPack && currentCategory)) && (
               <>
@@ -458,18 +471,6 @@ export const StylePacksManager = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="images">{t("admin.stylePacksManager.dialog.images")} *</Label>
-                  <Textarea
-                    id="images"
-                    value={formData.images}
-                    onChange={(e) =>
-                      setFormData({ ...formData, images: e.target.value })
-                    }
-                    placeholder={t("admin.stylePacksManager.dialog.imagesPlaceholder")}
-                  />
                 </div>
 
                 <div>

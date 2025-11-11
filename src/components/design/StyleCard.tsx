@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 interface StyleCardProps {
   id: string;
   name: string;
+  description?: string | null;
   images: string[];
   isSelected: boolean;
   onClick: () => void;
@@ -16,6 +17,7 @@ interface StyleCardProps {
 
 export const StyleCard = ({
   name,
+  description,
   images,
   isSelected,
   onClick,
@@ -43,6 +45,9 @@ export const StyleCard = ({
       </CardHeader>
       <CardContent className="p-4">
         <CardTitle className="text-lg mb-2">{name}</CardTitle>
+        {description && (
+          <CardDescription className="text-sm">{description}</CardDescription>
+        )}
       </CardContent>
     </Card>
   );
