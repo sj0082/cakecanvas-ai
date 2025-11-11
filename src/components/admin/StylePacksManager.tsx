@@ -40,7 +40,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, Trash2, Loader2, ChevronRight, FolderOpen } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, ChevronRight, FolderOpen, Sparkles } from "lucide-react";
+import { StylePackEditor } from "./stylepack-editor/StylePackEditor";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -74,6 +75,8 @@ export const StylePacksManager = () => {
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedPack, setSelectedPack] = useState<StylePack | null>(null);
+  const [enhancedEditorOpen, setEnhancedEditorOpen] = useState(false);
+  const [editingPack, setEditingPack] = useState<StylePack | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -126,6 +129,11 @@ export const StylePacksManager = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOpenEnhancedEditor = (pack?: StylePack) => {
+    setEditingPack(pack || null);
+    setEnhancedEditorOpen(true);
   };
 
   const handleOpenDialog = (pack?: StylePack, isCategory = false) => {
@@ -367,7 +375,20 @@ export const StylePacksManager = () => {
                         : t("admin.stylePacksManager.table.inactiveStatus")}
                     </span>
                   </TableCell>
-                  <TableCell className="text-right space-x-2">
+                   <TableCell className="text-right space-x-2">
+                    {currentCategory && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenEnhancedEditor(item);
+                        }}
+                        title="Enhanced Editor"
+                      >
+                        <Sparkles className="h-4 w-4 text-primary" />
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
@@ -572,6 +593,43 @@ export const StylePacksManager = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <StylePackEditor
+        open={enhancedEditorOpen}
+        onOpenChange={setEnhancedEditorOpen}
+        stylePack={editingPack}
+        onSave={async (data) => {
+          try {
+            if (editingPack) {
+              const { error } = await supabase
+                .from("stylepacks")
+                .update(data)
+                .eq("id", editingPack.id);
+
+              if (error) throw error;
+              toast({ title: t("admin.stylePacksManager.toast.updateSuccess") });
+            } else {
+              const { error } = await supabase.from("stylepacks").insert([{
+                ...data,
+                parent_id: currentCategory?.id || null,
+                is_category: false,
+              }]);
+
+              if (error) throw error;
+              toast({ title: t("admin.stylePacksManager.toast.createSuccess") });
+            }
+
+            setEnhancedEditorOpen(false);
+            fetchData();
+          } catch (error) {
+            toast({
+              title: t("admin.stylePacksManager.toast.saveError"),
+              description: error instanceof Error ? error.message : t("admin.toast.errorOccurred"),
+              variant: "destructive",
+            });
+          }
+        }}
+      />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
