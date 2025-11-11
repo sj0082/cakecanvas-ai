@@ -135,5 +135,202 @@
     "title": "AI-Powered Custom Cake Design | Create Your Dream Cake",
     "description": "Design your perfect custom cake with AI in minutes. Choose size and style, get 3 unique proposals. Professional cake design made simple and fast.",
     "keywords": "custom cake design, AI cake design, cake proposals, wedding cake, birthday cake, custom cakes"
+  },
+  "admin": {
+    "title": "Admin Dashboard",
+    "subtitle": "Manage Cake Design System",
+    "signOut": "Sign Out",
+    "backToDashboard": "Back to Dashboard",
+    "manage": "Manage",
+    "comingSoon": "Coming Soon",
+    "stylePacks": {
+      "title": "Style Packs",
+      "description": "Manage design styles and templates"
+    },
+    "sizeCategories": {
+      "title": "Size Categories",
+      "description": "Manage cake sizes and pricing"
+    },
+    "depositSettings": {
+      "title": "Deposit Settings",
+      "description": "Configure payment deposit rules"
+    },
+    "customerRequests": {
+      "title": "Customer Requests",
+      "description": "View and manage customer requests"
+    },
+    "realityRules": {
+      "title": "Reality Rules",
+      "description": "Configure feasibility validation rules"
+    },
+    "adminUsers": {
+      "title": "Admin Users",
+      "description": "Manage admin email whitelist"
+    },
+    "toast": {
+      "signOutSuccess": "Signed out successfully",
+      "signOutError": "Sign out error",
+      "errorOccurred": "An error occurred"
+    },
+    "stylePacksManager": {
+      "title": {
+        "categories": "Style Pack Categories",
+        "stylePacks": "Style Packs"
+      },
+      "breadcrumb": {
+        "categories": "Categories"
+      },
+      "addCategory": "Add Category",
+      "addStylePack": "Add Style Pack",
+      "addButton": "Add Style Pack",
+      "table": {
+        "name": "Name",
+        "shapeTemplate": "Shape Template",
+        "images": "Images",
+        "active": "Active",
+        "actions": "Actions",
+        "imageCount": "images",
+        "activeStatus": "Active",
+        "inactiveStatus": "Inactive",
+        "noCategories": "No categories created",
+        "noStylePacks": "No style packs in this category"
+      },
+      "dialog": {
+        "editTitle": "Edit Style Pack",
+        "addTitle": "Add Style Pack",
+        "editDescription": "Edit style pack information",
+        "addDescription": "Create new style pack",
+        "editCategory": "Edit Category",
+        "addCategory": "Add Category",
+        "editCategoryDescription": "Edit category information",
+        "addCategoryDescription": "Create new category",
+        "name": "Name",
+        "description": "Description",
+        "category": "Category",
+        "selectCategory": "Select category",
+        "images": "Images (comma-separated URLs)",
+        "imagesPlaceholder": "https://example.com/image1.jpg, https://example.com/image2.jpg",
+        "shapeTemplate": "Shape Template",
+        "loraRef": "LoRA Reference",
+        "allowedAccents": "Allowed Accents (comma-separated)",
+        "allowedAccentsPlaceholder": "gold, silver, bronze",
+        "bannedTerms": "Banned Terms (comma-separated)",
+        "paletteRange": "Palette Range (JSON)",
+        "paletteRangePlaceholder": "{\"primary\": \"#000000\", \"secondary\": \"#ffffff\"}",
+        "active": "Active",
+        "cancel": "Cancel",
+        "save": "Save"
+      },
+      "deleteDialog": {
+        "title": "Are you sure?",
+        "description": "This will permanently delete the style pack \"{{name}}\". This action cannot be undone.",
+        "cancel": "Cancel",
+        "delete": "Delete"
+      },
+      "toast": {
+        "fetchError": "Error fetching style packs",
+        "updateSuccess": "Style pack updated successfully",
+        "createSuccess": "Style pack created successfully",
+        "saveError": "Error saving style pack",
+        "deleteSuccess": "Style pack deleted successfully",
+        "deleteError": "Error deleting style pack"
+      }
+    },
+    "sizeCategoriesManager": {
+      "title": "Size Categories Management",
+      "addButton": "Add Size Category",
+      "table": {
+        "code": "Code",
+        "name": "Name",
+        "servings": "Servings",
+        "priceRange": "Price Range",
+        "leadTime": "Lead Time",
+        "active": "Active",
+        "actions": "Actions",
+        "days": "days",
+        "activeStatus": "Active",
+        "inactiveStatus": "Inactive"
+      },
+      "dialog": {
+        "editTitle": "Edit Size Category",
+        "addTitle": "Add Size Category",
+        "editDescription": "Edit size category information",
+        "addDescription": "Create new size category",
+        "code": "Code",
+        "name": "Name",
+        "minServings": "Min Servings",
+        "maxServings": "Max Servings",
+        "minPrice": "Min Price",
+        "maxPrice": "Max Price",
+        "leadTime": "Lead Time (days)",
+        "deliveryRadius": "Delivery Radius (miles)",
+        "tiersSpec": "Tiers Spec (JSON)",
+        "tiersSpecPlaceholder": "{\"tier1\": {...}, \"tier2\": {...}}",
+        "active": "Active",
+        "cancel": "Cancel",
+        "save": "Save"
+      },
+      "deleteDialog": {
+        "title": "Are you sure?",
+        "description": "This will permanently delete the size category \"{{name}}\". This action cannot be undone.",
+        "cancel": "Cancel",
+        "delete": "Delete"
+      },
+      "toast": {
+        "fetchError": "Error fetching size categories",
+        "updateSuccess": "Size category updated successfully",
+        "createSuccess": "Size category created successfully",
+        "saveError": "Error saving size category",
+        "deleteSuccess": "Size category deleted successfully",
+        "deleteError": "Error deleting size category"
+      }
+    },
+    "realityRulesManager": {
+      "title": "Reality Rules Management",
+      "addButton": "Add Reality Rule",
+      "table": {
+        "key": "Key",
+        "message": "Message",
+        "severity": "Severity",
+        "threshold": "Threshold",
+        "active": "Active",
+        "actions": "Actions",
+        "activeStatus": "Active",
+        "inactiveStatus": "Inactive"
+      },
+      "dialog": {
+        "editTitle": "Edit Reality Rule",
+        "addTitle": "Add Reality Rule",
+        "editDescription": "Edit reality rule information",
+        "addDescription": "Create new reality rule",
+        "key": "Key",
+        "keyPlaceholder": "e.g: max_height, complexity_limit",
+        "message": "Message",
+        "messagePlaceholder": "Rule violation description",
+        "severity": "Severity",
+        "severityInfo": "Info",
+        "severityWarning": "Warning",
+        "severityError": "Error",
+        "thresholdValue": "Threshold Value",
+        "thresholdPlaceholder": "e.g: 100, 5.5",
+        "active": "Active",
+        "cancel": "Cancel",
+        "save": "Save"
+      },
+      "deleteDialog": {
+        "title": "Are you sure?",
+        "description": "This will permanently delete the reality rule \"{{name}}\". This action cannot be undone.",
+        "cancel": "Cancel",
+        "delete": "Delete"
+      },
+      "toast": {
+        "fetchError": "Error fetching reality rules",
+        "updateSuccess": "Reality rule updated successfully",
+        "createSuccess": "Reality rule created successfully",
+        "saveError": "Error saving reality rule",
+        "deleteSuccess": "Reality rule deleted successfully",
+        "deleteError": "Error deleting reality rule"
+      }
+    }
   }
 }

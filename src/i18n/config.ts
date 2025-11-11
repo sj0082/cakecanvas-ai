@@ -9,6 +9,17 @@ import en from './locales/en.json';
 import es from './locales/es.json';
 import ko from './locales/ko.json';
 
+// Detect browser language
+const getBrowserLanguage = () => {
+  const savedLanguage = localStorage.getItem('language');
+  if (savedLanguage) return savedLanguage;
+  
+  const browserLang = navigator.language.toLowerCase();
+  if (browserLang.startsWith('ko')) return 'ko';
+  if (browserLang.startsWith('es')) return 'es';
+  return 'en';
+};
+
 i18n
   .use(initReactI18next)
   .init({
@@ -17,7 +28,7 @@ i18n
       es: { translation: es },
       ko: { translation: ko },
     },
-    lng: localStorage.getItem('language') || 'en',
+    lng: getBrowserLanguage(),
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false,

@@ -135,5 +135,202 @@
     "title": "Diseño de Pasteles Personalizados con IA | Crea el Pastel de tus Sueños",
     "description": "Diseña tu pastel personalizado perfecto con IA en minutos. Elige tamaño y estilo, obtén 3 propuestas únicas. Diseño profesional de pasteles simple y rápido.",
     "keywords": "diseño de pasteles personalizados, diseño de pasteles con IA, propuestas de pasteles, pastel de boda, pastel de cumpleaños, pasteles personalizados"
+  },
+  "admin": {
+    "title": "Panel de Administración",
+    "subtitle": "Gestionar Sistema de Diseño de Pasteles",
+    "signOut": "Cerrar Sesión",
+    "backToDashboard": "Volver al Panel",
+    "manage": "Gestionar",
+    "comingSoon": "Próximamente",
+    "stylePacks": {
+      "title": "Paquetes de Estilo",
+      "description": "Gestionar estilos de diseño y plantillas"
+    },
+    "sizeCategories": {
+      "title": "Categorías de Tamaño",
+      "description": "Gestionar tamaños de pasteles y precios"
+    },
+    "depositSettings": {
+      "title": "Configuración de Depósito",
+      "description": "Configurar reglas de depósito de pago"
+    },
+    "customerRequests": {
+      "title": "Solicitudes de Clientes",
+      "description": "Ver y gestionar solicitudes de clientes"
+    },
+    "realityRules": {
+      "title": "Reglas de Realidad",
+      "description": "Configurar reglas de validación de factibilidad"
+    },
+    "adminUsers": {
+      "title": "Usuarios Administradores",
+      "description": "Gestionar lista blanca de correos de administradores"
+    },
+    "toast": {
+      "signOutSuccess": "Sesión cerrada exitosamente",
+      "signOutError": "Error al cerrar sesión",
+      "errorOccurred": "Ocurrió un error"
+    },
+    "stylePacksManager": {
+      "title": {
+        "categories": "Categorías de Paquetes de Estilo",
+        "stylePacks": "Paquetes de Estilo"
+      },
+      "breadcrumb": {
+        "categories": "Categorías"
+      },
+      "addCategory": "Añadir Categoría",
+      "addStylePack": "Añadir Paquete de Estilo",
+      "addButton": "Añadir Paquete de Estilo",
+      "table": {
+        "name": "Nombre",
+        "shapeTemplate": "Plantilla de Forma",
+        "images": "Imágenes",
+        "active": "Activo",
+        "actions": "Acciones",
+        "imageCount": "imágenes",
+        "activeStatus": "Activo",
+        "inactiveStatus": "Inactivo",
+        "noCategories": "No hay categorías creadas",
+        "noStylePacks": "No hay paquetes de estilo en esta categoría"
+      },
+      "dialog": {
+        "editTitle": "Editar Paquete de Estilo",
+        "addTitle": "Añadir Paquete de Estilo",
+        "editDescription": "Editar información del paquete de estilo",
+        "addDescription": "Crear nuevo paquete de estilo",
+        "editCategory": "Editar Categoría",
+        "addCategory": "Añadir Categoría",
+        "editCategoryDescription": "Editar información de categoría",
+        "addCategoryDescription": "Crear nueva categoría",
+        "name": "Nombre",
+        "description": "Descripción",
+        "category": "Categoría",
+        "selectCategory": "Seleccionar categoría",
+        "images": "Imágenes (URLs separadas por comas)",
+        "imagesPlaceholder": "https://example.com/image1.jpg, https://example.com/image2.jpg",
+        "shapeTemplate": "Plantilla de Forma",
+        "loraRef": "Referencia LoRA",
+        "allowedAccents": "Acentos Permitidos (separados por comas)",
+        "allowedAccentsPlaceholder": "oro, plata, bronce",
+        "bannedTerms": "Términos Prohibidos (separados por comas)",
+        "paletteRange": "Rango de Paleta (JSON)",
+        "paletteRangePlaceholder": "{\"primary\": \"#000000\", \"secondary\": \"#ffffff\"}",
+        "active": "Activo",
+        "cancel": "Cancelar",
+        "save": "Guardar"
+      },
+      "deleteDialog": {
+        "title": "¿Estás seguro?",
+        "description": "Esto eliminará permanentemente el paquete de estilo \"{{name}}\". Esta acción no se puede deshacer.",
+        "cancel": "Cancelar",
+        "delete": "Eliminar"
+      },
+      "toast": {
+        "fetchError": "Error al cargar paquetes de estilo",
+        "updateSuccess": "Paquete de estilo actualizado exitosamente",
+        "createSuccess": "Paquete de estilo creado exitosamente",
+        "saveError": "Error al guardar paquete de estilo",
+        "deleteSuccess": "Paquete de estilo eliminado exitosamente",
+        "deleteError": "Error al eliminar paquete de estilo"
+      }
+    },
+    "sizeCategoriesManager": {
+      "title": "Gestión de Categorías de Tamaño",
+      "addButton": "Añadir Categoría de Tamaño",
+      "table": {
+        "code": "Código",
+        "name": "Nombre",
+        "servings": "Porciones",
+        "priceRange": "Rango de Precio",
+        "leadTime": "Tiempo de Entrega",
+        "active": "Activo",
+        "actions": "Acciones",
+        "days": "días",
+        "activeStatus": "Activo",
+        "inactiveStatus": "Inactivo"
+      },
+      "dialog": {
+        "editTitle": "Editar Categoría de Tamaño",
+        "addTitle": "Añadir Categoría de Tamaño",
+        "editDescription": "Editar información de categoría de tamaño",
+        "addDescription": "Crear nueva categoría de tamaño",
+        "code": "Código",
+        "name": "Nombre",
+        "minServings": "Porciones Mínimas",
+        "maxServings": "Porciones Máximas",
+        "minPrice": "Precio Mínimo",
+        "maxPrice": "Precio Máximo",
+        "leadTime": "Tiempo de Entrega (días)",
+        "deliveryRadius": "Radio de Entrega (millas)",
+        "tiersSpec": "Especificación de Niveles (JSON)",
+        "tiersSpecPlaceholder": "{\"tier1\": {...}, \"tier2\": {...}}",
+        "active": "Activo",
+        "cancel": "Cancelar",
+        "save": "Guardar"
+      },
+      "deleteDialog": {
+        "title": "¿Estás seguro?",
+        "description": "Esto eliminará permanentemente la categoría de tamaño \"{{name}}\". Esta acción no se puede deshacer.",
+        "cancel": "Cancelar",
+        "delete": "Eliminar"
+      },
+      "toast": {
+        "fetchError": "Error al cargar categorías de tamaño",
+        "updateSuccess": "Categoría de tamaño actualizada exitosamente",
+        "createSuccess": "Categoría de tamaño creada exitosamente",
+        "saveError": "Error al guardar categoría de tamaño",
+        "deleteSuccess": "Categoría de tamaño eliminada exitosamente",
+        "deleteError": "Error al eliminar categoría de tamaño"
+      }
+    },
+    "realityRulesManager": {
+      "title": "Gestión de Reglas de Realidad",
+      "addButton": "Añadir Regla de Realidad",
+      "table": {
+        "key": "Clave",
+        "message": "Mensaje",
+        "severity": "Severidad",
+        "threshold": "Umbral",
+        "active": "Activo",
+        "actions": "Acciones",
+        "activeStatus": "Activo",
+        "inactiveStatus": "Inactivo"
+      },
+      "dialog": {
+        "editTitle": "Editar Regla de Realidad",
+        "addTitle": "Añadir Regla de Realidad",
+        "editDescription": "Editar información de regla de realidad",
+        "addDescription": "Crear nueva regla de realidad",
+        "key": "Clave",
+        "keyPlaceholder": "ej: max_height, complexity_limit",
+        "message": "Mensaje",
+        "messagePlaceholder": "Descripción de violación de regla",
+        "severity": "Severidad",
+        "severityInfo": "Info",
+        "severityWarning": "Advertencia",
+        "severityError": "Error",
+        "thresholdValue": "Valor de Umbral",
+        "thresholdPlaceholder": "ej: 100, 5.5",
+        "active": "Activo",
+        "cancel": "Cancelar",
+        "save": "Guardar"
+      },
+      "deleteDialog": {
+        "title": "¿Estás seguro?",
+        "description": "Esto eliminará permanentemente la regla de realidad \"{{name}}\". Esta acción no se puede deshacer.",
+        "cancel": "Cancelar",
+        "delete": "Eliminar"
+      },
+      "toast": {
+        "fetchError": "Error al cargar reglas de realidad",
+        "updateSuccess": "Regla de realidad actualizada exitosamente",
+        "createSuccess": "Regla de realidad creada exitosamente",
+        "saveError": "Error al guardar regla de realidad",
+        "deleteSuccess": "Regla de realidad eliminada exitosamente",
+        "deleteError": "Error al eliminar regla de realidad"
+      }
+    }
   }
 }

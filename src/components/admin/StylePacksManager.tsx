@@ -29,6 +29,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -77,6 +84,7 @@ export const StylePacksManager = () => {
     banned_terms: "",
     palette_range: "{}",
     is_active: true,
+    parent_id: "",
   });
   const { toast } = useToast();
 
@@ -134,6 +142,7 @@ export const StylePacksManager = () => {
         banned_terms: pack.banned_terms?.join(", ") || "",
         palette_range: JSON.stringify(pack.palette_range || {}),
         is_active: pack.is_active,
+        parent_id: pack.parent_id || "",
       });
     } else {
       setSelectedPack(null);
@@ -147,6 +156,7 @@ export const StylePacksManager = () => {
         banned_terms: "",
         palette_range: "{}",
         is_active: true,
+        parent_id: currentCategory?.id || "",
       });
     }
     setDialogOpen(true);
@@ -169,11 +179,11 @@ export const StylePacksManager = () => {
           parent_id: null,
         };
       } else if (!isCreatingCategory && !selectedPack) {
-        // Creating a new style pack under current category
+        // Creating a new style pack under selected category
         data = {
           ...baseData,
           is_category: false,
-          parent_id: currentCategory?.id,
+          parent_id: formData.parent_id || null,
           images: formData.images.split(",").map((s) => s.trim()).filter(Boolean),
           lora_ref: formData.lora_ref || null,
           shape_template: formData.shape_template,
@@ -188,6 +198,7 @@ export const StylePacksManager = () => {
         } else {
           data = {
             ...baseData,
+            parent_id: formData.parent_id || null,
             images: formData.images.split(",").map((s) => s.trim()).filter(Boolean),
             lora_ref: formData.lora_ref || null,
             shape_template: formData.shape_template,
@@ -442,6 +453,27 @@ export const StylePacksManager = () => {
             {/* Only show style pack fields when not creating/editing a category */}
             {!isCreatingCategory && !selectedPack?.is_category && (
               <>
+                <div>
+                  <Label htmlFor="parent_id">{t("admin.stylePacksManager.dialog.category")}</Label>
+                  <Select
+                    value={formData.parent_id}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, parent_id: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t("admin.stylePacksManager.dialog.selectCategory")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div>
                   <Label htmlFor="images">{t("admin.stylePacksManager.dialog.images")} *</Label>
                   <Textarea
