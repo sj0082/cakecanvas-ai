@@ -151,11 +151,15 @@ export const StylePacksManager = () => {
         name: "",
         description: "",
         images: "",
-        lora_ref: "",
-        shape_template: "",
-        allowed_accents: "",
+        lora_ref: "cake_design_v2:0.75",
+        shape_template: "round, tiered, square, heart, custom",
+        allowed_accents: "gold, silver, rose gold, pearl white, champagne, blush pink",
         banned_terms: "",
-        palette_range: "{}",
+        palette_range: JSON.stringify({
+          primary: ["#FFFFFF", "#FFF5F5", "#FFF0F0"],
+          accent: ["#FFD700", "#C0C0C0", "#F4C2C2"],
+          neutral: ["#F5F5DC", "#FFFACD", "#FFF8DC"]
+        }, null, 2),
         is_active: true,
         parent_id: currentCategory?.id || "",
       });
@@ -477,23 +481,27 @@ export const StylePacksManager = () => {
                   <Label htmlFor="shape_template">
                     {t("admin.stylePacksManager.dialog.shapeTemplate")} *
                   </Label>
-                  <Input
+                  <Textarea
                     id="shape_template"
                     value={formData.shape_template}
                     onChange={(e) =>
                       setFormData({ ...formData, shape_template: e.target.value })
                     }
+                    placeholder="케이크 형태 템플릿 (예: round, tiered, square, heart, custom)&#10;- round: 원형 케이크 (1-3단)&#10;- tiered: 다단 케이크 (웨딩용 권장)&#10;- square: 사각형 케이크 (모던 스타일)&#10;- heart: 하트형 (로맨틱 스타일)&#10;- custom: 맞춤형 디자인"
+                    rows={4}
                   />
                 </div>
 
                 <div>
                   <Label htmlFor="lora_ref">{t("admin.stylePacksManager.dialog.loraRef")}</Label>
-                  <Input
+                  <Textarea
                     id="lora_ref"
                     value={formData.lora_ref}
                     onChange={(e) =>
                       setFormData({ ...formData, lora_ref: e.target.value })
                     }
+                    placeholder="AI 모델 가중치 설정 (형식: 모델명:가중치)&#10;예: cake_design_v2:0.75&#10;&#10;가중치 범위: 0.5 ~ 1.0&#10;- 0.5-0.6: 약한 스타일 적용 (자연스러움 우선)&#10;- 0.7-0.8: 균형잡힌 스타일 (권장)&#10;- 0.9-1.0: 강한 스타일 적용 (특징 강조)&#10;&#10;케이크 디자인 권장값: 0.75"
+                    rows={5}
                   />
                 </div>
 
@@ -501,13 +509,14 @@ export const StylePacksManager = () => {
                   <Label htmlFor="allowed_accents">
                     {t("admin.stylePacksManager.dialog.allowedAccents")}
                   </Label>
-                  <Input
+                  <Textarea
                     id="allowed_accents"
                     value={formData.allowed_accents}
                     onChange={(e) =>
                       setFormData({ ...formData, allowed_accents: e.target.value })
                     }
-                    placeholder={t("admin.stylePacksManager.dialog.allowedAccentsPlaceholder")}
+                    placeholder="허용된 장식 요소 (쉼표로 구분)&#10;예: gold, silver, rose gold, pearl white, champagne, blush pink&#10;&#10;케이크 장식 권장 요소:&#10;- 금속: gold, silver, rose gold, bronze&#10;- 진주: pearl white, pearl ivory, pearl cream&#10;- 파스텔: blush pink, mint, lavender, champagne&#10;- 장식: flowers, ribbons, lace, crystals, berries"
+                    rows={4}
                   />
                 </div>
 
@@ -515,12 +524,14 @@ export const StylePacksManager = () => {
                   <Label htmlFor="banned_terms">
                     {t("admin.stylePacksManager.dialog.bannedTerms")}
                   </Label>
-                  <Input
+                  <Textarea
                     id="banned_terms"
                     value={formData.banned_terms}
                     onChange={(e) =>
                       setFormData({ ...formData, banned_terms: e.target.value })
                     }
+                    placeholder="금지된 용어 (쉼표로 구분)&#10;예: cartoon, anime, unrealistic, toy, plastic&#10;&#10;케이크 디자인에서 제외할 요소:&#10;- 스타일: cartoon, anime, sketch, abstract&#10;- 재질: plastic, toy, fake, artificial&#10;- 품질: blurry, low quality, distorted&#10;- 기타: text, watermark, logo"
+                    rows={4}
                   />
                 </div>
 
@@ -534,7 +545,8 @@ export const StylePacksManager = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, palette_range: e.target.value })
                     }
-                    placeholder={t("admin.stylePacksManager.dialog.paletteRangePlaceholder")}
+                    placeholder='색상 팔레트 범위 (JSON 형식)&#10;예시:&#10;{&#10;  "primary": ["#FFFFFF", "#FFF5F5", "#FFF0F0"],&#10;  "accent": ["#FFD700", "#C0C0C0", "#F4C2C2"],&#10;  "neutral": ["#F5F5DC", "#FFFACD", "#FFF8DC"]&#10;}&#10;&#10;- primary: 케이크 기본 색상 (아이보리, 화이트 계열)&#10;- accent: 장식 포인트 색상 (골드, 실버, 파스텔)&#10;- neutral: 배경 및 보조 색상&#10;&#10;권장 조합:&#10;웨딩: 화이트 + 골드&#10;로맨틱: 블러쉬 핑크 + 로즈골드&#10;모던: 그레이 + 실버'
+                    rows={8}
                   />
                 </div>
               </>
