@@ -1,9 +1,5 @@
 # TRD
 
-고정하기: No
-프로젝트: ASC 3-Builder Track (https://www.notion.so/ASC-3-Builder-Track-29ede782122380f48afdc47d6f7976c0?pvs=21)
-연결된 노트: PRD (https://www.notion.so/PRD-29ede7821223808eaf61df9e5587a7f8?pvs=21)
-
 # AI 케이크 디자인 서비스 PRD (Lovable‑Ready)
 
 ## 0. 한눈 요약 (Executive One‑Pager)
@@ -59,7 +55,8 @@
 
 1. **진입(임베드)** → 2) **사이즈 선택** → 3) **스타일팩 선택** → 4) **추가 입력(선택: 텍스트/영감 이미지)** →
 2. **AI 제안 3종 생성(비동기)** → 6) **선호안 1개 선택** → 7) **예약금 결제** → 8) **완료 확인/이메일**
-- *폴백*: 20s 초과 시 진행 상태 표시, 40s 초과 시 “텍스트 스펙 초안” 제공 + 완료 알림 구독.
+
+- _폴백_: 20s 초과 시 진행 상태 표시, 40s 초과 시 “텍스트 스펙 초안” 제공 + 완료 알림 구독.
 
 ### 3.3 관리자 여정
 
@@ -72,7 +69,7 @@
 ### 4.1 In‑Scope (MVP)
 
 - 임베드 UX(게스트 모드), Size/StylePack 강제 선택, 제안 3종, 선호안 선택.
-- **예약금 결제**: (권장) **Stripe 등 PG 결제** → QBO에 **동기화**. *(대안)* QBO Payment Link 사용(사전 PoC 필요).
+- **예약금 결제**: (권장) **Stripe 등 PG 결제** → QBO에 **동기화**. _(대안)_ QBO Payment Link 사용(사전 PoC 필요).
 - 결제 상태 동기화(웹훅 또는 안전 폴링), 이메일 알림, 기본 대시보드(요청/제안/결제).
 - 업로드 정책(확장자·용량), EXIF 제거, 이미지 1600px 웹 변환.
 - 접근성 WCAG 2.1 AA 준수.
@@ -110,8 +107,8 @@
 
 ### 6.1 입력 계층 구조(중요)
 
-- **Hard Constraint**: `StylePack.shape_template`, `palette_range`, `allowed_accents` *(반드시 준수)*
-- **Soft Constraint**: 고객 텍스트·이미지에서 추출한 팔레트/무드/액센트 *(가중치 적용)*
+- **Hard Constraint**: `StylePack.shape_template`, `palette_range`, `allowed_accents` _(반드시 준수)_
+- **Soft Constraint**: 고객 텍스트·이미지에서 추출한 팔레트/무드/액센트 _(가중치 적용)_
 
 ### 6.2 초기 가중치/파라미터(권장값)
 
@@ -170,11 +167,10 @@
 ## 8. API 개요 (Lovable Cloud 환경)
 
 > **환경**: Supabase Edge Functions (Lovable Cloud 자동 배포)
-> 
+>
 > **인증**: 게스트는 `access_token`, 관리자는 JWT
-> 
+>
 > **비동기**: 요청은 202 반환 + `request_id`, 상태는 폴링으로 추적
-> 
 
 ### 8.1 현재 구현된 엔드포인트
 
@@ -243,7 +239,7 @@
 - 고객 결제는 **Stripe 등 PG**로 처리(모바일 최적화/신뢰도/속도).
 - 결제 성공 시 QBO에 **수납 동기화(Invoice/Payment)**. 회계 계정 매핑은 **차기**.
 
-### 10.2 대안 경로(QBO 링크 직결) – *사전 PoC 필수*
+### 10.2 대안 경로(QBO 링크 직결) – _사전 PoC 필수_
 
 - QBO Payment Link 생성 속도/모바일 UX/웹훅 신뢰도 **사전 측정**.
 - 성공 시 사용, 실패 시 즉시 PG로 전환.
@@ -261,7 +257,7 @@
 ## 12. KPI 정의·계측
 
 - **제안 완료율** = (제안 3종 완결 건 / 생성 시도 건)×100
-    - 분모: POST `/api/requests` 성공, 분자: 워커 콜백 3종 완료.
+  - 분모: POST `/api/requests` 성공, 분자: 워커 콜백 3종 완료.
 - **결제 전환율** = (DEPOSIT_PAID 요청 / 제안 3종 전달 요청)×100
 - **상담 시간 50%↓**: 베이스라인 T1(현행) 대비 MVP T2(제안→결제확정) 비교.
 - 이벤트 로깅: `req_id, step, ts(ms)` 기반, 대시보드 카드 제공.
@@ -284,6 +280,7 @@
 ### 구현 완료 상태 (2025-11-09 기준)
 
 **Phase 1 (W1) - ✅ 90% 완료**
+
 - ✅ DB 스키마 전체 구현 (stylepacks, size_categories, requests, proposals, rules_reality, logs_audit)
 - ✅ 관리자 시스템 (profiles, user_roles, allowed_admin_emails 테이블)
 - ✅ Admin Dashboard + StylePacks/SizeCategories/RealityRules Manager
@@ -293,6 +290,7 @@
 - ⏳ 테스트 데이터 입력 대기
 
 **Phase 2 (W2) - 🔄 진행 예정**
+
 - ❌ A03: AI 제안 생성 파이프라인 (Gemini 2.5 Flash Image via Lovable AI Gateway)
 - ❌ A04: 현실성 룰 평가 및 배지 생성
 - ❌ A01-A02: 보안 강화 (멱등성, 레이트리밋, MIME 검증)
@@ -300,11 +298,13 @@
 - 예상 기간: 6-9일
 
 **Phase 3 (W3) - 미착수**
+
 - 결제 통합 (Stripe)
 - 이메일 알림
 - 임베드 안정화
 
 **Phase 4 (W4) - 미착수**
+
 - 베타 테스트 (실요청 ≥10)
 - 프롬프트/가중치 튜닝
 - 성능 최적화
@@ -324,11 +324,11 @@
 
 ### A. 초기 SizeCategory 샘플
 
-| 코드 | 티어/지름/높이 | 서빙 | 기본가(예) | 리드타임 |
-| --- | --- | --- | --- | --- |
-| S | 1T 6″×4″ | 8–10 | $85–$110 | 3–5일 |
-| M | 2T 6″+8″(각 4″) | 26–30 | $220–$280 | 5–7일 |
-| L | 3T 6″+8″+10″ | 50+ | $420–$520 | 7–10일 |
+| 코드 | 티어/지름/높이  | 서빙  | 기본가(예) | 리드타임 |
+| ---- | --------------- | ----- | ---------- | -------- |
+| S    | 1T 6″×4″        | 8–10  | $85–$110   | 3–5일    |
+| M    | 2T 6″+8″(각 4″) | 26–30 | $220–$280  | 5–7일    |
+| L    | 3T 6″+8″+10″    | 50+   | $420–$520  | 7–10일   |
 
 ### B. StylePack 메타 필드
 
@@ -345,6 +345,7 @@
 ## 17. 기술 스택 (Implementation Stack)
 
 ### 17.1 프론트엔드
+
 - **프레임워크**: React 18.3 + TypeScript
 - **빌드**: Vite
 - **스타일링**: Tailwind CSS + shadcn/ui components
@@ -353,6 +354,7 @@
 - **국제화**: i18next (한국어/영어 지원)
 
 ### 17.2 백엔드 (Lovable Cloud)
+
 - **데이터베이스**: Supabase (PostgreSQL)
 - **인증**: Supabase Auth (Email + 관리자 화이트리스트)
 - **스토리지**: Supabase Storage (cake-inspiration 버킷)
@@ -361,6 +363,7 @@
 - **실시간**: Supabase Realtime (향후)
 
 ### 17.3 AI/이미지 생성
+
 - **모델**: Google Gemini 2.5 Flash Image (`google/gemini-2.5-flash-image-preview`)
 - **API Gateway**: Lovable AI Gateway (`https://ai.gateway.lovable.dev/v1/chat/completions`)
 - **인증**: LOVABLE_API_KEY (자동 제공)
@@ -368,10 +371,12 @@
 - **출력**: Base64 → Supabase Storage → 공개 URL
 
 ### 17.4 결제 (Phase 3)
+
 - **PG**: Stripe (권장)
 - **회계 동기화**: QuickBooks Online (차기)
 
 ### 17.5 배포 및 인프라
+
 - **호스팅**: Lovable Cloud (자동 배포)
 - **도메인**: lovable.app 서브도메인
 - **CI/CD**: Lovable 자동 빌드/배포
