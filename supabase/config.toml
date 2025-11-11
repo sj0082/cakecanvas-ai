@@ -5,3 +5,13 @@ verify_jwt = false
 
 [functions.get-request]
 verify_jwt = false
+
+[functions.generate-proposals]
+verify_jwt = false
+
+[functions."admin/stylepack-sign-upload"]
+verify_jwt = true
+
+[functions."admin/stylepack-analyze"]
+verify_jwt = true
+

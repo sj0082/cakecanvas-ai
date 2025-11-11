@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,9 +10,14 @@ import { SimpleTab } from "./SimpleTab";
 import { AdvancedTab } from "./AdvancedTab";
 import { PreviewPanel } from "./PreviewPanel";
 import { PresetSelector } from "./PresetSelector";
+import { MultiImageUpload } from "./MultiImageUpload";
+import { AnalysisPanel } from "./AnalysisPanel";
+import { QuickTestPanel } from "./QuickTestPanel";
+import { StyleFitnessCard } from "./StyleFitnessCard";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface StylePack {
   id: string;
@@ -26,6 +31,8 @@ interface StylePack {
   palette_range: any;
   is_active: boolean;
   parent_id: string | null;
+  reference_stats?: any;
+  generator_provider?: string;
 }
 
 interface StylePackEditorProps {
@@ -46,8 +53,14 @@ export const StylePackEditor = ({
   // Basic fields
   const [name, setName] = useState(stylePack?.name || "");
   const [description, setDescription] = useState(stylePack?.description || "");
-  const [images, setImages] = useState(stylePack?.images?.join(", ") || "");
+  const [images, setImages] = useState<Array<{url: string; key: string}>>(
+    (stylePack?.images || []).map((url: string) => ({ url, key: url }))
+  );
   const [isActive, setIsActive] = useState(stylePack?.is_active ?? true);
+  
+  // Analysis
+  const [referenceStats, setReferenceStats] = useState(stylePack?.reference_stats || null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Simple tab controls
   const [styleStrength, setStyleStrength] = useState(0.75);
@@ -145,17 +158,44 @@ export const StylePackEditor = ({
     });
   };
 
+  const handleAutoAnalyze = async () => {
+    setIsAnalyzing(true);
+    try {
+      const imageUrls = images.map(img => img.url);
+      const { data, error } = await supabase.functions.invoke('admin/stylepack-analyze', {
+        body: { imageUrls }
+      });
+
+      if (error) throw error;
+      
+      setReferenceStats(data);
+      toast({
+        title: "Analysis complete",
+        description: `Extracted ${data.palette?.length || 0} colors and ${data.textures?.length || 0} textures`
+      });
+    } catch (error) {
+      toast({
+        title: "Analysis failed",
+        description: error instanceof Error ? error.message : "Could not analyze images",
+        variant: "destructive"
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const handleSave = async () => {
     try {
       const data = {
         name,
         description: description || null,
-        images: images.split(",").map(s => s.trim()).filter(Boolean),
+        images: images.map(img => img.url),
         lora_ref: loraRef || null,
         shape_template: shapeTemplate || null,
         allowed_accents: allowedAccents.split(",").map(s => s.trim()).filter(Boolean),
         banned_terms: bannedTerms.split(",").map(s => s.trim()).filter(Boolean),
         palette_range: JSON.parse(paletteRange || "{}"),
+        reference_stats: referenceStats,
         is_active: isActive,
       };
       await onSave(data);
@@ -173,18 +213,14 @@ export const StylePackEditor = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 mb-4">
             {stylePack ? "Edit Style Pack" : "Create Style Pack"}
-            {validationBadges.length > 0 && (
-              <div className="flex gap-2">
-                {validationBadges.map((badge, i) => (
-                  <Badge key={i} variant="outline" className="text-xs">
-                    {badge}
-                  </Badge>
-                ))}
-              </div>
-            )}
           </DialogTitle>
+          <StyleFitnessCard 
+            stylePackId={stylePack?.id}
+            imageCount={images.length}
+            referenceStats={referenceStats}
+          />
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden">
@@ -210,16 +246,23 @@ export const StylePackEditor = ({
                     rows={2}
                   />
                 </div>
-                <div>
-                  <Label htmlFor="images">Images (comma-separated URLs)</Label>
-                  <Textarea
-                    id="images"
-                    value={images}
-                    onChange={(e) => setImages(e.target.value)}
-                    rows={2}
-                    placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-                  />
-                </div>
+              </div>
+
+              {/* Multi Image Upload */}
+              <div className="pb-4 border-b">
+                <MultiImageUpload
+                  images={images}
+                  onImagesChange={setImages}
+                  onAnalyze={handleAutoAnalyze}
+                />
+              </div>
+
+              {/* Analysis Panel */}
+              <div className="pb-4 border-b">
+                <AnalysisPanel
+                  referenceStats={referenceStats}
+                  isAnalyzing={isAnalyzing}
+                />
               </div>
 
               {/* Preset Selector */}
@@ -286,28 +329,36 @@ export const StylePackEditor = ({
               </div>
             </div>
 
-            {/* Right Panel - Preview */}
+            {/* Right Panel - Quick Test */}
             <div className="border-l pl-6 overflow-y-auto">
-              <PreviewPanel
-                isLoading={isGeneratingPreview}
-                previews={previews}
-                seedLocked={seedLocked}
-                onToggleSeedLock={() => setSeedLocked(!seedLocked)}
-                onGeneratePreview={handleGeneratePreview}
-                showComparison={showComparison}
-                onToggleComparison={() => setShowComparison(!showComparison)}
+              <QuickTestPanel
+                stylePackId={stylePack?.id}
+                currentParams={{
+                  strength: styleStrength,
+                  cfg: sharpness,
+                  steps: 32,
+                  seed: Math.floor(Math.random() * 1000000)
+                }}
+                onTestComplete={(url) => {
+                  toast({
+                    title: "Preview ready",
+                    description: "Sample generated successfully"
+                  });
+                }}
               />
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex justify-between items-center pt-4 border-t">
+        <DialogFooter className="pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>Save Style Pack</Button>
-        </div>
+          <Button onClick={handleSave} disabled={!name}>
+            Save Style Pack
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

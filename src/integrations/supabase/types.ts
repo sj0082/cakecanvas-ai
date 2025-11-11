@@ -108,36 +108,45 @@ export type Database = {
         Row: {
           badges: string[] | null
           created_at: string
+          generator_request: Json | null
+          generator_response: Json | null
           id: string
           image_url: string
           is_selected: boolean | null
           price_range_max: number
           price_range_min: number
           request_id: string
+          seed: number | null
           spec_json: Json
           variant: string
         }
         Insert: {
           badges?: string[] | null
           created_at?: string
+          generator_request?: Json | null
+          generator_response?: Json | null
           id?: string
           image_url: string
           is_selected?: boolean | null
           price_range_max: number
           price_range_min: number
           request_id: string
+          seed?: number | null
           spec_json: Json
           variant: string
         }
         Update: {
           badges?: string[] | null
           created_at?: string
+          generator_request?: Json | null
+          generator_response?: Json | null
           id?: string
           image_url?: string
           is_selected?: boolean | null
           price_range_max?: number
           price_range_min?: number
           request_id?: string
+          seed?: number | null
           spec_json?: Json
           variant?: string
         }
@@ -310,6 +319,7 @@ export type Database = {
           banned_terms: string[] | null
           created_at: string
           description: string | null
+          generator_provider: string | null
           id: string
           images: string[] | null
           is_active: boolean
@@ -318,6 +328,7 @@ export type Database = {
           name: string
           palette_range: Json | null
           parent_id: string | null
+          reference_stats: Json | null
           shape_template: string | null
           updated_at: string
         }
@@ -326,6 +337,7 @@ export type Database = {
           banned_terms?: string[] | null
           created_at?: string
           description?: string | null
+          generator_provider?: string | null
           id?: string
           images?: string[] | null
           is_active?: boolean
@@ -334,6 +346,7 @@ export type Database = {
           name: string
           palette_range?: Json | null
           parent_id?: string | null
+          reference_stats?: Json | null
           shape_template?: string | null
           updated_at?: string
         }
@@ -342,6 +355,7 @@ export type Database = {
           banned_terms?: string[] | null
           created_at?: string
           description?: string | null
+          generator_provider?: string | null
           id?: string
           images?: string[] | null
           is_active?: boolean
@@ -350,6 +364,7 @@ export type Database = {
           name?: string
           palette_range?: Json | null
           parent_id?: string | null
+          reference_stats?: Json | null
           shape_template?: string | null
           updated_at?: string
         }
