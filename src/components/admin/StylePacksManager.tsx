@@ -132,15 +132,16 @@ export const StylePacksManager = () => {
     setIsCreatingCategory(isCategory);
     if (pack) {
       setSelectedPack(pack);
+      const isLevel1 = pack.parent_id === null;
       setFormData({
         name: pack.name,
         description: pack.description || "",
-        images: pack.images?.join(", ") || "",
-        lora_ref: pack.lora_ref || "",
-        shape_template: pack.shape_template || "",
-        allowed_accents: pack.allowed_accents?.join(", ") || "",
-        banned_terms: pack.banned_terms?.join(", ") || "",
-        palette_range: JSON.stringify(pack.palette_range || {}),
+        images: isLevel1 ? "" : (pack.images?.join(", ") || ""),
+        lora_ref: isLevel1 ? "" : (pack.lora_ref || ""),
+        shape_template: isLevel1 ? "" : (pack.shape_template || ""),
+        allowed_accents: isLevel1 ? "" : (pack.allowed_accents?.join(", ") || ""),
+        banned_terms: isLevel1 ? "" : (pack.banned_terms?.join(", ") || ""),
+        palette_range: isLevel1 ? "{}" : JSON.stringify(pack.palette_range || {}),
         is_active: pack.is_active,
         parent_id: pack.parent_id || "",
       });
@@ -164,6 +165,7 @@ export const StylePacksManager = () => {
 
   const handleSave = async () => {
     try {
+      const isLevel1 = !formData.parent_id;
       const baseData = {
         name: formData.name,
         description: formData.description || null,
@@ -171,42 +173,26 @@ export const StylePacksManager = () => {
       };
 
       let data;
-      if (isCreatingCategory && !selectedPack) {
-        // Creating a new category
+      if (isLevel1) {
+        // Level 1 category - only basic fields
         data = {
           ...baseData,
           is_category: true,
           parent_id: null,
         };
-      } else if (!isCreatingCategory && !selectedPack) {
-        // Creating a new style pack under selected category
+      } else {
+        // Level 2 style pack - all fields
         data = {
           ...baseData,
           is_category: false,
-          parent_id: formData.parent_id || null,
+          parent_id: formData.parent_id,
           images: formData.images.split(",").map((s) => s.trim()).filter(Boolean),
           lora_ref: formData.lora_ref || null,
-          shape_template: formData.shape_template,
+          shape_template: formData.shape_template || null,
           allowed_accents: formData.allowed_accents.split(",").map((s) => s.trim()).filter(Boolean),
           banned_terms: formData.banned_terms.split(",").map((s) => s.trim()).filter(Boolean),
-          palette_range: JSON.parse(formData.palette_range),
+          palette_range: JSON.parse(formData.palette_range || "{}"),
         };
-      } else {
-        // Updating existing item
-        if (selectedPack?.is_category) {
-          data = baseData;
-        } else {
-          data = {
-            ...baseData,
-            parent_id: formData.parent_id || null,
-            images: formData.images.split(",").map((s) => s.trim()).filter(Boolean),
-            lora_ref: formData.lora_ref || null,
-            shape_template: formData.shape_template,
-            allowed_accents: formData.allowed_accents.split(",").map((s) => s.trim()).filter(Boolean),
-            banned_terms: formData.banned_terms.split(",").map((s) => s.trim()).filter(Boolean),
-            palette_range: JSON.parse(formData.palette_range),
-          };
-        }
       }
 
       if (selectedPack) {
@@ -450,8 +436,8 @@ export const StylePacksManager = () => {
               />
             </div>
 
-            {/* Only show style pack fields when not creating/editing a category */}
-            {!isCreatingCategory && !selectedPack?.is_category && (
+            {/* Only show style pack fields for level 2 (when parent_id exists) */}
+            {((selectedPack && selectedPack.parent_id !== null) || (!selectedPack && currentCategory)) && (
               <>
                 <div>
                   <Label htmlFor="parent_id">{t("admin.stylePacksManager.dialog.category")}</Label>

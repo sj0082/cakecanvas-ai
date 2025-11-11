@@ -58,7 +58,9 @@
   "style": {
     "badge": "Step 2",
     "title": "Choose Your Style",
+    "titleStylePack": "Select Your Style Pack",
     "subtitle": "Select the aesthetic that matches your vision",
+    "subtitleStylePack": "Choose the perfect design for your occasion",
     "loading": "Loading styles...",
     "prev": "Previous: Size Selection",
     "next": "Next: Design Details",

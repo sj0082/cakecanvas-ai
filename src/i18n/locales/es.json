@@ -57,8 +57,10 @@
   },
   "style": {
     "badge": "Paso 2",
-    "title": "Elige Tu Estilo",
+    "title": "Elige tu categoría de estilo",
+    "titleStylePack": "Selecciona tu paquete de estilo",
     "subtitle": "Selecciona la estética que coincida con tu visión",
+    "subtitleStylePack": "Elige el diseño perfecto para tu ocasión",
     "loading": "Cargando estilos...",
     "prev": "Anterior: Selección de Tamaño",
     "next": "Siguiente: Detalles del Diseño",
