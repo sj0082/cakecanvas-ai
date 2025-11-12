@@ -250,12 +250,25 @@ Return ONLY valid JSON with schema: { "palette": string[], "textures": string[] 
     }
 
     const completion = await aiResp.json();
-    const raw = completion.choices?.[0]?.message?.content;
+    let raw = completion.choices?.[0]?.message?.content;
+
+    console.log(`[stylepack-analyze] [${requestId}] Raw AI response (first 200 chars):`, 
+      typeof raw === "string" ? raw.substring(0, 200) : raw);
+
+    // Remove Markdown code blocks (```json ... ``` or ``` ... ```)
+    if (typeof raw === "string") {
+      raw = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+      console.log(`[stylepack-analyze] [${requestId}] After removing markdown (first 200 chars):`, 
+        raw.substring(0, 200));
+    }
+
     let parsed: any;
     try {
       parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+      console.log(`[stylepack-analyze] [${requestId}] Successfully parsed JSON`);
     } catch (e) {
-      console.error(`[stylepack-analyze] [${requestId}] JSON parse from AI failed`, e, raw);
+      console.error(`[stylepack-analyze] [${requestId}] JSON parse failed`, e);
+      console.error(`[stylepack-analyze] [${requestId}] Raw value:`, raw);
       return respondError({
         status: 500,
         requestId,
@@ -265,17 +278,50 @@ Return ONLY valid JSON with schema: { "palette": string[], "textures": string[] 
       });
     }
 
-    // Normalize output
-    const palette: string[] = Array.isArray(parsed?.palette)
-      ? parsed.palette
-          .map((c: any) => (typeof c === "string" ? c : c?.hex))
-          .filter((v: any) => typeof v === "string")
-          .map((v: string) => v.trim().toUpperCase())
-      : [];
+    // Handle array response (multiple image analyses) or single object
+    let palette: string[] = [];
+    let textures: string[] = [];
 
-    const textures: string[] = Array.isArray(parsed?.textures)
-      ? parsed.textures.filter((t: any) => typeof t === "string").map((t: string) => t.trim())
-      : [];
+    if (Array.isArray(parsed)) {
+      console.log(`[stylepack-analyze] [${requestId}] Got array of ${parsed.length} image analyses`);
+      
+      // Merge all palettes and textures from multiple image analyses
+      const allPalettes: string[] = [];
+      const allTextures: string[] = [];
+      
+      for (const item of parsed) {
+        if (Array.isArray(item?.palette)) {
+          allPalettes.push(...item.palette
+            .map((c: any) => typeof c === "string" ? c.trim().toUpperCase() : c?.hex?.trim().toUpperCase())
+            .filter(Boolean)
+          );
+        }
+        if (Array.isArray(item?.textures)) {
+          allTextures.push(...item.textures
+            .filter((t: any) => typeof t === "string")
+            .map((t: string) => t.trim())
+          );
+        }
+      }
+      
+      // Remove duplicates
+      palette = [...new Set(allPalettes)];
+      textures = [...new Set(allTextures)];
+      
+      console.log(`[stylepack-analyze] [${requestId}] Merged: ${palette.length} colors, ${textures.length} textures`);
+    } else {
+      // Single object response
+      palette = Array.isArray(parsed?.palette)
+        ? parsed.palette
+            .map((c: any) => (typeof c === "string" ? c : c?.hex))
+            .filter((v: any) => typeof v === "string")
+            .map((v: string) => v.trim().toUpperCase())
+        : [];
+
+      textures = Array.isArray(parsed?.textures)
+        ? parsed.textures.filter((t: any) => typeof t === "string").map((t: string) => t.trim())
+        : [];
+    }
 
     console.log(
       `[stylepack-analyze] [${requestId}] analysis done palette=${palette.length} textures=${textures.length}`
