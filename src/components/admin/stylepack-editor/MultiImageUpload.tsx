@@ -118,20 +118,31 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze, stylePackI
         };
       }
 
+      console.debug(`[MultiImageUpload] [${requestId}] Session valid, token length:`, session.access_token?.length);
+      console.debug(`[MultiImageUpload] [${requestId}] Supabase URL:`, import.meta.env.VITE_SUPABASE_URL);
+
       // Extract magic number for server validation
       const magicBase64 = await extractMagicNumber(file);
+      
+      const requestBody = {
+        filename: file.name,
+        contentType: file.type,
+        size: file.size,
+        stylepackId: stylePackId,
+        magicBase64
+      };
 
-      console.debug(`[MultiImageUpload] [${requestId}] Calling edge function...`);
-      const { data: signData, error: signError } = await supabase.functions.invoke<SignedUploadResponse>(
+      console.debug(`[MultiImageUpload] [${requestId}] About to invoke Edge Function...`);
+      const invokeStart = Date.now();
+      
+      let signData: SignedUploadResponse | null = null;
+      let signError: any = null;
+
+      // 1차 시도: supabase.functions.invoke()
+      const { data, error } = await supabase.functions.invoke<SignedUploadResponse>(
         'stylepack-sign-upload',
         {
-          body: {
-            filename: file.name,
-            contentType: file.type,
-            size: file.size,
-            stylepackId: stylePackId,
-            magicBase64
-          },
+          body: requestBody,
           headers: {
             Authorization: `Bearer ${session.access_token}`,
             'X-Request-ID': requestId,
@@ -139,19 +150,58 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze, stylePackI
         }
       );
 
-      if (signError) {
-        console.error(`[MultiImageUpload] [${requestId}] Edge function error:`, signError);
-        const errorMsg = mapSignError(signError, requestId);
-        return {
-          url: '',
-          key: '',
-          error: errorMsg,
-          file
-        };
+      console.debug(`[MultiImageUpload] [${requestId}] Invoke completed in ${Date.now() - invokeStart}ms`);
+      console.debug(`[MultiImageUpload] [${requestId}] Has data:`, !!data, 'Has error:', !!error);
+
+      if (error) {
+        console.warn(`[MultiImageUpload] [${requestId}] Invoke failed, trying direct fetch fallback...`, error);
+        console.error(`[MultiImageUpload] [${requestId}] Edge function error (FULL):`, JSON.stringify(error, null, 2));
+        
+        // 2차 시도: 직접 fetch
+        try {
+          const fetchStart = Date.now();
+          const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stylepack-sign-upload`;
+          
+          console.debug(`[MultiImageUpload] [${requestId}] Fetching:`, url);
+          
+          const fetchResponse = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+              'X-Request-ID': requestId,
+              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            },
+            body: JSON.stringify(requestBody)
+          });
+
+          console.debug(`[MultiImageUpload] [${requestId}] Fetch completed in ${Date.now() - fetchStart}ms, status:`, fetchResponse.status);
+
+          if (!fetchResponse.ok) {
+            const errorText = await fetchResponse.text();
+            console.error(`[MultiImageUpload] [${requestId}] Fetch failed:`, fetchResponse.status, errorText);
+            signError = { status: fetchResponse.status, message: errorText };
+          } else {
+            signData = await fetchResponse.json();
+            console.debug(`[MultiImageUpload] [${requestId}] Fetch succeeded, got signData`);
+          }
+        } catch (fetchError) {
+          console.error(`[MultiImageUpload] [${requestId}] Fetch error:`, fetchError);
+          signError = fetchError;
+        }
+      } else {
+        signData = data;
       }
 
-      if (!signData || !signData.signedUrl) {
-        console.error(`[MultiImageUpload] [${requestId}] Invalid response from edge function:`, signData);
+      // 에러 처리
+      if (signError || !signData) {
+        console.error(`[MultiImageUpload] [${requestId}] All methods failed:`, signError);
+        const errorMsg = mapSignError(signError, requestId);
+        return { url: '', key: '', error: errorMsg, file };
+      }
+
+      if (!signData.signedUrl) {
+        console.error(`[MultiImageUpload] [${requestId}] Invalid response - no signedUrl:`, signData);
         return {
           url: '',
           key: '',

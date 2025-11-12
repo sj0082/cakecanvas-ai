@@ -9,12 +9,34 @@ const getAllowedOrigins = (): string[] => {
 
 const getCorsHeaders = (origin: string | null): Record<string, string> => {
   const allowedOrigins = getAllowedOrigins();
-  const isAllowed = origin && allowedOrigins.some(allowed => 
-    origin === allowed || origin.endsWith(allowed.replace('*', ''))
-  );
+  
+  // No origins configured = allow all
+  if (!allowedOrigins || allowedOrigins.length === 0) {
+    return {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'authorization, content-type, x-request-id, x-client-info, apikey',
+    };
+  }
+
+  // Check if request origin is in allowed list (support wildcards)
+  let isAllowed = false;
+  if (origin) {
+    isAllowed = allowedOrigins.some(allowed => {
+      if (allowed === origin) return true; // Exact match
+      if (allowed.includes('*')) {
+        // Handle wildcard: https://*.lovable.app matches https://cakecanvas-ai.lovable.app
+        const pattern = allowed.replace('https://*.', '.');
+        return origin.endsWith(pattern);
+      }
+      return false;
+    });
+  }
+  
+  const allowOrigin = isAllowed && origin ? origin : (allowedOrigins[0] || '*');
   
   return {
-    'Access-Control-Allow-Origin': isAllowed ? origin : allowedOrigins[0] || '*',
+    'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'authorization, content-type, x-request-id, x-client-info, apikey',
     'Vary': 'Origin'
@@ -80,15 +102,20 @@ const sanitizeFilename = (filename: string): string => {
 
 serve(async (req) => {
   const origin = req.headers.get('origin');
+  const requestId = req.headers.get('x-request-id') || crypto.randomUUID();
+  const method = req.method;
   const corsHeaders = getCorsHeaders(origin);
+  
+  console.log(`[stylepack-sign-upload] [${requestId}] ${method} request from: ${origin}`);
   
   if (req.method === 'OPTIONS') {
     console.debug('[stylepack-sign-upload] [preflight] OPTIONS request from:', origin);
     return new Response(null, { status: 204, headers: corsHeaders });
   }
 
+  console.log(`[stylepack-sign-upload] [${requestId}] POST request received - processing...`);
+
   try {
-    const requestId = req.headers.get('x-request-id') || crypto.randomUUID();
     
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
