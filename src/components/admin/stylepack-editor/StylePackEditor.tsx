@@ -248,15 +248,34 @@ export const StylePackEditor = ({
                 </div>
               </div>
 
+              {/* Reference Images */}
+              <div className="pb-4 border-b">
+                <MultiImageUpload
+                  images={images}
+                  onImagesChange={setImages}
+                  onAnalyze={handleAutoAnalyze}
+                />
+              </div>
+
+              {/* Analysis Panel */}
+              {referenceStats && (
+                <div className="pb-4 border-b">
+                  <AnalysisPanel
+                    referenceStats={referenceStats}
+                    isAnalyzing={isAnalyzing}
+                  />
+                </div>
+              )}
+
               {/* Style Controls */}
               <div className="pb-4 border-b">
-                <Label className="mb-2 block">Style Controls</Label>
+                <Label className="mb-3 block font-semibold">Style Controls</Label>
                 <Tabs defaultValue="simple" className="flex-1">
-                  <TabsList className="grid w-full grid-cols-2 sticky top-0 z-10">
+                  <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="simple">Simple</TabsTrigger>
                     <TabsTrigger value="advanced">Advanced</TabsTrigger>
                   </TabsList>
-                  <TabsContent value="simple" className="overflow-y-auto max-h-[420px] pt-4">
+                  <TabsContent value="simple" className="pt-2">
                     <SimpleTab
                       styleStrength={styleStrength}
                       sharpness={sharpness}
@@ -274,7 +293,7 @@ export const StylePackEditor = ({
                       onPerformanceProfileChange={setPerformanceProfile}
                     />
                   </TabsContent>
-                  <TabsContent value="advanced" className="overflow-y-auto max-h-[420px] pt-4">
+                  <TabsContent value="advanced" className="pt-2">
                     <AdvancedTab
                       loraRef={loraRef}
                       shapeTemplate={shapeTemplate}
@@ -292,7 +311,7 @@ export const StylePackEditor = ({
                 </Tabs>
               </div>
 
-              {/* Preset Selector */}
+              {/* Preset Library */}
               <div className="pb-4 border-b">
                 <Label className="mb-2 block">Preset Library</Label>
                 <PresetSelector
@@ -301,23 +320,6 @@ export const StylePackEditor = ({
                   onPresetChange={handlePresetChange}
                   onSaveAsNew={() => toast({ title: "Save preset feature coming soon" })}
                   onRevert={() => toast({ title: "Reverted to recommended settings" })}
-                />
-              </div>
-
-              {/* Multi Image Upload */}
-              <div className="pb-4 border-b">
-                <MultiImageUpload
-                  images={images}
-                  onImagesChange={setImages}
-                  onAnalyze={handleAutoAnalyze}
-                />
-              </div>
-
-              {/* Analysis Panel */}
-              <div className="pb-4 border-b">
-                <AnalysisPanel
-                  referenceStats={referenceStats}
-                  isAnalyzing={isAnalyzing}
                 />
               </div>
 
