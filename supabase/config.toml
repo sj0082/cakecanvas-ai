@@ -9,8 +9,8 @@ verify_jwt = false
 [functions.generate-proposals]
 verify_jwt = false
 
-[functions."admin/stylepack-sign-upload"]
-verify_jwt = true
+[functions.stylepack-sign-upload]
+verify_jwt = false
 
 [functions."admin/stylepack-analyze"]
 verify_jwt = true

@@ -104,7 +104,7 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze, stylePackI
 
       console.debug(`[MultiImageUpload] [${requestId}] Calling edge function...`);
       const { data: signData, error: signError } = await supabase.functions.invoke<SignedUploadResponse>(
-        'admin/stylepack-sign-upload',
+        'stylepack-sign-upload',
         {
           body: {
             filename: file.name,
