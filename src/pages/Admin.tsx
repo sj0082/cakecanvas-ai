@@ -40,14 +40,10 @@ const Admin = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted p-8">
         <div className="max-w-7xl mx-auto space-y-8">
-          <div className="flex justify-between items-center">
+          <div className="flex items-center">
             <Button onClick={() => setCurrentView("dashboard")} variant="outline">
               <ArrowLeft className="h-4 w-4 mr-2" />
               {t("admin.backToDashboard")}
-            </Button>
-            <Button onClick={handleSignOut} variant="outline">
-              <LogOut className="h-4 w-4 mr-2" />
-              {t("admin.signOut")}
             </Button>
           </div>
 
@@ -55,6 +51,15 @@ const Admin = () => {
           {currentView === "sizes" && <SizeCategoriesManager />}
           {currentView === "rules" && <RealityRulesManager />}
         </div>
+        
+        <Button 
+          onClick={handleSignOut} 
+          variant="outline"
+          className="fixed bottom-8 right-8 z-50 shadow-lg"
+        >
+          <LogOut className="h-4 w-4 mr-2" />
+          {t("admin.signOut")}
+        </Button>
       </div>
     );
   }
@@ -62,17 +67,11 @@ const Admin = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted p-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-4xl font-bold">{t("admin.title")}</h1>
-            <p className="text-muted-foreground mt-2">
-              {t("admin.subtitle")}
-            </p>
-          </div>
-          <Button onClick={handleSignOut} variant="outline">
-            <LogOut className="h-4 w-4 mr-2" />
-            {t("admin.signOut")}
-          </Button>
+        <div>
+          <h1 className="text-4xl font-bold">{t("admin.title")}</h1>
+          <p className="text-muted-foreground mt-2">
+            {t("admin.subtitle")}
+          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -161,6 +160,15 @@ const Admin = () => {
           </Card>
         </div>
       </div>
+      
+      <Button 
+        onClick={handleSignOut} 
+        variant="outline"
+        className="fixed bottom-8 right-8 z-50 shadow-lg"
+      >
+        <LogOut className="h-4 w-4 mr-2" />
+        {t("admin.signOut")}
+      </Button>
     </div>
   );
 };
