@@ -84,6 +84,25 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze, stylePackI
     });
   };
 
+  const mapSignError = (error: any, reqId: string): string => {
+    // Network/preflight failure - no status or fetch/network error
+    if (!error || !error.status || 
+        error.message?.toLowerCase().includes('fetch') || 
+        error.message?.toLowerCase().includes('network') ||
+        error.message?.toLowerCase().includes('failed to send')) {
+      return `업로드 실패: Edge Function 호출 실패 – ${reqId}`;
+    }
+    
+    switch (error.status) {
+      case 401: return `로그인이 필요합니다 – ${reqId}`;
+      case 403: return `관리자 권한이 필요합니다 – ${reqId}`;
+      case 413: return `파일이 너무 큽니다(최대 20MB) – ${reqId}`;
+      case 415: return `허용되지 않는 파일 형식입니다(JPG/PNG/WebP만 가능) – ${reqId}`;
+      case 429: return `요청이 너무 많습니다. 잠시 후 다시 시도해주세요 – ${reqId}`;
+      default:  return `업로드 실패(코드: ${error.status}) – ${reqId}`;
+    }
+  };
+
   const uploadFile = async (file: File, requestId: string): Promise<ImageData | null> => {
     try {
       console.debug(`[MultiImageUpload] [${requestId}] Starting upload for:`, file.name, file.type, file.size);
@@ -94,7 +113,7 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze, stylePackI
         return {
           url: '',
           key: '',
-          error: '로그인이 필요합니다',
+          error: `로그인이 필요합니다 – ${requestId}`,
           file
         };
       }
@@ -122,29 +141,11 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze, stylePackI
 
       if (signError) {
         console.error(`[MultiImageUpload] [${requestId}] Edge function error:`, signError);
-        
-        // Map error codes to Korean messages based on HTTP status
-        const status = (signError as any).status;
-        let errorMessage = '업로드 실패';
-        
-        if (status === 401) {
-          errorMessage = '로그인이 필요합니다';
-        } else if (status === 403) {
-          errorMessage = '관리자 권한이 필요합니다';
-        } else if (status === 413) {
-          errorMessage = '파일이 20MB를 초과했습니다';
-        } else if (status === 415) {
-          errorMessage = '지원되지 않는 파일 형식입니다 (JPG/PNG/WebP만 가능)';
-        } else if (status === 429) {
-          errorMessage = '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요';
-        } else if ((signError as any).message) {
-          errorMessage = `업로드 실패: ${(signError as any).message}`;
-        }
-        
+        const errorMsg = mapSignError(signError, requestId);
         return {
           url: '',
           key: '',
-          error: errorMessage,
+          error: errorMsg,
           file
         };
       }
@@ -154,38 +155,76 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze, stylePackI
         return {
           url: '',
           key: '',
-          error: '업로드 준비 실패',
+          error: `업로드 준비 실패 – ${requestId}`,
           file
         };
       }
 
       console.debug(`[MultiImageUpload] [${requestId}] Got signed URL, uploading file via SDK...`);
+      
+      // Try SDK upload first
+      let uploadSuccess = false;
       const { error: uploadError } = await supabase
         .storage
         .from('stylepack-ref')
         .uploadToSignedUrl(signData.path, signData.token, file);
 
       if (uploadError) {
-        console.error(`[MultiImageUpload] [${requestId}] SDK upload failed:`, uploadError);
+        console.warn(`[MultiImageUpload] [${requestId}] SDK upload failed, trying PUT fallback:`, uploadError);
+        
+        // Fallback to direct PUT
+        try {
+          const putResponse = await fetch(signData.signedUrl, {
+            method: 'PUT',
+            body: file,
+            headers: { 'Content-Type': file.type }
+          });
+          
+          if (putResponse.ok) {
+            console.debug(`[MultiImageUpload] [${requestId}] PUT fallback succeeded`);
+            uploadSuccess = true;
+          } else {
+            console.error(`[MultiImageUpload] [${requestId}] PUT fallback failed:`, putResponse.status);
+            return {
+              url: '',
+              key: '',
+              error: `업로드 실패(${putResponse.status}) – ${requestId}`,
+              file
+            };
+          }
+        } catch (putError) {
+          console.error(`[MultiImageUpload] [${requestId}] PUT fallback error:`, putError);
+          return {
+            url: '',
+            key: '',
+            error: `업로드 실패 – ${requestId}`,
+            file
+          };
+        }
+      } else {
+        uploadSuccess = true;
+      }
+
+      if (uploadSuccess) {
+        console.debug(`[MultiImageUpload] [${requestId}] Upload successful:`, signData.url);
         return {
-          url: '',
-          key: '',
-          error: '업로드 실패: ' + uploadError.message,
-          file
+          url: signData.url,
+          key: signData.key
         };
       }
 
-      console.debug(`[MultiImageUpload] [${requestId}] Upload successful:`, signData.url);
       return {
-        url: signData.url,
-        key: signData.key
+        url: '',
+        key: '',
+        error: `업로드 실패 – ${requestId}`,
+        file
       };
     } catch (error) {
       console.error(`[MultiImageUpload] [${requestId}] Upload error for`, file.name, ':', error);
       return {
         url: '',
         key: '',
-        error: error instanceof Error ? error.message : '업로드 실패',
+        error: error instanceof Error ? `${error.message} – ${requestId}` : `업로드 실패 – ${requestId}`,
         file
       };
     }
@@ -309,10 +348,25 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze, stylePackI
     const successCount = successfulUploads.length;
     const failCount = failedUploads.length;
 
-    if (successCount > 0) {
+    // Improved toast messages with success/failure counts
+    if (failCount > 0 && successCount > 0) {
+      const firstError = failedUploads[0]?.error || '알 수 없는 오류';
       toast({
-        title: "Upload complete",
-        description: `${successCount} image${successCount > 1 ? 's' : ''} uploaded successfully`
+        title: "업로드 완료",
+        description: `성공 ${successCount}개, 실패 ${failCount}개 (첫 오류: ${firstError})`,
+        variant: "destructive"
+      });
+    } else if (failCount > 0) {
+      const firstError = failedUploads[0]?.error || '알 수 없는 오류';
+      toast({
+        title: "업로드 실패",
+        description: `실패 ${failCount}개: ${firstError}`,
+        variant: "destructive"
+      });
+    } else if (successCount > 0) {
+      toast({
+        title: "업로드 완료",
+        description: `${successCount}개 이미지 업로드 성공`
       });
 
       // Auto-analyze if we have 3+ images total
@@ -321,15 +375,6 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze, stylePackI
         console.debug(`[MultiImageUpload] [${requestId}] Auto-triggering analyze (${totalSuccessful} images)`);
         setTimeout(() => onAnalyze(), 500);
       }
-    }
-    
-    if (failCount > 0) {
-      const firstError = failedUploads[0]?.error || 'Unknown error';
-      toast({
-        title: "Upload errors",
-        description: `${failCount} failed: ${firstError}`,
-        variant: "destructive"
-      });
     }
   }, [images, onImagesChange, toast, onAnalyze]);
 

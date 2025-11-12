@@ -16,7 +16,7 @@ const getCorsHeaders = (origin: string | null): Record<string, string> => {
   return {
     'Access-Control-Allow-Origin': isAllowed ? origin : allowedOrigins[0] || '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'authorization, content-type, x-request-id',
+    'Access-Control-Allow-Headers': 'authorization, content-type, x-request-id, x-client-info, apikey',
     'Vary': 'Origin'
   };
 };
@@ -83,7 +83,8 @@ serve(async (req) => {
   const corsHeaders = getCorsHeaders(origin);
   
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    console.debug('[stylepack-sign-upload] [preflight] OPTIONS request from:', origin);
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   try {
