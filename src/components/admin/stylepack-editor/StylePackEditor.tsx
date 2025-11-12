@@ -197,10 +197,11 @@ export const StylePackEditor = ({
       const imageUrls = images.map(img => img.url);
       console.log(`[AutoAnalyze] [${requestId}] Calling stylepack-analyze function`);
       
-      const { data, error } = await supabase.functions.invoke('admin/stylepack-analyze', {
+      const { data, error } = await supabase.functions.invoke('stylepack-analyze', {
         body: { imageUrls },
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
           'X-Request-ID': requestId,
           'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
         },
