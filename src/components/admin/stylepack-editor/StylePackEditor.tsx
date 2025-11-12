@@ -492,6 +492,8 @@ export const StylePackEditor = ({
             <div className="border-l pl-6 overflow-y-auto">
               <QuickTestPanel
                 stylePackId={stylePack?.id}
+                stylePackName={name}
+                referenceImages={images.map(img => img.url)}
                 currentParams={{
                   strength: styleStrength,
                   cfg: sharpness,

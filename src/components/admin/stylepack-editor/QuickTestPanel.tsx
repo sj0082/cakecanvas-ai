@@ -6,31 +6,61 @@ import { Zap, Loader2, Clock, DollarSign } from "lucide-react";
 
 interface QuickTestPanelProps {
   stylePackId?: string;
+  stylePackName?: string;
+  referenceImages: string[];
   currentParams: any;
   onTestComplete?: (imageUrl: string) => void;
 }
 
-export const QuickTestPanel = ({ stylePackId, currentParams, onTestComplete }: QuickTestPanelProps) => {
+export const QuickTestPanel = ({ stylePackId, stylePackName, referenceImages, currentParams, onTestComplete }: QuickTestPanelProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [seedLocked, setSeedLocked] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [generationTime, setGenerationTime] = useState<number | null>(null);
 
   const handleQuickTest = async () => {
+    if (referenceImages.length === 0) {
+      console.error('No reference images available');
+      return;
+    }
+
     setIsGenerating(true);
     const startTime = Date.now();
 
     try {
-      // Mock generation for now - in production this would call an edge function
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Extract storage path from first reference image URL
+      const firstImageUrl = referenceImages[0];
+      const pathMatch = firstImageUrl.match(/\/object\/public\/stylepack-ref\/(.+)$/);
+      const referenceImagePath = pathMatch ? pathMatch[1] : firstImageUrl;
+
+      console.log('Calling stylepack-quick-test with:', {
+        referenceImagePath,
+        stylePackName,
+        currentParams
+      });
+
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data, error } = await supabase.functions.invoke('stylepack-quick-test', {
+        body: {
+          referenceImagePath,
+          stylePackName,
+          params: currentParams,
+          lockSeed: seedLocked
+        }
+      });
+
+      if (error) {
+        console.error('Quick test error:', error);
+        throw error;
+      }
+
+      console.log('Quick test success:', data);
       
-      // Mock image
-      const mockImage = "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=512&h=512&fit=crop";
-      setPreview(mockImage);
-      setGenerationTime(Date.now() - startTime);
+      setPreview(data.imageUrl);
+      setGenerationTime(data.generationTime);
       
       if (onTestComplete) {
-        onTestComplete(mockImage);
+        onTestComplete(data.imageUrl);
       }
     } catch (error) {
       console.error('Quick test error:', error);
@@ -61,7 +91,7 @@ export const QuickTestPanel = ({ stylePackId, currentParams, onTestComplete }: Q
 
       <Button
         onClick={handleQuickTest}
-        disabled={isGenerating}
+        disabled={isGenerating || referenceImages.length === 0}
         className="w-full"
       >
         {isGenerating ? (
