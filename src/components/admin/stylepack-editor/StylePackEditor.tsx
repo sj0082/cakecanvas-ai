@@ -248,6 +248,62 @@ export const StylePackEditor = ({
                 </div>
               </div>
 
+              {/* Style Controls */}
+              <div className="pb-4 border-b">
+                <Label className="mb-2 block">Style Controls</Label>
+                <Tabs defaultValue="simple" className="flex-1">
+                  <TabsList className="grid w-full grid-cols-2 sticky top-0 z-10">
+                    <TabsTrigger value="simple">Simple</TabsTrigger>
+                    <TabsTrigger value="advanced">Advanced</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="simple" className="overflow-y-auto max-h-[420px] pt-4">
+                    <SimpleTab
+                      styleStrength={styleStrength}
+                      sharpness={sharpness}
+                      realism={realism}
+                      complexity={complexity}
+                      paletteLock={paletteLock}
+                      uniformity={uniformity}
+                      performanceProfile={performanceProfile}
+                      onStyleStrengthChange={setStyleStrength}
+                      onSharpnessChange={setSharpness}
+                      onRealismChange={setRealism}
+                      onComplexityChange={setComplexity}
+                      onPaletteLockChange={setPaletteLock}
+                      onUniformityChange={setUniformity}
+                      onPerformanceProfileChange={setPerformanceProfile}
+                    />
+                  </TabsContent>
+                  <TabsContent value="advanced" className="overflow-y-auto max-h-[420px] pt-4">
+                    <AdvancedTab
+                      loraRef={loraRef}
+                      shapeTemplate={shapeTemplate}
+                      allowedAccents={allowedAccents}
+                      bannedTerms={bannedTerms}
+                      paletteRange={paletteRange}
+                      onLoraRefChange={setLoraRef}
+                      onShapeTemplateChange={setShapeTemplate}
+                      onAllowedAccentsChange={setAllowedAccents}
+                      onBannedTermsChange={setBannedTerms}
+                      onPaletteRangeChange={setPaletteRange}
+                      isUnpredictable={isUnpredictable()}
+                    />
+                  </TabsContent>
+                </Tabs>
+              </div>
+
+              {/* Preset Selector */}
+              <div className="pb-4 border-b">
+                <Label className="mb-2 block">Preset Library</Label>
+                <PresetSelector
+                  presets={[]}
+                  selectedPreset={selectedPreset}
+                  onPresetChange={handlePresetChange}
+                  onSaveAsNew={() => toast({ title: "Save preset feature coming soon" })}
+                  onRevert={() => toast({ title: "Reverted to recommended settings" })}
+                />
+              </div>
+
               {/* Multi Image Upload */}
               <div className="pb-4 border-b">
                 <MultiImageUpload
@@ -264,59 +320,6 @@ export const StylePackEditor = ({
                   isAnalyzing={isAnalyzing}
                 />
               </div>
-
-              {/* Preset Selector */}
-              <div className="pb-4 border-b">
-                <Label className="mb-2 block">Preset Library</Label>
-                <PresetSelector
-                  presets={[]}
-                  selectedPreset={selectedPreset}
-                  onPresetChange={handlePresetChange}
-                  onSaveAsNew={() => toast({ title: "Save preset feature coming soon" })}
-                  onRevert={() => toast({ title: "Reverted to recommended settings" })}
-                />
-              </div>
-
-              {/* Tabs */}
-              <Tabs defaultValue="simple" className="flex-1">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="simple">Simple</TabsTrigger>
-                  <TabsTrigger value="advanced">Advanced</TabsTrigger>
-                </TabsList>
-                <TabsContent value="simple" className="overflow-y-auto max-h-[400px]">
-                  <SimpleTab
-                    styleStrength={styleStrength}
-                    sharpness={sharpness}
-                    realism={realism}
-                    complexity={complexity}
-                    paletteLock={paletteLock}
-                    uniformity={uniformity}
-                    performanceProfile={performanceProfile}
-                    onStyleStrengthChange={setStyleStrength}
-                    onSharpnessChange={setSharpness}
-                    onRealismChange={setRealism}
-                    onComplexityChange={setComplexity}
-                    onPaletteLockChange={setPaletteLock}
-                    onUniformityChange={setUniformity}
-                    onPerformanceProfileChange={setPerformanceProfile}
-                  />
-                </TabsContent>
-                <TabsContent value="advanced" className="overflow-y-auto max-h-[400px]">
-                  <AdvancedTab
-                    loraRef={loraRef}
-                    shapeTemplate={shapeTemplate}
-                    allowedAccents={allowedAccents}
-                    bannedTerms={bannedTerms}
-                    paletteRange={paletteRange}
-                    onLoraRefChange={setLoraRef}
-                    onShapeTemplateChange={setShapeTemplate}
-                    onAllowedAccentsChange={setAllowedAccents}
-                    onBannedTermsChange={setBannedTerms}
-                    onPaletteRangeChange={setPaletteRange}
-                    isUnpredictable={isUnpredictable()}
-                  />
-                </TabsContent>
-              </Tabs>
 
               {/* Active Toggle */}
               <div className="flex items-center gap-2 pt-4 border-t">

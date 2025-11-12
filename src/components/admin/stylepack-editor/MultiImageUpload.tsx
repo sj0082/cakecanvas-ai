@@ -53,21 +53,15 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
         throw new Error('Invalid upload URL received');
       }
 
-      console.log('[MultiImageUpload] Got signed URL, uploading file...');
-      const uploadResponse = await fetch(signData.signedUrl, {
-        method: 'PUT',
-        body: file,
-        headers: {
-          'Content-Type': file.type,
-          'x-upsert': 'true',
-        }
-      });
+      console.log('[MultiImageUpload] Got signed URL, uploading file via SDK...');
+      const { data: uploadData, error: uploadError } = await supabase
+        .storage
+        .from('stylepack-ref')
+        .uploadToSignedUrl(signData.path, signData.token, file);
 
-      if (!uploadResponse.ok) {
-        console.error('[MultiImageUpload] Upload failed with status:', uploadResponse.status);
-        const errorText = await uploadResponse.text();
-        console.error('[MultiImageUpload] Upload error text:', errorText);
-        throw new Error(`Upload failed: ${uploadResponse.status}`);
+      if (uploadError) {
+        console.error('[MultiImageUpload] Upload failed:', uploadError);
+        throw new Error(uploadError.message || 'Upload failed');
       }
 
       console.log('[MultiImageUpload] Upload successful:', signData.url);
