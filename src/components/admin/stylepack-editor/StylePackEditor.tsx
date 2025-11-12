@@ -216,13 +216,7 @@ export const StylePackEditor = ({
       console.log(`[AutoAnalyze] [${requestId}] Calling stylepack-analyze function with paths:`, imagePaths);
       
       const { data, error } = await supabase.functions.invoke('stylepack-analyze', {
-        body: { imagePaths },
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-          'x-request-id': requestId,
-          'x-client-info': '@supabase/functions-js/2.0.0'
-        }
+        body: { imagePaths }
       });
 
       if (error) {
