@@ -26,14 +26,14 @@ const getCorsHeaders = (origin: string | null): Record<string, string> => {
       if (allowed === origin) return true; // Exact match
       if (allowed.includes('*')) {
         // Handle wildcard: https://*.lovable.app matches https://cakecanvas-ai.lovable.app
-        const pattern = allowed.replace('https://*.', '.');
-        return origin.endsWith(pattern);
+        const pattern = allowed.replace('https://*.', '');
+        return origin.includes(pattern);
       }
       return false;
     });
   }
   
-  const allowOrigin = isAllowed && origin ? origin : (allowedOrigins[0] || '*');
+  const allowOrigin = isAllowed && origin ? origin : '*';
   
   return {
     'Access-Control-Allow-Origin': allowOrigin,
@@ -109,11 +109,11 @@ serve(async (req) => {
   console.log(`[stylepack-sign-upload] [${requestId}] ${method} request from: ${origin}`);
   
   if (req.method === 'OPTIONS') {
-    console.debug('[stylepack-sign-upload] [preflight] OPTIONS request from:', origin);
+    console.log(`[stylepack-sign-upload] [${requestId}] OPTIONS preflight from: ${origin}`);
     return new Response(null, { status: 204, headers: corsHeaders });
   }
 
-  console.log(`[stylepack-sign-upload] [${requestId}] POST request received - processing...`);
+  console.log(`[stylepack-sign-upload] [${requestId}] ===== Incoming POST request from: ${origin} =====`);
 
   try {
     

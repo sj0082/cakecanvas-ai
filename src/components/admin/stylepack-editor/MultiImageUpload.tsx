@@ -144,8 +144,9 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze, stylePackI
         {
           body: requestBody,
           headers: {
-            Authorization: `Bearer ${session.access_token}`,
+            'Authorization': `Bearer ${session.access_token}`,
             'X-Request-ID': requestId,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
           },
         }
       );
