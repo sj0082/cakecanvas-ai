@@ -42,6 +42,34 @@ interface StylePackEditorProps {
   onSave: (data: any) => Promise<void>;
 }
 
+/**
+ * Supabase Storage URL에서 storage path 추출
+ * URL: https://{project}.supabase.co/storage/v1/object/public/{bucket}/{path}
+ * 반환: {path} 부분만 (예: "uploads/abc.webp")
+ */
+const extractStoragePath = (urlOrPath: string, bucket: string = 'stylepack-ref'): string | null => {
+  // 이미 경로 형식이면 그대로 반환
+  if (!urlOrPath.startsWith('http://') && !urlOrPath.startsWith('https://')) {
+    return urlOrPath;
+  }
+  
+  // URL에서 /object/public/{bucket}/ 또는 /object/authenticated/{bucket}/ 이후 추출
+  const patterns = [
+    `/object/public/${bucket}/`,
+    `/object/authenticated/${bucket}/`,
+  ];
+  
+  for (const pattern of patterns) {
+    const idx = urlOrPath.indexOf(pattern);
+    if (idx !== -1) {
+      return urlOrPath.slice(idx + pattern.length);
+    }
+  }
+  
+  console.warn(`[extractStoragePath] Could not extract path from: ${urlOrPath}`);
+  return null;
+};
+
 export const StylePackEditor = ({
   open,
   onOpenChange,
@@ -97,7 +125,13 @@ export const StylePackEditor = ({
     if (stylePack) {
       setName(stylePack.name || "");
       setDescription(stylePack.description || "");
-      setImages((stylePack.images || []).map((url: string) => ({ url, key: url })));
+      setImages((stylePack.images || []).map((url: string) => {
+        const path = extractStoragePath(url, 'stylepack-ref');
+        return {
+          url,
+          key: path || '', // path가 추출되지 않으면 빈 문자열 (분석 제외됨)
+        };
+      }));
       setIsActive(stylePack.is_active ?? true);
       setReferenceStats(stylePack.reference_stats || null);
       setLoraRef(stylePack.lora_ref || "cake_design_v2:0.75");
@@ -212,7 +246,19 @@ export const StylePackEditor = ({
         throw new Error('Authentication required');
       }
 
-      const imagePaths = eligible.map(img => img.key);
+      const imagePaths = eligible
+        .map(img => extractStoragePath(img.key, 'stylepack-ref'))
+        .filter((path): path is string => path !== null && path.length > 0);
+
+      if (imagePaths.length < 3) {
+        toast({
+          title: "최소 3장 이상 필요합니다",
+          description: `유효한 경로: ${imagePaths.length}장`,
+          variant: "destructive"
+        });
+        return;
+      }
+      
       console.log(`[AutoAnalyze] [${requestId}] Calling stylepack-analyze function with paths:`, imagePaths);
       
       const { data, error } = await supabase.functions.invoke('stylepack-analyze', {
@@ -221,9 +267,28 @@ export const StylePackEditor = ({
 
       if (error) {
         console.error(`[AutoAnalyze] [${requestId}] Full error object:`, JSON.stringify(error, null, 2));
-        const status = (error as any)?.status || 'unknown';
-        const errorMsg = (error as any)?.message || error.toString();
-        throw new Error(`Analysis failed: ${status} ${errorMsg} – ${requestId}`);
+        
+        // FunctionsHttpError에서 상세 정보 추출
+        let errorMessage = 'Unknown error';
+        let statusCode = 'unknown';
+        
+        if ((error as any)?.context) {
+          try {
+            const errorBody = await (error as any).context.json();
+            statusCode = errorBody.status || (error as any).status || 'unknown';
+            errorMessage = errorBody.message || errorBody.error || errorMessage;
+            console.error(`[AutoAnalyze] [${requestId}] Error body:`, errorBody);
+          } catch (parseError) {
+            // context.json() 실패 시 기본 메시지 사용
+            statusCode = (error as any)?.status || 'unknown';
+            errorMessage = (error as any)?.message || error.toString();
+          }
+        } else {
+          statusCode = (error as any)?.status || 'unknown';
+          errorMessage = (error as any)?.message || error.toString();
+        }
+        
+        throw new Error(`${statusCode}: ${errorMessage} – ${requestId}`);
       }
       
       console.log(`[AutoAnalyze] [${requestId}] Success:`, data);
