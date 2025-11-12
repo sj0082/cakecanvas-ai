@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Upload, X, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -19,7 +19,38 @@ interface MultiImageUploadProps {
 
 export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiImageUploadProps) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+  const [authError, setAuthError] = useState<string>("");
   const { toast } = useToast();
+
+  // Check authorization on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        setIsAuthorized(false);
+        setAuthError("Please sign in to upload images");
+        return;
+      }
+
+      const { data: hasAdminRole } = await supabase.rpc('has_role', {
+        _user_id: session.user.id,
+        _role: 'admin'
+      });
+
+      if (!hasAdminRole) {
+        setIsAuthorized(false);
+        setAuthError("Admin role required to upload reference images");
+        return;
+      }
+
+      setIsAuthorized(true);
+      setAuthError("");
+    };
+
+    checkAuth();
+  }, []);
 
   const uploadFile = async (file: File): Promise<ImageData | null> => {
     try {
@@ -28,7 +59,11 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         console.error('[MultiImageUpload] No auth session');
-        throw new Error('Not authenticated');
+        return {
+          url: '',
+          key: '',
+          error: 'Please sign in to upload images'
+        };
       }
 
       console.log('[MultiImageUpload] Calling edge function...');
@@ -48,12 +83,33 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
 
       if (signError) {
         console.error('[MultiImageUpload] Edge function error:', signError);
-        throw signError;
+        
+        // Map common errors to user-friendly messages
+        let errorMessage = 'Upload failed';
+        if (signError.message?.includes('401') || signError.message?.includes('unauthorized')) {
+          errorMessage = 'Please sign in again';
+        } else if (signError.message?.includes('403') || signError.message?.includes('forbidden')) {
+          errorMessage = 'Admin role required';
+        } else if (signError.message?.includes('invalid_type')) {
+          errorMessage = 'Invalid file type. Use JPG/PNG/WebP';
+        } else if (signError.message?.includes('file_too_large')) {
+          errorMessage = 'File exceeds 20MB limit';
+        }
+        
+        return {
+          url: '',
+          key: '',
+          error: errorMessage
+        };
       }
 
       if (!signData || !signData.signedUrl) {
         console.error('[MultiImageUpload] Invalid response from edge function:', signData);
-        throw new Error('Invalid upload URL received');
+        return {
+          url: '',
+          key: '',
+          error: 'Could not prepare upload'
+        };
       }
 
       console.log('[MultiImageUpload] Got signed URL, uploading file via SDK...');
@@ -76,7 +132,11 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
         if (!resp.ok) {
           const errorText = await resp.text().catch(() => '');
           console.error('[MultiImageUpload] Fallback PUT failed:', resp.status, errorText);
-          throw new Error(`Upload failed (${resp.status}) ${errorText || ''}`.trim());
+          return {
+            url: '',
+            key: '',
+            error: `Upload failed (${resp.status})`
+          };
         }
       }
 
@@ -175,6 +235,12 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
         )}
       </div>
 
+      {isAuthorized === false && (
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 text-sm text-destructive">
+          {authError}
+        </div>
+      )}
+
       <div
         className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
           isDragging ? 'border-primary bg-primary/5' : 'border-border'
@@ -199,7 +265,7 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
           id="image-upload"
         />
         <label htmlFor="image-upload">
-          <Button variant="outline" asChild>
+          <Button variant="outline" asChild disabled={isAuthorized === false}>
             <span>Select Files</span>
           </Button>
         </label>
