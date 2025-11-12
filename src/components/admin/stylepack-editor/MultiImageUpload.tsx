@@ -262,7 +262,9 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze, stylePackI
         console.debug(`[MultiImageUpload] [${requestId}] Upload successful:`, signData.url);
         return {
           url: signData.url,
-          key: signData.key
+          key: signData.key,
+          path: signData.path,
+          bucket: 'stylepack-ref'
         };
       }
 

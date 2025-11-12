@@ -53,7 +53,7 @@ export const StylePackEditor = ({
   // Basic fields
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [images, setImages] = useState<Array<{url?: string; key: string; path?: string; bucket?: string; uploading?: boolean; error?: string}>>([]);
+  const [images, setImages] = useState<Array<{url: string; key: string; path?: string; bucket?: string; uploading?: boolean; error?: string; file?: File}>>([]);
   const [isActive, setIsActive] = useState(true);
   
   // Analysis
@@ -183,22 +183,33 @@ export const StylePackEditor = ({
   };
 
   const handleAutoAnalyze = async () => {
+    // Prevent calling with fewer than 3 images
+    const validImages = images.filter(img => !img.error && !img.uploading && img.path);
+    if (validImages.length < 3) {
+      toast({
+        title: "최소 3장 이상 필요합니다",
+        description: "스타일 분석을 위해 최소 3장의 레퍼런스 이미지를 업로드해주세요",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsAnalyzing(true);
     const requestId = crypto.randomUUID();
     
     try {
-      console.log(`[AutoAnalyze] [${requestId}] Starting analysis for ${images.length} images`);
+      console.log(`[AutoAnalyze] [${requestId}] Starting analysis for ${validImages.length} images`);
       
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('Authentication required');
       }
 
-      const imageUrls = images.map(img => img.url);
-      console.log(`[AutoAnalyze] [${requestId}] Calling stylepack-analyze function`);
+      const imagePaths = validImages.map(img => img.path!);
+      console.log(`[AutoAnalyze] [${requestId}] Calling stylepack-analyze function with paths:`, imagePaths);
       
       const { data, error } = await supabase.functions.invoke('stylepack-analyze', {
-        body: { imageUrls },
+        body: { imagePaths },
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
@@ -208,21 +219,23 @@ export const StylePackEditor = ({
       });
 
       if (error) {
-        console.error(`[AutoAnalyze] [${requestId}] Error:`, error);
-        throw error;
+        console.error(`[AutoAnalyze] [${requestId}] Full error object:`, JSON.stringify(error, null, 2));
+        const status = (error as any)?.status || 'unknown';
+        const errorMsg = (error as any)?.message || error.toString();
+        throw new Error(`Analysis failed: ${status} ${errorMsg} – ${requestId}`);
       }
       
       console.log(`[AutoAnalyze] [${requestId}] Success:`, data);
       setReferenceStats(data);
       toast({
-        title: "Analysis complete",
-        description: `Extracted ${data.palette?.length || 0} colors and ${data.textures?.length || 0} textures`
+        title: "분석 완료",
+        description: `팔레트 ${data.palette?.length || 0}개, 텍스처 ${data.textures?.length || 0}개 추출`
       });
     } catch (error) {
       console.error(`[AutoAnalyze] [${requestId}] Failed:`, error);
       toast({
-        title: "Analysis failed",
-        description: error instanceof Error ? error.message : "Could not analyze images",
+        title: "분석 실패",
+        description: error instanceof Error ? error.message : `분석 실패 – ${requestId}`,
         variant: "destructive"
       });
     } finally {
