@@ -23,11 +23,15 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
 
   const uploadFile = async (file: File): Promise<ImageData | null> => {
     try {
+      console.log('[MultiImageUpload] Starting upload for:', file.name, file.type, file.size);
+      
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
+        console.error('[MultiImageUpload] No auth session');
         throw new Error('Not authenticated');
       }
 
+      console.log('[MultiImageUpload] Calling edge function...');
       const { data: signData, error: signError } = await supabase.functions.invoke(
         'admin/stylepack-sign-upload',
         {
@@ -39,26 +43,40 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
         }
       );
 
-      if (signError) throw signError;
+      if (signError) {
+        console.error('[MultiImageUpload] Edge function error:', signError);
+        throw signError;
+      }
 
+      if (!signData || !signData.signedUrl) {
+        console.error('[MultiImageUpload] Invalid response from edge function:', signData);
+        throw new Error('Invalid upload URL received');
+      }
+
+      console.log('[MultiImageUpload] Got signed URL, uploading file...');
       const uploadResponse = await fetch(signData.signedUrl, {
         method: 'PUT',
         body: file,
         headers: {
           'Content-Type': file.type,
+          'x-upsert': 'true',
         }
       });
 
       if (!uploadResponse.ok) {
-        throw new Error('Upload failed');
+        console.error('[MultiImageUpload] Upload failed with status:', uploadResponse.status);
+        const errorText = await uploadResponse.text();
+        console.error('[MultiImageUpload] Upload error text:', errorText);
+        throw new Error(`Upload failed: ${uploadResponse.status}`);
       }
 
+      console.log('[MultiImageUpload] Upload successful:', signData.url);
       return {
         url: signData.url,
         key: signData.key
       };
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('[MultiImageUpload] Upload error for', file.name, ':', error);
       return {
         url: '',
         key: '',
