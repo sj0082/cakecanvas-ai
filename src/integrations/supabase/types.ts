@@ -313,6 +313,53 @@ export type Database = {
         }
         Relationships: []
       }
+      stylepack_ref_images: {
+        Row: {
+          created_at: string
+          height: number | null
+          id: string
+          key: string
+          mime: string
+          size_bytes: number
+          stylepack_id: string
+          uploaded_by: string
+          url: string
+          width: number | null
+        }
+        Insert: {
+          created_at?: string
+          height?: number | null
+          id?: string
+          key: string
+          mime: string
+          size_bytes: number
+          stylepack_id: string
+          uploaded_by: string
+          url: string
+          width?: number | null
+        }
+        Update: {
+          created_at?: string
+          height?: number | null
+          id?: string
+          key?: string
+          mime?: string
+          size_bytes?: number
+          stylepack_id?: string
+          uploaded_by?: string
+          url?: string
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stylepack_ref_images_stylepack_id_fkey"
+            columns: ["stylepack_id"]
+            isOneToOne: false
+            referencedRelation: "stylepacks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stylepacks: {
         Row: {
           allowed_accents: string[] | null

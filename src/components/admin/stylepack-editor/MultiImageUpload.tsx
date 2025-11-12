@@ -9,12 +9,14 @@ interface ImageData {
   key: string;
   uploading?: boolean;
   error?: string;
+  file?: File;
 }
 
 interface MultiImageUploadProps {
   images: ImageData[];
   onImagesChange: (images: ImageData[]) => void;
   onAnalyze?: () => void;
+  stylePackId: string;
 }
 
 interface SignedUploadResponse {
@@ -32,7 +34,7 @@ interface SignedUploadError {
         'sign_error' | 'internal_error';
 }
 
-export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiImageUploadProps) => {
+export const MultiImageUpload = ({ images, onImagesChange, onAnalyze, stylePackId }: MultiImageUploadProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [authError, setAuthError] = useState<string>("");
@@ -67,6 +69,21 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
     checkAuth();
   }, []);
 
+  // Extract magic number (first 12 bytes for WebP) for validation
+  const extractMagicNumber = async (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const buffer = reader.result as ArrayBuffer;
+        const bytes = new Uint8Array(buffer).slice(0, 12);
+        const base64 = btoa(String.fromCharCode(...bytes));
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file.slice(0, 12));
+    });
+  };
+
   const uploadFile = async (file: File, requestId: string): Promise<ImageData | null> => {
     try {
       console.debug(`[MultiImageUpload] [${requestId}] Starting upload for:`, file.name, file.type, file.size);
@@ -77,9 +94,13 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
         return {
           url: '',
           key: '',
-          error: 'Please sign in to upload images'
+          error: '로그인이 필요합니다',
+          file
         };
       }
+
+      // Extract magic number for server validation
+      const magicBase64 = await extractMagicNumber(file);
 
       console.debug(`[MultiImageUpload] [${requestId}] Calling edge function...`);
       const { data: signData, error: signError } = await supabase.functions.invoke<SignedUploadResponse>(
@@ -88,7 +109,9 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
           body: {
             filename: file.name,
             contentType: file.type,
-            size: file.size
+            size: file.size,
+            stylepackId: stylePackId,
+            magicBase64
           },
           headers: {
             Authorization: `Bearer ${session.access_token}`,
@@ -100,38 +123,29 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
       if (signError) {
         console.error(`[MultiImageUpload] [${requestId}] Edge function error:`, signError);
         
-        // Parse error response properly
-        const errorData = signError as unknown as SignedUploadError;
-        let errorMessage = 'Upload failed';
+        // Map error codes to Korean messages based on HTTP status
+        const status = (signError as any).status;
+        let errorMessage = '업로드 실패';
         
-        if (errorData.code) {
-          switch (errorData.code) {
-            case 'unauthorized':
-            case 'invalid_token':
-              errorMessage = 'Please sign in again';
-              break;
-            case 'forbidden_admin_required':
-              errorMessage = 'Admin role required';
-              break;
-            case 'invalid_type':
-              errorMessage = 'Invalid file type. Use JPG/PNG/WebP';
-              break;
-            case 'file_too_large':
-              errorMessage = 'File exceeds 20MB limit';
-              break;
-            case 'sign_error':
-              errorMessage = 'Could not prepare upload. Try again';
-              break;
-            case 'internal_error':
-              errorMessage = 'Server error. Please try again';
-              break;
-          }
+        if (status === 401) {
+          errorMessage = '로그인이 필요합니다';
+        } else if (status === 403) {
+          errorMessage = '관리자 권한이 필요합니다';
+        } else if (status === 413) {
+          errorMessage = '파일이 20MB를 초과했습니다';
+        } else if (status === 415) {
+          errorMessage = '지원되지 않는 파일 형식입니다 (JPG/PNG/WebP만 가능)';
+        } else if (status === 429) {
+          errorMessage = '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요';
+        } else if ((signError as any).message) {
+          errorMessage = `업로드 실패: ${(signError as any).message}`;
         }
         
         return {
           url: '',
           key: '',
-          error: errorMessage
+          error: errorMessage,
+          file
         };
       }
 
@@ -140,7 +154,8 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
         return {
           url: '',
           key: '',
-          error: 'Could not prepare upload'
+          error: '업로드 준비 실패',
+          file
         };
       }
 
@@ -155,7 +170,8 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
         return {
           url: '',
           key: '',
-          error: 'Upload failed'
+          error: '업로드 실패: ' + uploadError.message,
+          file
         };
       }
 
@@ -169,7 +185,8 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
       return {
         url: '',
         key: '',
-        error: error instanceof Error ? error.message : 'Upload failed'
+        error: error instanceof Error ? error.message : '업로드 실패',
+        file
       };
     }
   };
@@ -210,20 +227,39 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
 
   const retryUpload = useCallback(async (index: number) => {
     const failedImage = images[index];
-    if (!failedImage.error) return;
+    if (!failedImage.error || !failedImage.file) {
+      toast({
+        title: "재시도 불가",
+        description: "파일 정보가 없습니다. 다시 선택해 주세요",
+        variant: "destructive"
+      });
+      return;
+    }
 
-    // Update to uploading state
-    const updatedImages = [...images];
-    updatedImages[index] = { ...failedImage, uploading: true, error: undefined };
+    // Remove failed image from list temporarily
+    const updatedImages = images.filter((_, i) => i !== index);
     onImagesChange(updatedImages);
 
-    // Create a temporary file object from the failed image
-    // Note: This is a simplified retry - in production you'd need to store original file
-    toast({
-      title: "Retry not available",
-      description: "Please remove and re-upload the file",
-      variant: "destructive"
-    });
+    // Retry upload
+    const requestId = crypto.randomUUID();
+    const result = await uploadFile(failedImage.file, requestId);
+    
+    if (result) {
+      onImagesChange([...updatedImages, result]);
+      
+      if (!result.error) {
+        toast({
+          title: "재시도 성공",
+          description: "이미지가 업로드되었습니다"
+        });
+      } else {
+        toast({
+          title: "재시도 실패",
+          description: result.error,
+          variant: "destructive"
+        });
+      }
+    }
   }, [images, onImagesChange, toast]);
 
   const handleFiles = useCallback(async (files: FileList) => {
@@ -250,7 +286,8 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
     const tempImages = validFiles.map((file, idx) => ({
       url: URL.createObjectURL(file),
       key: `temp-${Date.now()}-${idx}`,
-      uploading: true
+      uploading: true,
+      file
     }));
 
     onImagesChange([...images, ...tempImages]);

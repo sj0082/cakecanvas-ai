@@ -275,6 +275,7 @@ export const StylePackEditor = ({
               {/* Reference Images */}
               <div className="pb-4 border-b">
                 <MultiImageUpload
+                  stylePackId={stylePack?.id || 'new'}
                   images={images}
                   onImagesChange={setImages}
                   onAnalyze={handleAutoAnalyze}
