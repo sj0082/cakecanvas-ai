@@ -1,14 +1,47 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const ALLOWED_ORIGINS = Deno.env.get('ALLOWED_ORIGINS')?.split(',').map(o => o.trim()) || [];
+
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  const allowedOrigins = ALLOWED_ORIGINS.length > 0 ? ALLOWED_ORIGINS : ['*'];
+  
+  let isAllowed = false;
+  if (origin) {
+    isAllowed = allowedOrigins.some(allowed => {
+      if (allowed === '*') return true;
+      if (allowed === origin) return true;
+      if (allowed.includes('*')) {
+        const pattern = allowed.replace('https://*.', '');
+        return origin.includes(pattern);
+      }
+      return false;
+    });
+  }
+  
+  const allowOrigin = isAllowed && origin ? origin : '*';
+  
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Headers': 'authorization, content-type, x-request-id, x-client-info, apikey',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Vary': 'Origin',
+  };
+}
 
 serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const requestId = req.headers.get('x-request-id') || crypto.randomUUID();
+  const method = req.method;
+  const corsHeaders = getCorsHeaders(origin);
+
+  console.log(`[stylepack-analyze] [${requestId}] ${method} request from: ${origin}`);
+
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    console.log(`[stylepack-analyze] [${requestId}] OPTIONS preflight from: ${origin}`);
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
+
+  console.log(`[stylepack-analyze] [${requestId}] ===== Incoming POST request from: ${origin} =====`);
 
   try {
     const { imageUrls } = await req.json();

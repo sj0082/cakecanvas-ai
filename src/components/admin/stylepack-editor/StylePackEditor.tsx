@@ -184,20 +184,41 @@ export const StylePackEditor = ({
 
   const handleAutoAnalyze = async () => {
     setIsAnalyzing(true);
+    const requestId = crypto.randomUUID();
+    
     try {
+      console.log(`[AutoAnalyze] [${requestId}] Starting analysis for ${images.length} images`);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Authentication required');
+      }
+
       const imageUrls = images.map(img => img.url);
+      console.log(`[AutoAnalyze] [${requestId}] Calling stylepack-analyze function`);
+      
       const { data, error } = await supabase.functions.invoke('admin/stylepack-analyze', {
-        body: { imageUrls }
+        body: { imageUrls },
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'X-Request-ID': requestId,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error(`[AutoAnalyze] [${requestId}] Error:`, error);
+        throw error;
+      }
       
+      console.log(`[AutoAnalyze] [${requestId}] Success:`, data);
       setReferenceStats(data);
       toast({
         title: "Analysis complete",
         description: `Extracted ${data.palette?.length || 0} colors and ${data.textures?.length || 0} textures`
       });
     } catch (error) {
+      console.error(`[AutoAnalyze] [${requestId}] Failed:`, error);
       toast({
         title: "Analysis failed",
         description: error instanceof Error ? error.message : "Could not analyze images",
