@@ -39,7 +39,10 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
             filename: file.name,
             contentType: file.type,
             size: file.size
-          }
+          },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
         }
       );
 
@@ -121,9 +124,11 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
     const uploadPromises = validFiles.map(uploadFile);
     const results = await Promise.all(uploadPromises);
 
-    // Filter out failed uploads and replace temp images with successful ones
     const successfulUploads = results.filter((r): r is ImageData => r !== null && !r.error);
-    const finalImages = [...images, ...successfulUploads];
+    const finalImages = [
+      ...images.filter((i) => !i.key.startsWith('temp-')),
+      ...successfulUploads,
+    ];
 
     onImagesChange(finalImages);
 

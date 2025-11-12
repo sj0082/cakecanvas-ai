@@ -235,7 +235,7 @@ export const StylePackEditor = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto flex flex-col">
+      <DialogContent className="max-w-7xl h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 mb-4">
             {stylePack ? "Edit Style Pack" : "Create Style Pack"}
@@ -247,8 +247,8 @@ export const StylePackEditor = ({
           />
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden">
-          <div className="grid grid-cols-2 gap-6 h-full">
+        <div className="flex-1 overflow-y-auto">
+          <div className="grid grid-cols-2 gap-6">
             {/* Left Panel - Form */}
             <div className="flex flex-col gap-4 overflow-y-auto pr-2">
               {/* Basic Info */}
@@ -282,14 +282,7 @@ export const StylePackEditor = ({
               </div>
 
               {/* Analysis Panel */}
-              {referenceStats && (
-                <div className="pb-4 border-b">
-                  <AnalysisPanel
-                    referenceStats={referenceStats}
-                    isAnalyzing={isAnalyzing}
-                  />
-                </div>
-              )}
+              {/* Analysis moved below Style Controls */}
 
               {/* Style Controls */}
               <div className="pb-4 border-b">
@@ -334,6 +327,16 @@ export const StylePackEditor = ({
                   </TabsContent>
                 </Tabs>
               </div>
+
+              {/* Analysis Panel (moved below Style Controls) */}
+              {referenceStats && (
+                <div className="pb-4 border-b">
+                  <AnalysisPanel
+                    referenceStats={referenceStats}
+                    isAnalyzing={isAnalyzing}
+                  />
+                </div>
+              )}
 
               {/* Preset Library */}
               <div className="pb-4 border-b">
