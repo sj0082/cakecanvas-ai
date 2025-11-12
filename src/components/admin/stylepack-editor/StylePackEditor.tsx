@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -51,15 +51,13 @@ export const StylePackEditor = ({
   const { toast } = useToast();
   
   // Basic fields
-  const [name, setName] = useState(stylePack?.name || "");
-  const [description, setDescription] = useState(stylePack?.description || "");
-  const [images, setImages] = useState<Array<{url: string; key: string}>>(
-    (stylePack?.images || []).map((url: string) => ({ url, key: url }))
-  );
-  const [isActive, setIsActive] = useState(stylePack?.is_active ?? true);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [images, setImages] = useState<Array<{url: string; key: string}>>([]);
+  const [isActive, setIsActive] = useState(true);
   
   // Analysis
-  const [referenceStats, setReferenceStats] = useState(stylePack?.reference_stats || null);
+  const [referenceStats, setReferenceStats] = useState<any>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Simple tab controls
@@ -72,25 +70,15 @@ export const StylePackEditor = ({
   const [performanceProfile, setPerformanceProfile] = useState<"draft" | "standard" | "quality">("standard");
 
   // Advanced tab controls
-  const [loraRef, setLoraRef] = useState(
-    stylePack?.lora_ref || "cake_design_v2:0.75"
-  );
-  const [shapeTemplate, setShapeTemplate] = useState(
-    stylePack?.shape_template || "round, tiered, square, heart, custom"
-  );
-  const [allowedAccents, setAllowedAccents] = useState(
-    stylePack?.allowed_accents?.join(", ") || "gold, silver, rose gold, pearl white, champagne, blush pink"
-  );
-  const [bannedTerms, setBannedTerms] = useState(
-    stylePack?.banned_terms?.join(", ") || "cartoon, anime, unrealistic, toy, plastic"
-  );
-  const [paletteRange, setPaletteRange] = useState(
-    JSON.stringify(stylePack?.palette_range || {
-      primary: ["#FFFFFF", "#FFF5F5", "#FFF0F0"],
-      accent: ["#FFD700", "#C0C0C0", "#F4C2C2"],
-      neutral: ["#F5F5DC", "#FFFACD", "#FFF8DC"]
-    }, null, 2)
-  );
+  const [loraRef, setLoraRef] = useState("cake_design_v2:0.75");
+  const [shapeTemplate, setShapeTemplate] = useState("round, tiered, square, heart, custom");
+  const [allowedAccents, setAllowedAccents] = useState("gold, silver, rose gold, pearl white, champagne, blush pink");
+  const [bannedTerms, setBannedTerms] = useState("cartoon, anime, unrealistic, toy, plastic");
+  const [paletteRange, setPaletteRange] = useState(JSON.stringify({
+    primary: ["#FFFFFF", "#FFF5F5", "#FFF0F0"],
+    accent: ["#FFD700", "#C0C0C0", "#F4C2C2"],
+    neutral: ["#F5F5DC", "#FFFACD", "#FFF8DC"]
+  }, null, 2));
 
   // Preview panel
   const [previews, setPreviews] = useState<string[]>([]);
@@ -103,6 +91,42 @@ export const StylePackEditor = ({
 
   // Validation
   const [validationBadges, setValidationBadges] = useState<string[]>([]);
+
+  // Initialize form when stylePack changes
+  useEffect(() => {
+    if (stylePack) {
+      setName(stylePack.name || "");
+      setDescription(stylePack.description || "");
+      setImages((stylePack.images || []).map((url: string) => ({ url, key: url })));
+      setIsActive(stylePack.is_active ?? true);
+      setReferenceStats(stylePack.reference_stats || null);
+      setLoraRef(stylePack.lora_ref || "cake_design_v2:0.75");
+      setShapeTemplate(stylePack.shape_template || "round, tiered, square, heart, custom");
+      setAllowedAccents(stylePack.allowed_accents?.join(", ") || "gold, silver, rose gold, pearl white, champagne, blush pink");
+      setBannedTerms(stylePack.banned_terms?.join(", ") || "cartoon, anime, unrealistic, toy, plastic");
+      setPaletteRange(JSON.stringify(stylePack.palette_range || {
+        primary: ["#FFFFFF", "#FFF5F5", "#FFF0F0"],
+        accent: ["#FFD700", "#C0C0C0", "#F4C2C2"],
+        neutral: ["#F5F5DC", "#FFFACD", "#FFF8DC"]
+      }, null, 2));
+    } else {
+      // Reset to defaults for new style pack
+      setName("");
+      setDescription("");
+      setImages([]);
+      setIsActive(true);
+      setReferenceStats(null);
+      setLoraRef("cake_design_v2:0.75");
+      setShapeTemplate("round, tiered, square, heart, custom");
+      setAllowedAccents("gold, silver, rose gold, pearl white, champagne, blush pink");
+      setBannedTerms("cartoon, anime, unrealistic, toy, plastic");
+      setPaletteRange(JSON.stringify({
+        primary: ["#FFFFFF", "#FFF5F5", "#FFF0F0"],
+        accent: ["#FFD700", "#C0C0C0", "#F4C2C2"],
+        neutral: ["#F5F5DC", "#FFFACD", "#FFF8DC"]
+      }, null, 2));
+    }
+  }, [stylePack]);
 
   const isUnpredictable = () => {
     const weight = parseFloat(loraRef.split(":")[1] || "0.75");
@@ -270,12 +294,12 @@ export const StylePackEditor = ({
               {/* Style Controls */}
               <div className="pb-4 border-b">
                 <Label className="mb-3 block font-semibold">Style Controls</Label>
-                <Tabs defaultValue="simple" className="flex-1">
+                <Tabs defaultValue="simple">
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="simple">Simple</TabsTrigger>
                     <TabsTrigger value="advanced">Advanced</TabsTrigger>
                   </TabsList>
-                  <TabsContent value="simple" className="pt-2">
+                  <TabsContent value="simple">
                     <SimpleTab
                       styleStrength={styleStrength}
                       sharpness={sharpness}
@@ -293,7 +317,7 @@ export const StylePackEditor = ({
                       onPerformanceProfileChange={setPerformanceProfile}
                     />
                   </TabsContent>
-                  <TabsContent value="advanced" className="pt-2">
+                  <TabsContent value="advanced">
                     <AdvancedTab
                       loraRef={loraRef}
                       shapeTemplate={shapeTemplate}
