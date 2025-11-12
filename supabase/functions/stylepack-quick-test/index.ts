@@ -57,10 +57,19 @@ serve(async (req) => {
 
     console.log(`[stylepack-quick-test] [${requestId}] Got signed URL for reference image`);
 
-    // Generate AI image
-    const prompt = `Create a beautiful ${stylePackName || 'wedding'} cake with these visual characteristics. Maintain the style, colors, and decorative elements from the reference image. The cake should be elegant, realistic, and professionally photographed.`;
+    // Generate AI image with style parameters
+    const styleIntensity = params?.strength >= 0.8 ? "very closely matching" : 
+                          params?.strength >= 0.6 ? "strongly inspired by" : 
+                          "loosely inspired by";
+    
+    const detailLevel = params?.cfg >= 0.7 ? "with highly detailed decorations and precise textures" :
+                       params?.cfg >= 0.5 ? "with elegant decorative elements" :
+                       "with subtle, minimalist decorations";
 
-    console.log(`[stylepack-quick-test] [${requestId}] Calling AI with prompt: ${prompt.substring(0, 100)}...`);
+    const prompt = `Generate a completely NEW ${stylePackName || 'wedding'} cake design that is ${styleIntensity} the visual style of the reference image. Create a different cake with unique composition and structure, but use similar colors, textures, and decorative style elements from the reference. The new cake should be ${detailLevel}. Make it elegant, realistic, and professionally photographed in a similar lighting style.`;
+
+    console.log(`[stylepack-quick-test] [${requestId}] Calling AI with params:`, { strength: params?.strength, cfg: params?.cfg, seed: params?.seed });
+    console.log(`[stylepack-quick-test] [${requestId}] Prompt: ${prompt.substring(0, 150)}...`);
 
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -82,7 +91,8 @@ serve(async (req) => {
             ]
           }
         ],
-        modalities: ["image", "text"]
+        modalities: ["image", "text"],
+        ...(lockSeed && params?.seed ? { seed: params.seed } : {})
       }),
     });
 
@@ -96,17 +106,24 @@ serve(async (req) => {
     }
 
     const completion = await aiResp.json();
+    console.log(`[stylepack-quick-test] [${requestId}] AI response structure:`, {
+      hasChoices: !!completion.choices,
+      choicesLength: completion.choices?.length,
+      hasMessage: !!completion.choices?.[0]?.message,
+      hasImages: !!completion.choices?.[0]?.message?.images
+    });
+
     const generatedImageBase64 = completion.choices?.[0]?.message?.images?.[0]?.image_url?.url;
 
     if (!generatedImageBase64) {
-      console.error(`[stylepack-quick-test] [${requestId}] No image in AI response`);
+      console.error(`[stylepack-quick-test] [${requestId}] No image in AI response. Full response:`, JSON.stringify(completion).substring(0, 500));
       return new Response(
-        JSON.stringify({ error: 'No image generated' }),
+        JSON.stringify({ error: 'No image generated', details: 'AI did not return an image' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`[stylepack-quick-test] [${requestId}] AI image generated, uploading to storage...`);
+    console.log(`[stylepack-quick-test] [${requestId}] AI image generated successfully (base64 length: ${generatedImageBase64.length}), uploading to storage...`);
 
     // Extract base64 data (remove data:image/png;base64, prefix)
     const base64Data = generatedImageBase64.replace(/^data:image\/\w+;base64,/, '');
