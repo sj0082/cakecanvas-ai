@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 interface ImageData {
   url: string;
   key: string;
+  path?: string;
+  bucket?: string;
   uploading?: boolean;
   error?: string;
   file?: File;

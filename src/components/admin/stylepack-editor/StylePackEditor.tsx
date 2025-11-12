@@ -53,7 +53,7 @@ export const StylePackEditor = ({
   // Basic fields
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [images, setImages] = useState<Array<{url: string; key: string}>>([]);
+  const [images, setImages] = useState<Array<{url?: string; key: string; path?: string; bucket?: string; uploading?: boolean; error?: string}>>([]);
   const [isActive, setIsActive] = useState(true);
   
   // Analysis

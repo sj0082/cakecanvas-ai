@@ -12,6 +12,6 @@ verify_jwt = false
 [functions.stylepack-sign-upload]
 verify_jwt = false
 
-[functions."admin/stylepack-analyze"]
+[functions.stylepack-analyze]
 verify_jwt = true
 
