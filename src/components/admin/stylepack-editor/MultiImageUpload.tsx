@@ -54,14 +54,27 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
       }
 
       console.log('[MultiImageUpload] Got signed URL, uploading file via SDK...');
-      const { data: uploadData, error: uploadError } = await supabase
+      // Try SDK helper first
+      const { error: uploadError } = await supabase
         .storage
         .from('stylepack-ref')
         .uploadToSignedUrl(signData.path, signData.token, file);
 
       if (uploadError) {
-        console.error('[MultiImageUpload] Upload failed:', uploadError);
-        throw new Error(uploadError.message || 'Upload failed');
+        console.warn('[MultiImageUpload] SDK upload failed, falling back to direct PUT:', uploadError);
+        // Fallback: direct PUT to signed URL
+        const resp = await fetch(signData.signedUrl, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'Content-Type': file.type,
+          },
+        });
+        if (!resp.ok) {
+          const errorText = await resp.text().catch(() => '');
+          console.error('[MultiImageUpload] Fallback PUT failed:', resp.status, errorText);
+          throw new Error(`Upload failed (${resp.status}) ${errorText || ''}`.trim());
+        }
       }
 
       console.log('[MultiImageUpload] Upload successful:', signData.url);
