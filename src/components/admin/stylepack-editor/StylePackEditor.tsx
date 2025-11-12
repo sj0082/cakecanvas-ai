@@ -183,12 +183,19 @@ export const StylePackEditor = ({
   };
 
   const handleAutoAnalyze = async () => {
-    // Prevent calling with fewer than 3 images
-    const validImages = images.filter(img => !img.error && !img.uploading && img.path);
-    if (validImages.length < 3) {
+    // Eligible images: key exists && !temp-* && !error
+    const eligible = images.filter(img => 
+      img.key && 
+      !img.key.startsWith('temp-') && 
+      !img.error
+    );
+    
+    console.log(`[AutoAnalyze] Eligible images:`, eligible.length, eligible);
+    
+    if (eligible.length < 3) {
       toast({
         title: "최소 3장 이상 필요합니다",
-        description: "스타일 분석을 위해 최소 3장의 레퍼런스 이미지를 업로드해주세요",
+        description: `분석 가능: ${eligible.length}장 (성공 업로드만 집계)`,
         variant: "destructive"
       });
       return;
@@ -198,14 +205,14 @@ export const StylePackEditor = ({
     const requestId = crypto.randomUUID();
     
     try {
-      console.log(`[AutoAnalyze] [${requestId}] Starting analysis for ${validImages.length} images`);
+      console.log(`[AutoAnalyze] [${requestId}] Starting analysis for ${eligible.length} images`);
       
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('Authentication required');
       }
 
-      const imagePaths = validImages.map(img => img.path!);
+      const imagePaths = eligible.map(img => img.key);
       console.log(`[AutoAnalyze] [${requestId}] Calling stylepack-analyze function with paths:`, imagePaths);
       
       const { data, error } = await supabase.functions.invoke('stylepack-analyze', {
@@ -213,9 +220,9 @@ export const StylePackEditor = ({
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
-          'X-Request-ID': requestId,
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-        },
+          'x-request-id': requestId,
+          'x-client-info': '@supabase/functions-js/2.0.0'
+        }
       });
 
       if (error) {
@@ -242,6 +249,13 @@ export const StylePackEditor = ({
       setIsAnalyzing(false);
     }
   };
+
+  // Calculate eligible images for Auto-Analyze button
+  const eligibleImagesCount = images.filter(img => 
+    img.key && 
+    !img.key.startsWith('temp-') && 
+    !img.error
+  ).length;
 
   const handleSave = async () => {
     try {
@@ -309,6 +323,24 @@ export const StylePackEditor = ({
 
               {/* Reference Images */}
               <div className="pb-4 border-b">
+                <div className="flex justify-between items-center mb-4">
+                  <Label className="font-semibold">Reference Images</Label>
+                  <Button 
+                    onClick={handleAutoAnalyze}
+                    disabled={isAnalyzing || eligibleImagesCount < 3}
+                    size="sm"
+                    className="gap-2"
+                  >
+                    {isAnalyzing ? "Analyzing..." : "Auto-Analyze"}
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                      eligibleImagesCount >= 3 
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                    }`}>
+                      {eligibleImagesCount}/3
+                    </span>
+                  </Button>
+                </div>
                 <MultiImageUpload
                   stylePackId={stylePack?.id || 'new'}
                   images={images}

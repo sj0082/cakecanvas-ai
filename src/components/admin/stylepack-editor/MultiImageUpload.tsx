@@ -389,12 +389,17 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze, stylePackI
     // Upload with concurrency limit of 2
     const results = await uploadWithConcurrency(validFiles, 2, requestId);
 
+    // Remove all temp-* images and add successful uploads
     const successfulUploads = results.filter((r): r is ImageData => r !== null && !r.error);
     const failedUploads = results.filter(r => r && r.error);
     
     const finalImages = [
-      ...images.filter((i) => !i.key.startsWith('temp-')),
-      ...successfulUploads,
+      ...images.filter((i) => !i.key.startsWith('temp-')), // Remove all temp images
+      ...successfulUploads.map(upload => ({
+        url: upload.url,
+        key: upload.key, // Storage path (e.g., 'uploads/uuid.jpg')
+        uploading: false
+      })),
       ...failedUploads,
     ];
 
@@ -424,10 +429,12 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze, stylePackI
         description: `${successCount}개 이미지 업로드 성공`
       });
 
-      // Auto-analyze if we have 3+ images total
-      const totalSuccessful = finalImages.filter(img => !img.error && !img.uploading).length;
-      if (totalSuccessful >= 3 && onAnalyze) {
-        console.debug(`[MultiImageUpload] [${requestId}] Auto-triggering analyze (${totalSuccessful} images)`);
+      // Auto-analyze if we have 3+ images total (eligible only)
+      const eligibleCount = finalImages.filter(img => 
+        img.key && !img.key.startsWith('temp-') && (!('error' in img) || !img.error)
+      ).length;
+      if (eligibleCount >= 3 && onAnalyze) {
+        console.debug(`[MultiImageUpload] [${requestId}] Auto-triggering analyze (${eligibleCount} eligible images)`);
         setTimeout(() => onAnalyze(), 500);
       }
     }
@@ -450,12 +457,6 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze, stylePackI
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="font-medium">Reference Images</h3>
-        {images.length > 0 && onAnalyze && (
-          <Button onClick={onAnalyze} variant="outline" size="sm">
-            <AlertCircle className="mr-2 h-4 w-4" />
-            Auto-Analyze
-          </Button>
-        )}
       </div>
 
       {isAuthorized === false && (
