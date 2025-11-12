@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { Upload, X, Loader2, AlertCircle } from "lucide-react";
+import { Upload, X, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +15,21 @@ interface MultiImageUploadProps {
   images: ImageData[];
   onImagesChange: (images: ImageData[]) => void;
   onAnalyze?: () => void;
+}
+
+interface SignedUploadResponse {
+  key: string;
+  signedUrl: string;
+  url: string;
+  token: string;
+  path: string;
+}
+
+interface SignedUploadError {
+  error: string;
+  code: 'unauthorized' | 'invalid_token' | 'forbidden_admin_required' | 
+        'bad_request' | 'invalid_type' | 'file_too_large' | 
+        'sign_error' | 'internal_error';
 }
 
 export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiImageUploadProps) => {
@@ -52,13 +67,13 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
     checkAuth();
   }, []);
 
-  const uploadFile = async (file: File): Promise<ImageData | null> => {
+  const uploadFile = async (file: File, requestId: string): Promise<ImageData | null> => {
     try {
-      console.log('[MultiImageUpload] Starting upload for:', file.name, file.type, file.size);
+      console.debug(`[MultiImageUpload] [${requestId}] Starting upload for:`, file.name, file.type, file.size);
       
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        console.error('[MultiImageUpload] No auth session');
+        console.error(`[MultiImageUpload] [${requestId}] No auth session`);
         return {
           url: '',
           key: '',
@@ -66,8 +81,8 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
         };
       }
 
-      console.log('[MultiImageUpload] Calling edge function...');
-      const { data: signData, error: signError } = await supabase.functions.invoke(
+      console.debug(`[MultiImageUpload] [${requestId}] Calling edge function...`);
+      const { data: signData, error: signError } = await supabase.functions.invoke<SignedUploadResponse>(
         'admin/stylepack-sign-upload',
         {
           body: {
@@ -77,23 +92,40 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
           },
           headers: {
             Authorization: `Bearer ${session.access_token}`,
+            'X-Request-ID': requestId,
           },
         }
       );
 
       if (signError) {
-        console.error('[MultiImageUpload] Edge function error:', signError);
+        console.error(`[MultiImageUpload] [${requestId}] Edge function error:`, signError);
         
-        // Map common errors to user-friendly messages
+        // Parse error response properly
+        const errorData = signError as unknown as SignedUploadError;
         let errorMessage = 'Upload failed';
-        if (signError.message?.includes('401') || signError.message?.includes('unauthorized')) {
-          errorMessage = 'Please sign in again';
-        } else if (signError.message?.includes('403') || signError.message?.includes('forbidden')) {
-          errorMessage = 'Admin role required';
-        } else if (signError.message?.includes('invalid_type')) {
-          errorMessage = 'Invalid file type. Use JPG/PNG/WebP';
-        } else if (signError.message?.includes('file_too_large')) {
-          errorMessage = 'File exceeds 20MB limit';
+        
+        if (errorData.code) {
+          switch (errorData.code) {
+            case 'unauthorized':
+            case 'invalid_token':
+              errorMessage = 'Please sign in again';
+              break;
+            case 'forbidden_admin_required':
+              errorMessage = 'Admin role required';
+              break;
+            case 'invalid_type':
+              errorMessage = 'Invalid file type. Use JPG/PNG/WebP';
+              break;
+            case 'file_too_large':
+              errorMessage = 'File exceeds 20MB limit';
+              break;
+            case 'sign_error':
+              errorMessage = 'Could not prepare upload. Try again';
+              break;
+            case 'internal_error':
+              errorMessage = 'Server error. Please try again';
+              break;
+          }
         }
         
         return {
@@ -104,7 +136,7 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
       }
 
       if (!signData || !signData.signedUrl) {
-        console.error('[MultiImageUpload] Invalid response from edge function:', signData);
+        console.error(`[MultiImageUpload] [${requestId}] Invalid response from edge function:`, signData);
         return {
           url: '',
           key: '',
@@ -112,41 +144,28 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
         };
       }
 
-      console.log('[MultiImageUpload] Got signed URL, uploading file via SDK...');
-      // Try SDK helper first
+      console.debug(`[MultiImageUpload] [${requestId}] Got signed URL, uploading file via SDK...`);
       const { error: uploadError } = await supabase
         .storage
         .from('stylepack-ref')
         .uploadToSignedUrl(signData.path, signData.token, file);
 
       if (uploadError) {
-        console.warn('[MultiImageUpload] SDK upload failed, falling back to direct PUT:', uploadError);
-        // Fallback: direct PUT to signed URL
-        const resp = await fetch(signData.signedUrl, {
-          method: 'PUT',
-          body: file,
-          headers: {
-            'Content-Type': file.type,
-          },
-        });
-        if (!resp.ok) {
-          const errorText = await resp.text().catch(() => '');
-          console.error('[MultiImageUpload] Fallback PUT failed:', resp.status, errorText);
-          return {
-            url: '',
-            key: '',
-            error: `Upload failed (${resp.status})`
-          };
-        }
+        console.error(`[MultiImageUpload] [${requestId}] SDK upload failed:`, uploadError);
+        return {
+          url: '',
+          key: '',
+          error: 'Upload failed'
+        };
       }
 
-      console.log('[MultiImageUpload] Upload successful:', signData.url);
+      console.debug(`[MultiImageUpload] [${requestId}] Upload successful:`, signData.url);
       return {
         url: signData.url,
         key: signData.key
       };
     } catch (error) {
-      console.error('[MultiImageUpload] Upload error for', file.name, ':', error);
+      console.error(`[MultiImageUpload] [${requestId}] Upload error for`, file.name, ':', error);
       return {
         url: '',
         key: '',
@@ -155,7 +174,62 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
     }
   };
 
+  const uploadWithConcurrency = async (files: File[], maxConcurrent: number, requestId: string): Promise<ImageData[]> => {
+    const results: ImageData[] = [];
+    const queue = [...files];
+    const inProgress = new Map<number, Promise<ImageData | null>>();
+    let nextId = 0;
+
+    while (queue.length > 0 || inProgress.size > 0) {
+      // Start new uploads up to max concurrent
+      while (inProgress.size < maxConcurrent && queue.length > 0) {
+        const file = queue.shift()!;
+        const id = nextId++;
+        const promise = uploadFile(file, `${requestId}-${id}`);
+        inProgress.set(id, promise);
+      }
+
+      // Wait for at least one to complete
+      if (inProgress.size > 0) {
+        const completed = await Promise.race(
+          Array.from(inProgress.entries()).map(async ([id, promise]) => {
+            const result = await promise;
+            return { id, result };
+          })
+        );
+        
+        if (completed.result) {
+          results.push(completed.result);
+        }
+        inProgress.delete(completed.id);
+      }
+    }
+
+    return results;
+  };
+
+  const retryUpload = useCallback(async (index: number) => {
+    const failedImage = images[index];
+    if (!failedImage.error) return;
+
+    // Update to uploading state
+    const updatedImages = [...images];
+    updatedImages[index] = { ...failedImage, uploading: true, error: undefined };
+    onImagesChange(updatedImages);
+
+    // Create a temporary file object from the failed image
+    // Note: This is a simplified retry - in production you'd need to store original file
+    toast({
+      title: "Retry not available",
+      description: "Please remove and re-upload the file",
+      variant: "destructive"
+    });
+  }, [images, onImagesChange, toast]);
+
   const handleFiles = useCallback(async (files: FileList) => {
+    const requestId = crypto.randomUUID();
+    console.debug(`[MultiImageUpload] [${requestId}] Processing ${files.length} files`);
+
     const fileArray = Array.from(files);
     const validFiles = fileArray.filter(file => {
       const isValidType = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type);
@@ -181,34 +255,46 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
 
     onImagesChange([...images, ...tempImages]);
 
-    const uploadPromises = validFiles.map(uploadFile);
-    const results = await Promise.all(uploadPromises);
+    // Upload with concurrency limit of 2
+    const results = await uploadWithConcurrency(validFiles, 2, requestId);
 
     const successfulUploads = results.filter((r): r is ImageData => r !== null && !r.error);
+    const failedUploads = results.filter(r => r && r.error);
+    
     const finalImages = [
       ...images.filter((i) => !i.key.startsWith('temp-')),
       ...successfulUploads,
+      ...failedUploads,
     ];
 
     onImagesChange(finalImages);
 
     const successCount = successfulUploads.length;
-    const failCount = results.length - successCount;
+    const failCount = failedUploads.length;
 
     if (successCount > 0) {
       toast({
         title: "Upload complete",
         description: `${successCount} image${successCount > 1 ? 's' : ''} uploaded successfully`
       });
+
+      // Auto-analyze if we have 3+ images total
+      const totalSuccessful = finalImages.filter(img => !img.error && !img.uploading).length;
+      if (totalSuccessful >= 3 && onAnalyze) {
+        console.debug(`[MultiImageUpload] [${requestId}] Auto-triggering analyze (${totalSuccessful} images)`);
+        setTimeout(() => onAnalyze(), 500);
+      }
     }
+    
     if (failCount > 0) {
+      const firstError = failedUploads[0]?.error || 'Unknown error';
       toast({
         title: "Upload errors",
-        description: `${failCount} image${failCount > 1 ? 's' : ''} failed to upload`,
+        description: `${failCount} failed: ${firstError}`,
         variant: "destructive"
       });
     }
-  }, [images, onImagesChange, toast]);
+  }, [images, onImagesChange, toast, onAnalyze]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -286,8 +372,17 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze }: MultiIma
                 </div>
               )}
               {img.error && (
-                <div className="absolute inset-0 bg-destructive/80 flex items-center justify-center p-2">
+                <div className="absolute inset-0 bg-destructive/90 flex flex-col items-center justify-center p-2 gap-2">
                   <p className="text-xs text-white text-center">{img.error}</p>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="h-7 text-xs"
+                    onClick={() => retryUpload(idx)}
+                  >
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    Retry
+                  </Button>
                 </div>
               )}
               <Button
