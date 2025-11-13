@@ -75,6 +75,13 @@ serve(async (req) => {
     const bannedTerms = stylepack.banned_terms || [];
     const shapeTemplate = stylepack.shape_template || 'round, tiered';
     
+    // Extract style control parameters
+    const styleStrength = stylepack.style_strength ?? 0.75;
+    const sharpness = stylepack.sharpness ?? 0.7;
+    const realism = stylepack.realism ?? 0.8;
+    const complexity = stylepack.complexity ?? 0.6;
+    const paletteLock = stylepack.palette_lock ?? 0.9;
+    
     // Extract Size Category info
     const tiersSpec = sizeCategory.tiers_spec as any || {};
     const tierCount = tiersSpec.tiers || 1;
@@ -134,7 +141,13 @@ serve(async (req) => {
           allowedAccents,
           shapeTemplate,
           userText,
-          negativePrompt
+          negativePrompt,
+          // Pass style control parameters
+          styleStrength,
+          sharpness,
+          realism,
+          complexity,
+          paletteLock
         });
         
         console.log(`Generating ${variant.label} with prompt:`, detailedPrompt);
@@ -289,6 +302,11 @@ function buildDetailedPrompt(params: {
   shapeTemplate: string;
   userText: string;
   negativePrompt: string;
+  styleStrength: number;
+  sharpness: number;
+  realism: number;
+  complexity: number;
+  paletteLock: number;
 }): string {
   const {
     stylepackName,
@@ -300,36 +318,99 @@ function buildDetailedPrompt(params: {
     accentColors,
     allowedAccents,
     shapeTemplate,
-    userText
+    userText,
+    styleStrength,
+    sharpness,
+    realism,
+    complexity,
+    paletteLock
   } = params;
 
-  // Build structured, detailed prompt
+  // Build complexity description based on parameter
+  const complexityText = complexity > 0.7
+    ? 'Highly detailed with intricate decorations, multiple layers of embellishments, and rich textures'
+    : complexity > 0.4
+    ? 'Moderately decorated with elegant elements and balanced ornamentation'
+    : 'Minimalist design with clean lines, subtle decorations, and refined simplicity';
+  
+  // Build realism description based on parameter
+  const realismText = realism > 0.75
+    ? 'Ultra-realistic, photographic quality with perfect lighting and texture detail'
+    : realism > 0.5
+    ? 'Natural and achievable design with realistic materials and proportions'
+    : 'Stylized artistic interpretation while maintaining bakery feasibility';
+  
+  // Build sharpness description based on parameter
+  const sharpnessText = sharpness > 0.75
+    ? 'Crystal clear details, sharp edges, and crisp textures'
+    : sharpness > 0.5
+    ? 'Balanced focus with clear main features and soft background'
+    : 'Soft focus with dreamy, gentle appearance';
+  
+  // Build style strength description
+  const styleText = styleStrength > 0.8
+    ? 'Stay extremely close to reference style with minimal creative deviation'
+    : styleStrength > 0.6
+    ? 'Follow reference style while allowing some creative interpretation'
+    : 'Use reference as loose inspiration with significant creative freedom';
+  
+  // Build palette adherence description
+  const paletteText = paletteLock > 0.85
+    ? 'Strictly use only the specified colors with no variations'
+    : paletteLock > 0.6
+    ? 'Primarily use specified colors with subtle complementary tones'
+    : 'Inspired by color palette with flexible color interpretation';
+
+  // Build structured, detailed prompt with 2025 trends
   const sections = [
     `Professional cake design photography in ${stylepackName} style.`,
     stylepackDescription ? `Style essence: ${stylepackDescription}` : '',
     `Design approach: ${variantModifier}`,
     '',
+    '2025 CAKE DESIGN TRENDS:',
+    '- Modern minimalist aesthetics with organic textures',
+    '- Sustainable and natural decoration elements',
+    '- Instagram-worthy visual appeal with bold colors or elegant simplicity',
+    '- Innovative use of fresh flowers, geometric patterns, or artistic brushstrokes',
+    '- Contemporary color palettes: sage green, terracotta, dusty rose, champagne gold',
+    '',
+    'STYLE PARAMETERS:',
+    `- Style adherence: ${styleText}`,
+    `- Realism: ${realismText}`,
+    `- Detail level: ${complexityText}`,
+    `- Image quality: ${sharpnessText}`,
+    `- Color accuracy: ${paletteText}`,
+    '',
     'STRUCTURE REQUIREMENTS:',
     `- ${tierCount} tier${tierCount > 1 ? 's' : ''} cake (serving ${servingRange} people)`,
     `- Shape: ${shapeTemplate}`,
-    `- Professional bakery quality construction`,
+    `- Professional bakery quality construction with modern techniques`,
     '',
     'COLOR PALETTE:',
     primaryColors.length > 0 ? `- Primary colors: ${primaryColors.join(', ')}` : '',
     accentColors.length > 0 ? `- Accent colors: ${accentColors.join(', ')}` : '',
+    '',
     'DECORATION ELEMENTS:',
     allowedAccents.length > 0 ? `- Allowed accents: ${allowedAccents.join(', ')}` : '',
+    '- Use trending decoration techniques: textured buttercream, wafer paper flowers, gold leaf accents',
     '',
     userText ? `CUSTOMER PREFERENCES: ${userText}` : '',
     '',
     'PHOTOGRAPHY REQUIREMENTS:',
-    '- Professional studio lighting with soft shadows',
-    '- Clean white or neutral background',
-    '- Sharp focus on cake details',
-    '- High resolution product photography',
+    '- Professional studio lighting with soft, flattering shadows',
+    '- Clean white or soft neutral background for maximum elegance',
+    '- Sharp focus on cake details and textures',
+    '- High resolution product photography (Instagram/Pinterest quality)',
     '- Appetizing presentation angle (slightly elevated, 3/4 view)',
-    '- No text, logos, or watermarks',
-    '- Realistic, achievable design (no impossible structures)'
+    '- No text, logos, watermarks, or brand names',
+    '- Realistic, achievable design that a skilled baker can execute',
+    '',
+    'TRENDING VISUAL ELEMENTS (2025):',
+    '- Natural lighting simulation for authentic appeal',
+    '- Organic shapes and flowing decorations',
+    '- Mix of matte and metallic finishes',
+    '- Fresh botanicals or modern geometric patterns',
+    '- Color gradients and ombré effects'
   ];
 
   return sections.filter(s => s).join('\n');

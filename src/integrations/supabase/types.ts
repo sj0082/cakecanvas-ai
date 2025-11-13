@@ -364,6 +364,7 @@ export type Database = {
         Row: {
           allowed_accents: string[] | null
           banned_terms: string[] | null
+          complexity: number | null
           created_at: string
           description: string | null
           generator_provider: string | null
@@ -373,15 +374,22 @@ export type Database = {
           is_category: boolean
           lora_ref: string | null
           name: string
+          palette_lock: number | null
           palette_range: Json | null
           parent_id: string | null
+          performance_profile: string | null
+          realism: number | null
           reference_stats: Json | null
           shape_template: string | null
+          sharpness: number | null
+          style_strength: number | null
+          uniformity: number | null
           updated_at: string
         }
         Insert: {
           allowed_accents?: string[] | null
           banned_terms?: string[] | null
+          complexity?: number | null
           created_at?: string
           description?: string | null
           generator_provider?: string | null
@@ -391,15 +399,22 @@ export type Database = {
           is_category?: boolean
           lora_ref?: string | null
           name: string
+          palette_lock?: number | null
           palette_range?: Json | null
           parent_id?: string | null
+          performance_profile?: string | null
+          realism?: number | null
           reference_stats?: Json | null
           shape_template?: string | null
+          sharpness?: number | null
+          style_strength?: number | null
+          uniformity?: number | null
           updated_at?: string
         }
         Update: {
           allowed_accents?: string[] | null
           banned_terms?: string[] | null
+          complexity?: number | null
           created_at?: string
           description?: string | null
           generator_provider?: string | null
@@ -409,10 +424,16 @@ export type Database = {
           is_category?: boolean
           lora_ref?: string | null
           name?: string
+          palette_lock?: number | null
           palette_range?: Json | null
           parent_id?: string | null
+          performance_profile?: string | null
+          realism?: number | null
           reference_stats?: Json | null
           shape_template?: string | null
+          sharpness?: number | null
+          style_strength?: number | null
+          uniformity?: number | null
           updated_at?: string
         }
         Relationships: [

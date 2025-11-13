@@ -134,6 +134,16 @@ export const StylePackEditor = ({
       }));
       setIsActive(stylePack.is_active ?? true);
       setReferenceStats(stylePack.reference_stats || null);
+      
+      // Load style control parameters from DB
+      setStyleStrength((stylePack as any).style_strength ?? 0.75);
+      setSharpness((stylePack as any).sharpness ?? 0.7);
+      setRealism((stylePack as any).realism ?? 0.8);
+      setComplexity((stylePack as any).complexity ?? 0.6);
+      setPaletteLock((stylePack as any).palette_lock ?? 0.9);
+      setUniformity((stylePack as any).uniformity ?? 0.7);
+      setPerformanceProfile((stylePack as any).performance_profile || "standard");
+      
       setLoraRef(stylePack.lora_ref || "cake_design_v2:0.75");
       setShapeTemplate(stylePack.shape_template || "round, tiered, square, heart, custom");
       setAllowedAccents(stylePack.allowed_accents?.join(", ") || "gold, silver, rose gold, pearl white, champagne, blush pink");
@@ -329,6 +339,14 @@ export const StylePackEditor = ({
         palette_range: JSON.parse(paletteRange || "{}"),
         reference_stats: referenceStats,
         is_active: isActive,
+        // Save style control parameters
+        style_strength: styleStrength,
+        sharpness: sharpness,
+        realism: realism,
+        complexity: complexity,
+        palette_lock: paletteLock,
+        uniformity: uniformity,
+        performance_profile: performanceProfile,
       };
       await onSave(data);
       onOpenChange(false);
