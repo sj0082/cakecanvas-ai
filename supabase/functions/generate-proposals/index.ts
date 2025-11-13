@@ -93,28 +93,78 @@ serve(async (req) => {
     // Reference images for style guidance
     const referenceImages = stylepack.images || [];
     
-    // Define 3 variants with different creative approaches
+    // Extract StylePack trend keywords from database
+    const styleTrendKeywords = (stylepack.trend_keywords as string[]) || [];
+    const styleTrendTechniques = (stylepack.trend_techniques as string[]) || [];
+    
+    // Define 3 variants with different creative approaches and trend differentiation
     const variants = [
       {
         name: 'conservative',
         label: 'V1-Conservative',
         description: 'Safe, classic design staying close to proven style references',
         creativityLevel: 'low',
-        promptModifier: 'Classic, traditional, elegant design. Stay very close to reference style. Minimal embellishments, timeless and sophisticated.'
+        promptModifier: 'Classic, traditional, elegant design. Stay very close to reference style. Minimal embellishments, timeless and sophisticated.',
+        trendKeywords: [
+          'Timeless elegance with subtle modern touches',
+          'Refined classic aesthetics with 2025 contemporary color palettes',
+          'Sophisticated minimalism with premium materials',
+          'Elegant simplicity inspired by luxury wedding trends',
+          ...styleTrendKeywords.slice(0, 2)
+        ],
+        trendTechniques: [
+          'Subtle texture variations',
+          'Refined color blocking',
+          'Premium material finishes',
+          'Delicate pearl dust accents',
+          ...styleTrendTechniques.slice(0, 2)
+        ]
       },
       {
         name: 'standard',
         label: 'V2-Standard',
         description: 'Balanced design with moderate creative interpretation',
         creativityLevel: 'medium',
-        promptModifier: 'Well-balanced design with creative touches. Harmonious blend of classic and contemporary elements. Moderate decoration density.'
+        promptModifier: 'Well-balanced design with creative touches. Harmonious blend of classic and contemporary elements. Moderate decoration density.',
+        trendKeywords: [
+          'Modern romantic aesthetics with organic textures',
+          'Instagram-worthy designs with trending color combinations (sage green + terracotta, dusty rose + champagne)',
+          'Contemporary elegance with fresh botanical elements',
+          '2025 wedding cake trends: textured buttercream, natural flowers, geometric accents',
+          ...styleTrendKeywords.slice(0, 3)
+        ],
+        trendTechniques: [
+          'Textured buttercream finishes',
+          'Fresh flower arrangements',
+          'Geometric pattern accents',
+          'Ombré color gradients',
+          'Wafer paper flowers',
+          ...styleTrendTechniques.slice(0, 3)
+        ]
       },
       {
         name: 'bold',
         label: 'V3-Bold',
         description: 'Creative, eye-catching design pushing style boundaries',
         creativityLevel: 'high',
-        promptModifier: 'Bold, eye-catching design with creative flair. Modern interpretation with striking visual impact. Rich decoration and dramatic presentation.'
+        promptModifier: 'Bold, eye-catching design with creative flair. Modern interpretation with striking visual impact. Rich decoration and dramatic presentation.',
+        trendKeywords: [
+          'Cutting-edge 2025 design trends with bold visual statements',
+          'Viral Instagram cake aesthetics: dramatic textures, unexpected color combinations',
+          'Avant-garde decoration techniques: wafer paper art, metallic accents, sculptural elements',
+          'Pinterest trending: maximalist designs, artistic brushstrokes, contemporary art influences',
+          ...styleTrendKeywords
+        ],
+        trendTechniques: [
+          'Dramatic texture contrasts',
+          'Bold color combinations',
+          'Sculptural decoration elements',
+          'Artistic brushstroke techniques',
+          'Metallic and matte finish combinations',
+          'Wafer paper art installations',
+          'Abstract geometric patterns',
+          ...styleTrendTechniques
+        ]
       }
     ];
 
@@ -122,7 +172,12 @@ serve(async (req) => {
       ...bannedTerms,
       'cartoon', 'anime', 'toy', 'plastic', 'floating', 'impossible structure', 
       'logo', 'trademark', 'text', 'words', 'licensed character', 'low quality',
-      'blurry', 'distorted', 'deformed', 'amateur'
+      'blurry', 'distorted', 'deformed', 'amateur',
+      // Exclude outdated design elements
+      'outdated design', 'old-fashioned', 'vintage 1990s style', 'vintage 2000s style',
+      'overly ornate traditional', 'excessive piping borders', 'dated color schemes',
+      'cheap looking decorations', 'artificial plastic flowers', 'tacky decorations',
+      '2010s style', 'fondant roses overload', 'heavy traditional piping'
     ].join(', ');
 
     let generatedProposals = [];
@@ -147,7 +202,11 @@ serve(async (req) => {
           sharpness,
           realism,
           complexity,
-          paletteLock
+          paletteLock,
+          // Pass variant-specific trend data
+          variantName: variant.name,
+          trendKeywords: variant.trendKeywords,
+          trendTechniques: variant.trendTechniques
         });
         
         console.log(`Generating ${variant.label} with prompt:`, detailedPrompt);
@@ -307,6 +366,9 @@ function buildDetailedPrompt(params: {
   realism: number;
   complexity: number;
   paletteLock: number;
+  variantName: string;
+  trendKeywords?: string[];
+  trendTechniques?: string[];
 }): string {
   const {
     stylepackName,
@@ -319,11 +381,15 @@ function buildDetailedPrompt(params: {
     allowedAccents,
     shapeTemplate,
     userText,
+    negativePrompt,
     styleStrength,
     sharpness,
     realism,
     complexity,
-    paletteLock
+    paletteLock,
+    variantName,
+    trendKeywords = [],
+    trendTechniques = []
   } = params;
 
   // Build complexity description based on parameter
@@ -361,18 +427,47 @@ function buildDetailedPrompt(params: {
     ? 'Primarily use specified colors with subtle complementary tones'
     : 'Inspired by color palette with flexible color interpretation';
 
-  // Build structured, detailed prompt with 2025 trends
+  // Build variant-specific trend section
+  const trendSection = variantName === 'conservative'
+    ? [
+        '2025 TREND INSPIRATION (Refined Classic):',
+        '- Timeless elegance with subtle contemporary updates',
+        '- Premium material finishes: satin buttercream, pearl dust accents',
+        '- Refined color palettes: muted pastels, sophisticated neutrals',
+        '- Classic shapes with modern proportions',
+        ...trendKeywords.map(k => `- ${k}`)
+      ]
+    : variantName === 'standard'
+    ? [
+        '2025 TREND INSPIRATION (Modern Romantic):',
+        '- Instagram-worthy aesthetics: natural lighting, organic textures',
+        '- Trending techniques: textured buttercream, fresh botanicals, geometric patterns',
+        '- Contemporary color combinations: sage green + terracotta, dusty rose + champagne',
+        '- Pinterest-inspired: ombré effects, wafer paper flowers, gold leaf accents',
+        ...trendKeywords.map(k => `- ${k}`),
+        trendTechniques && trendTechniques.length > 0 
+          ? `- Recommended techniques: ${trendTechniques.join(', ')}`
+          : ''
+      ]
+    : [ // bold
+        '2025 TREND INSPIRATION (Avant-Garde):',
+        '- Cutting-edge design trends: maximalist aesthetics, artistic expressions',
+        '- Viral Instagram styles: dramatic textures, unexpected color combinations',
+        '- Contemporary art influences: sculptural elements, abstract patterns',
+        '- Pinterest trending: bold statements, artistic brushstrokes, mixed media',
+        ...trendKeywords.map(k => `- ${k}`),
+        trendTechniques && trendTechniques.length > 0
+          ? `- Advanced techniques: ${trendTechniques.join(', ')}`
+          : ''
+      ];
+
+  // Build structured, detailed prompt with variant-specific 2025 trends
   const sections = [
     `Professional cake design photography in ${stylepackName} style.`,
     stylepackDescription ? `Style essence: ${stylepackDescription}` : '',
     `Design approach: ${variantModifier}`,
     '',
-    '2025 CAKE DESIGN TRENDS:',
-    '- Modern minimalist aesthetics with organic textures',
-    '- Sustainable and natural decoration elements',
-    '- Instagram-worthy visual appeal with bold colors or elegant simplicity',
-    '- Innovative use of fresh flowers, geometric patterns, or artistic brushstrokes',
-    '- Contemporary color palettes: sage green, terracotta, dusty rose, champagne gold',
+    ...trendSection.filter(Boolean),
     '',
     'STYLE PARAMETERS:',
     `- Style adherence: ${styleText}`,
@@ -431,10 +526,18 @@ async function generateWithGemini(params: any) {
   if (params.referenceImages && params.referenceImages.length > 0) {
     const referencesToUse = params.referenceImages.slice(0, 3);
     
-    // Add style guidance text
+    // Add detailed analysis instructions
     messageContent.unshift({
       type: "text",
-      text: `Reference images for style guidance (study these styles carefully):`
+      text: `REFERENCE IMAGE ANALYSIS INSTRUCTIONS:
+Study these reference images carefully and extract the most modern, trending elements:
+- Color combinations and palettes that are popular in 2025
+- Texture techniques (smooth buttercream, textured surfaces, artistic finishes)
+- Decoration styles and placement patterns
+- Overall aesthetic appeal that would trend on Instagram and Pinterest
+- Modern proportions and contemporary design language
+
+Focus on elements that make these designs visually appealing and commercially successful.`
     });
     
     // Add each reference image
@@ -445,10 +548,19 @@ async function generateWithGemini(params: any) {
       });
     }
     
-    // Add instruction to use references
+    // Add improved generation requirements
     messageContent.push({
       type: "text",
-      text: `Generate a new cake design inspired by the reference images above, following the specific requirements below:`
+      text: `GENERATION REQUIREMENTS:
+Create a NEW, TREND-FORWARD cake design that:
+1. Incorporates the most modern and appealing elements from the reference images
+2. Updates classic styles with 2025 trends (textured buttercream, natural botanicals, contemporary color palettes)
+3. Creates an Instagram-worthy, Pinterest-pinnable design that customers want to purchase
+4. Maintains commercial viability - must be achievable by a skilled baker
+5. Follows the specific style requirements and parameters below
+6. Avoids outdated design elements from 2010s-2020s (overly ornate piping, dated color schemes)
+
+Generate a cake that customers would be excited to order for their special occasion in 2025:`
     });
   }
 

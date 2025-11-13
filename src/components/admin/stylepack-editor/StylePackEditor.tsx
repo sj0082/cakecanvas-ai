@@ -96,6 +96,8 @@ export const StylePackEditor = ({
   const [paletteLock, setPaletteLock] = useState(0.9);
   const [uniformity, setUniformity] = useState(0.7);
   const [performanceProfile, setPerformanceProfile] = useState<"draft" | "standard" | "quality">("standard");
+  const [trendKeywords, setTrendKeywords] = useState<string[]>([]);
+  const [trendTechniques, setTrendTechniques] = useState<string[]>([]);
 
   // Advanced tab controls
   const [loraRef, setLoraRef] = useState("cake_design_v2:0.75");
@@ -143,6 +145,8 @@ export const StylePackEditor = ({
       setPaletteLock((stylePack as any).palette_lock ?? 0.9);
       setUniformity((stylePack as any).uniformity ?? 0.7);
       setPerformanceProfile((stylePack as any).performance_profile || "standard");
+      setTrendKeywords((stylePack as any).trend_keywords || []);
+      setTrendTechniques((stylePack as any).trend_techniques || []);
       
       setLoraRef(stylePack.lora_ref || "cake_design_v2:0.75");
       setShapeTemplate(stylePack.shape_template || "round, tiered, square, heart, custom");
@@ -164,6 +168,8 @@ export const StylePackEditor = ({
       setShapeTemplate("round, tiered, square, heart, custom");
       setAllowedAccents("gold, silver, rose gold, pearl white, champagne, blush pink");
       setBannedTerms("cartoon, anime, unrealistic, toy, plastic");
+      setTrendKeywords([]);
+      setTrendTechniques([]);
       setPaletteRange(JSON.stringify({
         primary: ["#FFFFFF", "#FFF5F5", "#FFF0F0"],
         accent: ["#FFD700", "#C0C0C0", "#F4C2C2"],
@@ -395,6 +401,61 @@ export const StylePackEditor = ({
                     onChange={(e) => setDescription(e.target.value)}
                     rows={2}
                   />
+                </div>
+
+                {/* 2025 Trend Keywords Section */}
+                <div className="space-y-4 p-4 border rounded-lg bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="w-5 h-5 text-purple-600" />
+                    <Label className="font-semibold text-lg">2025 Trend Keywords</Label>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">
+                        Trending Keywords
+                        <span className="text-xs text-muted-foreground ml-2">
+                          (Instagram/Pinterest 인기 키워드)
+                        </span>
+                      </Label>
+                      <Textarea
+                        placeholder="트렌드 키워드 입력 (한 줄에 하나씩):&#10;Modern minimalist&#10;Textured buttercream&#10;Fresh botanicals&#10;Geometric patterns"
+                        value={trendKeywords.join('\n')}
+                        onChange={(e) => setTrendKeywords(e.target.value.split('\n').filter(Boolean))}
+                        rows={4}
+                        className="font-mono text-sm"
+                      />
+                      <p className="text-xs text-muted-foreground mt-2">
+                        💡 현재 Instagram, Pinterest에서 인기있는 이 카테고리 케이크의 특징
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">
+                        Trending Techniques
+                        <span className="text-xs text-muted-foreground ml-2">
+                          (장식 기법)
+                        </span>
+                      </Label>
+                      <Textarea
+                        placeholder="트렌드 장식 기법 입력 (한 줄에 하나씩):&#10;Textured buttercream finish&#10;Fresh flower arrangements&#10;Gold leaf accents&#10;Ombré color gradients"
+                        value={trendTechniques.join('\n')}
+                        onChange={(e) => setTrendTechniques(e.target.value.split('\n').filter(Boolean))}
+                        rows={4}
+                        className="font-mono text-sm"
+                      />
+                      <p className="text-xs text-muted-foreground mt-2">
+                        🎨 2025년 트렌드 장식 기법 (AI가 이를 프롬프트에 반영)
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded border border-blue-200 dark:border-blue-800">
+                    <p className="text-xs text-blue-800 dark:text-blue-300">
+                      <strong>사용 방법:</strong> Instagram과 Pinterest에서 "{name || 'wedding'} cake 2025"로 검색하여
+                      최신 인기 디자인의 공통점을 파악한 후 키워드로 정리하세요.
+                    </p>
+                  </div>
                 </div>
               </div>
 

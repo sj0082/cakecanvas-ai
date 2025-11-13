@@ -383,6 +383,8 @@ export type Database = {
           shape_template: string | null
           sharpness: number | null
           style_strength: number | null
+          trend_keywords: string[] | null
+          trend_techniques: string[] | null
           uniformity: number | null
           updated_at: string
         }
@@ -408,6 +410,8 @@ export type Database = {
           shape_template?: string | null
           sharpness?: number | null
           style_strength?: number | null
+          trend_keywords?: string[] | null
+          trend_techniques?: string[] | null
           uniformity?: number | null
           updated_at?: string
         }
@@ -433,6 +437,8 @@ export type Database = {
           shape_template?: string | null
           sharpness?: number | null
           style_strength?: number | null
+          trend_keywords?: string[] | null
+          trend_techniques?: string[] | null
           uniformity?: number | null
           updated_at?: string
         }
