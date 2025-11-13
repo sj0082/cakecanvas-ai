@@ -15,7 +15,8 @@ import { AnalysisPanel } from "./AnalysisPanel";
 import { QuickTestPanel } from "./QuickTestPanel";
 import { StyleFitnessCard } from "./StyleFitnessCard";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, Sparkles } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { AlertCircle, Sparkles, ChevronDown, Settings, BarChart3, Layers } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -98,6 +99,11 @@ export const StylePackEditor = ({
   const [performanceProfile, setPerformanceProfile] = useState<"draft" | "standard" | "quality">("standard");
   const [trendKeywords, setTrendKeywords] = useState<string[]>([]);
   const [trendTechniques, setTrendTechniques] = useState<string[]>([]);
+
+  // Collapsible states
+  const [isStyleControlsOpen, setIsStyleControlsOpen] = useState(false);
+  const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
+  const [isPresetOpen, setIsPresetOpen] = useState(false);
 
   // Advanced tab controls
   const [loraRef, setLoraRef] = useState("cake_design_v2:0.75");
@@ -353,6 +359,9 @@ export const StylePackEditor = ({
         palette_lock: paletteLock,
         uniformity: uniformity,
         performance_profile: performanceProfile,
+        // Save trend keywords and techniques
+        trend_keywords: trendKeywords.length > 0 ? trendKeywords : null,
+        trend_techniques: trendTechniques.length > 0 ? trendTechniques : null,
       };
       await onSave(data);
       onOpenChange(false);
@@ -487,74 +496,96 @@ export const StylePackEditor = ({
                 />
               </div>
 
-              {/* Analysis Panel */}
-              {/* Analysis moved below Style Controls */}
+              {/* Style Controls - Collapsible */}
+              <Collapsible open={isStyleControlsOpen} onOpenChange={setIsStyleControlsOpen} className="pb-4 border-b">
+                <CollapsibleTrigger className="flex w-full items-center justify-between pb-2 hover:opacity-70 transition-opacity">
+                  <div className="flex items-center gap-2">
+                    <Settings className="w-4 h-4" />
+                    <Label className="font-semibold cursor-pointer">Style Controls</Label>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${isStyleControlsOpen ? 'rotate-180' : ''}`} />
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <Tabs defaultValue="simple" className="mt-3">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="simple">Simple</TabsTrigger>
+                      <TabsTrigger value="advanced">Advanced</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="simple">
+                      <SimpleTab
+                        styleStrength={styleStrength}
+                        sharpness={sharpness}
+                        realism={realism}
+                        complexity={complexity}
+                        paletteLock={paletteLock}
+                        uniformity={uniformity}
+                        performanceProfile={performanceProfile}
+                        onStyleStrengthChange={setStyleStrength}
+                        onSharpnessChange={setSharpness}
+                        onRealismChange={setRealism}
+                        onComplexityChange={setComplexity}
+                        onPaletteLockChange={setPaletteLock}
+                        onUniformityChange={setUniformity}
+                        onPerformanceProfileChange={setPerformanceProfile}
+                      />
+                    </TabsContent>
+                    <TabsContent value="advanced">
+                      <AdvancedTab
+                        loraRef={loraRef}
+                        shapeTemplate={shapeTemplate}
+                        allowedAccents={allowedAccents}
+                        bannedTerms={bannedTerms}
+                        paletteRange={paletteRange}
+                        onLoraRefChange={setLoraRef}
+                        onShapeTemplateChange={setShapeTemplate}
+                        onAllowedAccentsChange={setAllowedAccents}
+                        onBannedTermsChange={setBannedTerms}
+                        onPaletteRangeChange={setPaletteRange}
+                        isUnpredictable={isUnpredictable()}
+                      />
+                    </TabsContent>
+                  </Tabs>
+                </CollapsibleContent>
+              </Collapsible>
 
-              {/* Style Controls */}
-              <div className="pb-4 border-b">
-                <Label className="mb-3 block font-semibold">Style Controls</Label>
-                <Tabs defaultValue="simple">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="simple">Simple</TabsTrigger>
-                    <TabsTrigger value="advanced">Advanced</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="simple">
-                    <SimpleTab
-                      styleStrength={styleStrength}
-                      sharpness={sharpness}
-                      realism={realism}
-                      complexity={complexity}
-                      paletteLock={paletteLock}
-                      uniformity={uniformity}
-                      performanceProfile={performanceProfile}
-                      onStyleStrengthChange={setStyleStrength}
-                      onSharpnessChange={setSharpness}
-                      onRealismChange={setRealism}
-                      onComplexityChange={setComplexity}
-                      onPaletteLockChange={setPaletteLock}
-                      onUniformityChange={setUniformity}
-                      onPerformanceProfileChange={setPerformanceProfile}
-                    />
-                  </TabsContent>
-                  <TabsContent value="advanced">
-                    <AdvancedTab
-                      loraRef={loraRef}
-                      shapeTemplate={shapeTemplate}
-                      allowedAccents={allowedAccents}
-                      bannedTerms={bannedTerms}
-                      paletteRange={paletteRange}
-                      onLoraRefChange={setLoraRef}
-                      onShapeTemplateChange={setShapeTemplate}
-                      onAllowedAccentsChange={setAllowedAccents}
-                      onBannedTermsChange={setBannedTerms}
-                      onPaletteRangeChange={setPaletteRange}
-                      isUnpredictable={isUnpredictable()}
-                    />
-                  </TabsContent>
-                </Tabs>
-              </div>
-
-              {/* Analysis Panel (moved below Style Controls) */}
+              {/* Analysis Panel - Collapsible (only show if stats exist) */}
               {referenceStats && (
-                <div className="pb-4 border-b">
-                  <AnalysisPanel
-                    referenceStats={referenceStats}
-                    isAnalyzing={isAnalyzing}
-                  />
-                </div>
+                <Collapsible open={isAnalysisOpen} onOpenChange={setIsAnalysisOpen} className="pb-4 border-b">
+                  <CollapsibleTrigger className="flex w-full items-center justify-between pb-2 hover:opacity-70 transition-opacity">
+                    <div className="flex items-center gap-2">
+                      <BarChart3 className="w-4 h-4" />
+                      <Label className="font-semibold cursor-pointer">Analysis Results</Label>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 transition-transform ${isAnalysisOpen ? 'rotate-180' : ''}`} />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-3">
+                    <AnalysisPanel
+                      referenceStats={referenceStats}
+                      isAnalyzing={isAnalyzing}
+                    />
+                  </CollapsibleContent>
+                </Collapsible>
               )}
 
-              {/* Preset Library */}
-              <div className="pb-4 border-b">
-                <Label className="mb-2 block">Preset Library</Label>
-                <PresetSelector
-                  presets={[]}
-                  selectedPreset={selectedPreset}
-                  onPresetChange={handlePresetChange}
-                  onSaveAsNew={() => toast({ title: "Save preset feature coming soon" })}
-                  onRevert={() => toast({ title: "Reverted to recommended settings" })}
-                />
-              </div>
+              {/* Preset Library - Collapsible */}
+              <Collapsible open={isPresetOpen} onOpenChange={setIsPresetOpen} className="pb-4 border-b">
+                <CollapsibleTrigger className="flex w-full items-center justify-between pb-2 hover:opacity-70 transition-opacity">
+                  <div className="flex items-center gap-2">
+                    <Layers className="w-4 h-4" />
+                    <Label className="font-semibold cursor-pointer">Preset Library</Label>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${isPresetOpen ? 'rotate-180' : ''}`} />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-3">
+                  <PresetSelector
+                    presets={[]}
+                    selectedPreset={selectedPreset}
+                    onPresetChange={handlePresetChange}
+                    onSaveAsNew={() => toast({ title: "Save preset feature coming soon" })}
+                    onRevert={() => toast({ title: "Reverted to recommended settings" })}
+                  />
+                </CollapsibleContent>
+              </Collapsible>
 
               {/* Active Toggle */}
               <div className="flex items-center gap-2 pt-4 border-t">
