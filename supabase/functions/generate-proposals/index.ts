@@ -148,7 +148,8 @@ serve(async (req) => {
         
         return {
           ...imageData,
-          variant: variant.label,
+          variant: variant.name,  // Use 'conservative', 'standard', 'bold' for DB
+          variantLabel: variant.label,  // Keep 'V1-Conservative' etc. for UI
           variantType: variant.name,
           description: variant.description,
           prompt: detailedPrompt,
@@ -197,6 +198,7 @@ serve(async (req) => {
         seed: imgData.seed,
         provider,
         variantType: imgData.variantType,
+        variantLabel: imgData.variantLabel,  // Store UI-friendly label
         description: imgData.description
       },
       generator_request: {

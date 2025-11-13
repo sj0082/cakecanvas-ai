@@ -16,6 +16,7 @@ interface ProposalCardProps {
     tiers?: string;
     palette?: string;
     accents?: string[];
+    variantLabel?: string;
   };
   price_range_min: number;
   price_range_max: number;
@@ -35,6 +36,9 @@ export const ProposalCard = ({
   onSelect,
 }: ProposalCardProps) => {
   const { t } = useTranslation();
+  
+  // Use variantLabel if available for display, otherwise fall back to variant
+  const displayLabel = spec_json.variantLabel || t(`proposals.variant.${variant}`);
 
   const getBadgeVariant = (badge: string) => {
     if (badge.includes("risk") || badge.includes("warning")) return "destructive";
@@ -52,7 +56,7 @@ export const ProposalCard = ({
             className="w-full h-full object-cover"
           />
           <div className="absolute top-3 left-3">
-            <Badge variant="default">{t(`proposals.variant.${variant}`)}</Badge>
+            <Badge variant="default">{displayLabel}</Badge>
           </div>
         </div>
       </CardHeader>
