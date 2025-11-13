@@ -62,6 +62,30 @@ serve(async (req) => {
 
     console.log('Request created successfully:', data.id);
 
+    // Trigger generate-proposals as a background task (fire and forget)
+    const generateUrl = `${supabaseUrl}/functions/v1/generate-proposals`;
+    console.log('Triggering generate-proposals for request:', data.id);
+    
+    fetch(generateUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseServiceKey}`,
+      },
+      body: JSON.stringify({ requestId: data.id })
+    })
+    .then(async (response) => {
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to trigger generate-proposals:', response.status, errorText);
+      } else {
+        console.log('Successfully triggered generate-proposals for request:', data.id);
+      }
+    })
+    .catch(error => {
+      console.error('Error triggering generate-proposals:', error);
+    });
+
     return new Response(
       JSON.stringify(data),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

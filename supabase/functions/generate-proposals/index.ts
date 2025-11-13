@@ -13,8 +13,12 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const startTime = Date.now();
+  let requestId: string | null = null;
+
   try {
-    const { requestId } = await req.json();
+    const body = await req.json();
+    requestId = body.requestId;
     const idempotencyKey = req.headers.get('idempotency-key');
 
     if (idempotencyKey && idempotencyCache.has(idempotencyKey)) {
@@ -117,11 +121,8 @@ serve(async (req) => {
     let generatedProposals = [];
 
     try {
-      // Generate each variant with customized prompt
-      for (let i = 0; i < variants.length; i++) {
-        const variant = variants[i];
-        
-        // Build detailed, structured prompt for this variant
+      // Generate each variant with customized prompt (with timeout)
+      const generationPromises = variants.map(async (variant, i) => {
         const detailedPrompt = buildDetailedPrompt({
           stylepackName: stylepack.name,
           stylepackDescription: stylepack.description || '',
@@ -145,17 +146,44 @@ serve(async (req) => {
           supabase
         });
         
-        generatedProposals.push({
+        return {
           ...imageData,
           variant: variant.label,
           variantType: variant.name,
           description: variant.description,
           prompt: detailedPrompt,
           seed: seed + i
-        });
-      }
+        };
+      });
+
+      // Wait for all generations with 90 second timeout
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Generation timeout after 90 seconds')), 90000)
+      );
+      
+      generatedProposals = await Promise.race([
+        Promise.all(generationPromises),
+        timeoutPromise
+      ]) as any[];
+      
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      console.log(`All variants generated successfully in ${elapsed}s`);
+      
     } catch (error) {
       console.error('Generation failed:', error);
+      
+      // Update request status to FAILED
+      if (requestId) {
+        await supabase
+          .from('requests')
+          .update({ 
+            status: 'FAILED',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', requestId);
+        console.log('Updated request status to FAILED:', requestId);
+      }
+      
       throw error;
     }
 
@@ -214,8 +242,33 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in generate-proposals:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Generation failed';
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    
+    console.error(`Generation failed after ${elapsed}s:`, errorMessage);
+    
+    // Ensure request is marked as FAILED
+    if (requestId) {
+      try {
+        const supabase = createClient(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+        );
+        await supabase
+          .from('requests')
+          .update({ 
+            status: 'FAILED',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', requestId);
+      } catch (updateError) {
+        console.error('Failed to update request status:', updateError);
+      }
+    }
+    
     return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : 'Generation failed' 
+      error: errorMessage,
+      requestId
     }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });

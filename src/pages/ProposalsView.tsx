@@ -17,6 +17,7 @@ const ProposalsView = () => {
   const [selectedProposal, setSelectedProposal] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pollingCount, setPollingCount] = useState(0);
   const { t } = useTranslation();
   
   // Get access token from URL
@@ -70,9 +71,21 @@ const ProposalsView = () => {
     fetchRequest();
 
     // Poll for updates every 5 seconds while request is GENERATING
+    // Stop after 5 minutes (60 polls) to prevent infinite polling
+    const MAX_POLLS = 60;
     const pollInterval = setInterval(() => {
       if (request?.status === "GENERATING") {
+        setPollingCount(prev => {
+          const newCount = prev + 1;
+          if (newCount >= MAX_POLLS) {
+            setError('Generation is taking longer than expected. Please refresh the page or contact support.');
+            clearInterval(pollInterval);
+          }
+          return newCount;
+        });
         fetchRequest();
+      } else {
+        clearInterval(pollInterval);
       }
     }, 5000);
 
@@ -109,8 +122,24 @@ const ProposalsView = () => {
               <h1 className="text-4xl font-bold mb-4">{t('proposals.title')}</h1>
               <p className="text-xl text-muted-foreground">{t('proposals.subtitle')}</p>
             </div>
-            {request.status === "GENERATING" && request.proposals.length === 0 ? (
-              <div className="text-center py-12"><p className="text-muted-foreground">{t('proposals.status.generating')}</p></div>
+            {request.status === "FAILED" ? (
+              <div className="text-center py-12">
+                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-6 max-w-md mx-auto">
+                  <p className="text-destructive font-semibold mb-2">Generation Failed</p>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    We encountered an error while generating your cake designs. Please try again or contact support if the problem persists.
+                  </p>
+                  <p className="text-xs text-muted-foreground">Request ID: {requestId}</p>
+                </div>
+              </div>
+            ) : request.status === "GENERATING" && request.proposals.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground mb-2">{t('proposals.status.generating')}</p>
+                <p className="text-xs text-muted-foreground">This usually takes 20-40 seconds...</p>
+                {pollingCount > 6 && (
+                  <p className="text-xs text-muted-foreground mt-2">Still working on it... ({pollingCount * 5}s elapsed)</p>
+                )}
+              </div>
             ) : request.proposals.length > 0 ? (
               <>
                 <div className="grid md:grid-cols-3 gap-6 mb-8">
