@@ -88,8 +88,29 @@ serve(async (req) => {
     for (const imagePath of imagePaths) {
       const fileName = imagePath.split('/').pop();
       if (fileName) {
+        // Generate embedding for this image
+        let embedding = null;
+        try {
+          const embeddingResponse = await supabase.functions.invoke('generate-embeddings', {
+            body: { 
+              text: `cake design with ${textures.join(', ')} textures and ${density} density`
+            }
+          });
+          
+          if (embeddingResponse.data?.embedding) {
+            embedding = embeddingResponse.data.embedding;
+            console.log(`Generated embedding with ${embedding.length} dimensions for ${fileName}`);
+          }
+        } catch (embError) {
+          console.error('Failed to generate embedding for', fileName, embError);
+          // Continue without embedding
+        }
+
         await supabase.from('stylepack_ref_images').update({
-          palette, texture_tags: textures, density,
+          palette, 
+          texture_tags: textures, 
+          density,
+          embedding: embedding,
           meta: { analyzed_at: new Date().toISOString(), request_id: requestId }
         }).eq('stylepack_id', stylepackId).ilike('key', `%${fileName}%`);
       }

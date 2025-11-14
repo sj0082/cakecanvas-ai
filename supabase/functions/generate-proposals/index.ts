@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { filterForbiddenTerms } from '../_shared/forbidden-filter.ts';
+import { getFullNegativePrompt } from '../_shared/constants.ts';
+import { validatePaletteLock, extractColorsFromText } from '../_shared/color-utils.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -64,6 +67,20 @@ serve(async (req) => {
     const stylepack = request.stylepacks;
     const sizeCategory = request.size_categories;
 
+    // Fetch reference images for the stylepack
+    const { data: refImages } = await supabase
+      .from('stylepack_ref_images')
+      .select('url, palette, texture_tags, density')
+      .eq('stylepack_id', stylepack.id)
+      .limit(3);
+
+    // Enforce minimum 2 reference images
+    if (!refImages || refImages.length < 2) {
+      throw new Error(`Style pack requires at least 2 reference images (found: ${refImages?.length || 0})`);
+    }
+
+    console.log(`Using ${refImages.length} reference images for generation`);
+
     const seed = Math.floor(Math.random() * 1000000);
     const provider = stylepack.generator_provider || 'gemini';
 
@@ -87,8 +104,40 @@ serve(async (req) => {
     const tierCount = tiersSpec.tiers || 1;
     const servingRange = `${sizeCategory.serving_min}-${sizeCategory.serving_max}`;
     
-    // User preferences
-    const userText = request.user_text || '';
+    // User preferences - filter forbidden terms
+    let userText = request.user_text || '';
+    
+    const filterResult = filterForbiddenTerms(userText);
+    userText = filterResult.cleanedText;
+    
+    if (filterResult.replacements.length > 0) {
+      console.log('Filtered forbidden terms:', filterResult.replacements);
+      // Log to audit table
+      for (const replacement of filterResult.replacements) {
+        await supabase.from('logs_audit').insert({
+          action: 'forbidden_term_replaced',
+          request_id: requestId,
+          note: `Replaced "${replacement.original}" with "${replacement.replacement}"`,
+        });
+      }
+    }
+
+    // Validate palette lock if enabled
+    if (paletteLock >= 0.9 && paletteRange.primary) {
+      const requestedColors = extractColorsFromText(userText);
+      if (requestedColors.length > 0) {
+        const validation = validatePaletteLock(requestedColors, paletteRange.primary);
+        if (!validation.isValid) {
+          console.log('Palette lock violations detected:', validation.violations);
+          // Log violations but continue (will adjust colors in prompt)
+          await supabase.from('logs_audit').insert({
+            action: 'palette_lock_violation',
+            request_id: requestId,
+            note: `${validation.violations.length} color(s) violated palette lock constraint`,
+          });
+        }
+      }
+    }
     
     // Reference images for style guidance
     const referenceImages = stylepack.images || [];
@@ -168,7 +217,7 @@ serve(async (req) => {
       }
     ];
 
-    const negativePrompt = [
+    const negativePrompt = getFullNegativePrompt() + ', ' + [
       ...bannedTerms,
       'cartoon', 'anime', 'toy', 'plastic', 'floating', 'impossible structure', 
       'logo', 'trademark', 'text', 'words', 'licensed character', 'low quality',
@@ -179,6 +228,23 @@ serve(async (req) => {
       'cheap looking decorations', 'artificial plastic flowers', 'tacky decorations',
       '2010s style', 'fondant roses overload', 'heavy traditional piping'
     ].join(', ');
+
+    // Build reference context from fetched images
+    const referenceContext = refImages.length > 0 ? `
+REFERENCE IMAGES (${refImages.length} provided - MANDATORY to match):
+${refImages.map((img: any, i: number) => {
+  const paletteColors = img.palette?.colors || img.palette || [];
+  const colorStr = Array.isArray(paletteColors) 
+    ? paletteColors.map((c: any) => `${c.hex || c} (${((c.ratio || 0.1) * 100).toFixed(0)}%)`).join(', ')
+    : 'not analyzed';
+  return `
+  ${i + 1}. Color Palette: ${colorStr}
+     Texture Tags: ${img.texture_tags?.join(', ') || 'smooth fondant'}
+     Density Level: ${img.density || 'medium'}`;
+}).join('\n')}
+
+CRITICAL CONSTRAINT: Match the visual style, exact color palette proportions, and texture details from these ${refImages.length} reference images. Palette lock is ${paletteLock >= 0.9 ? 'ACTIVE - colors must match exactly (ΔE ≤ 10)' : 'flexible'}.
+` : '';
 
     let generatedProposals = [];
 
@@ -197,6 +263,7 @@ serve(async (req) => {
           shapeTemplate,
           userText,
           negativePrompt,
+          referenceContext,  // Add reference context
           // Pass style control parameters
           styleStrength,
           sharpness,
@@ -383,6 +450,7 @@ function buildDetailedPrompt(params: {
   shapeTemplate: string;
   userText: string;
   negativePrompt: string;
+  referenceContext?: string;
   styleStrength: number;
   sharpness: number;
   realism: number;
@@ -404,6 +472,7 @@ function buildDetailedPrompt(params: {
     shapeTemplate,
     userText,
     negativePrompt,
+    referenceContext = '',
     styleStrength,
     sharpness,
     realism,
@@ -490,6 +559,8 @@ function buildDetailedPrompt(params: {
     `Design approach: ${variantModifier}`,
     '',
     ...trendSection.filter(Boolean),
+    '',
+    referenceContext, // Add reference image context
     '',
     'STYLE PARAMETERS:',
     `- Style adherence: ${styleText}`,
