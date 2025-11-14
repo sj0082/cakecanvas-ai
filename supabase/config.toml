@@ -12,6 +12,12 @@ verify_jwt = false
 [functions.stylepack-sign-upload]
 verify_jwt = false
 
+[functions.check-style-compatibility]
+verify_jwt = false
+
+[functions.generate-proposals-v2]
+verify_jwt = false
+
 [functions.stylepack-analyze]
 verify_jwt = true
 
