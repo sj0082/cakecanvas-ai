@@ -1,13 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { corsHeaders } from '../_shared/cors.ts';
 import { evaluateProposal } from '../_shared/quality-evaluation.ts';
 import { filterForbiddenTerms } from '../_shared/forbidden-filter.ts';
 import { getFullNegativePrompt } from '../_shared/constants.ts';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { getCachedStage1, setCachedStage1, hashUserText } from '../_shared/cache-manager.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -136,19 +133,38 @@ serve(async (req) => {
     const prompts = await optimizePromptsWithLLM(context, constraints, LOVABLE_API_KEY);
     console.log('✅ Generated 3 prompt variants (conservative, standard, bold)');
 
-    // Step 5: Stage 1 - Idea Generation (512px, 8-10 variants)
-    console.log('🎨 Step 5: Stage 1 generation (512px, 8-10 variants)...');
+    // Step 5: Stage 1 - Idea Generation (512px, 8-10 variants) with Caching
+    console.log('💾 Step 5: Checking Stage 1 cache...');
     
-    const stage1Proposals = await generateStage1(
-      prompts,
-      constraints,
-      stylepack,
-      requestId!,
-      supabase,
-      LOVABLE_API_KEY
-    );
+    const userTextHash = await hashUserText(context.userText);
+    const cacheKey = {
+      stylepackId: stylepack.id,
+      userTextHash: userTextHash,
+      sizeCategoryId: sizeCategory.id
+    };
 
-    console.log(`✅ Stage 1 complete: ${stage1Proposals.length} proposals generated`);
+    let stage1Proposals = await getCachedStage1(supabase, cacheKey);
+    
+    if (!stage1Proposals) {
+      console.log('🎨 Cache miss - Generating Stage 1 (512px, 8-10 variants)...');
+      
+      stage1Proposals = await generateStage1(
+        prompts,
+        constraints,
+        stylepack,
+        requestId!,
+        supabase,
+        LOVABLE_API_KEY
+      );
+
+      // Cache the results
+      await setCachedStage1(supabase, cacheKey, stage1Proposals);
+    } else {
+      console.log('✅ Cache hit - Using cached Stage 1 results');
+    }
+
+    console.log(`✅ Stage 1 complete: ${stage1Proposals.length} proposals`);
+
 
     // Step 6: Quality Evaluation & Re-ranking
     console.log('📊 Step 6: Quality evaluation and ranking...');

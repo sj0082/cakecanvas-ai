@@ -18,6 +18,9 @@ verify_jwt = false
 [functions.generate-proposals-v2]
 verify_jwt = false
 
+[functions.calculate-style-fitness]
+verify_jwt = false
+
 [functions.stylepack-analyze]
 verify_jwt = true
 

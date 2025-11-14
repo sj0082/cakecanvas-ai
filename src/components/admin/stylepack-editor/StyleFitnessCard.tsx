@@ -1,5 +1,11 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CheckCircle2, AlertTriangle, XCircle, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 
 interface StyleFitnessCardProps {
   stylePackId?: string;
@@ -7,81 +13,186 @@ interface StyleFitnessCardProps {
   referenceStats: any;
 }
 
+interface FitnessScores {
+  consistency: number;
+  palette_drift: number;
+  layout_fit: number;
+}
+
 export const StyleFitnessCard = ({ stylePackId, imageCount, referenceStats }: StyleFitnessCardProps) => {
-  const calculateFitnessScore = (): number => {
-    let score = 0;
-    
-    // Image count (0-30 points)
-    if (imageCount >= 5) score += 30;
-    else if (imageCount >= 3) score += 20;
-    else if (imageCount >= 1) score += 10;
-    
-    // Palette consistency (0-35 points)
-    if (referenceStats?.palette?.length >= 5) score += 35;
-    else if (referenceStats?.palette?.length >= 3) score += 20;
-    
-    // Texture variety (0-20 points)
-    if (referenceStats?.textures?.length >= 3) score += 20;
-    else if (referenceStats?.textures?.length >= 1) score += 10;
-    
-    // Safety (0-15 points)
-    if (!referenceStats?.safety?.hasBannedContent) score += 15;
-    
-    return score;
+  const [fitnessScores, setFitnessScores] = useState<FitnessScores | null>(null);
+  const [isCalculating, setIsCalculating] = useState(false);
+
+  useEffect(() => {
+    if (referenceStats?.fitness_scores) {
+      setFitnessScores(referenceStats.fitness_scores);
+    }
+  }, [referenceStats]);
+
+  const calculateFitness = async () => {
+    if (!stylePackId) {
+      toast.error('Style pack ID is required');
+      return;
+    }
+
+    if (imageCount < 2) {
+      toast.error('Need at least 2 reference images to calculate fitness');
+      return;
+    }
+
+    setIsCalculating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('calculate-style-fitness', {
+        body: { stylepackId: stylePackId }
+      });
+
+      if (error) throw error;
+
+      if (data?.fitnessScores) {
+        setFitnessScores(data.fitnessScores);
+        toast.success('Style fitness calculated successfully');
+      }
+    } catch (error) {
+      console.error('Failed to calculate fitness:', error);
+      toast.error('Failed to calculate style fitness');
+    } finally {
+      setIsCalculating(false);
+    }
   };
 
-  const score = calculateFitnessScore();
-  
-  const getScoreColor = () => {
-    if (score >= 90) return { icon: CheckCircle2, color: "text-green-600", bg: "bg-green-50", label: "Excellent" };
-    if (score >= 70) return { icon: AlertTriangle, color: "text-yellow-600", bg: "bg-yellow-50", label: "Good" };
+  const getOverallScore = (): number => {
+    if (!fitnessScores) return 0;
+    // Weighted average: consistency 40%, palette_drift 35%, layout_fit 25%
+    return (
+      fitnessScores.consistency * 40 +
+      (1 - fitnessScores.palette_drift) * 35 + // Lower drift is better
+      fitnessScores.layout_fit * 25
+    );
+  };
+
+  const overallScore = getOverallScore();
+
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return { icon: CheckCircle2, color: "text-green-600", bg: "bg-green-50", label: "Excellent" };
+    if (score >= 60) return { icon: AlertTriangle, color: "text-yellow-600", bg: "bg-yellow-50", label: "Good" };
     return { icon: XCircle, color: "text-red-600", bg: "bg-red-50", label: "Needs Improvement" };
   };
 
-  const scoreInfo = getScoreColor();
+  const scoreInfo = getScoreColor(overallScore);
   const ScoreIcon = scoreInfo.icon;
 
-  return (
-    <div className={`border rounded-lg p-4 ${scoreInfo.bg}`}>
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <ScoreIcon className={`h-5 w-5 ${scoreInfo.color}`} />
-          <h3 className="font-medium">Style Fitness</h3>
-        </div>
-        <Badge variant={score >= 90 ? "default" : score >= 70 ? "secondary" : "destructive"}>
-          {score}/100
-        </Badge>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 text-sm">
-        <div>
-          <p className="text-muted-foreground text-xs">Images</p>
-          <p className="font-medium">{imageCount}</p>
-        </div>
-        <div>
-          <p className="text-muted-foreground text-xs">Palette</p>
-          <p className="font-medium">{referenceStats?.palette?.length || 0} colors</p>
-        </div>
-        <div>
-          <p className="text-muted-foreground text-xs">Textures</p>
-          <p className="font-medium">{referenceStats?.textures?.length || 0} types</p>
-        </div>
-        <div>
-          <p className="text-muted-foreground text-xs">Safety</p>
-          <p className="font-medium">
-            {referenceStats?.safety?.hasBannedContent ? "⚠️ Issues" : "✓ Clean"}
+  if (!fitnessScores && imageCount < 2) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-yellow-600" />
+            Style Fitness
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            Upload at least 2 reference images to calculate style fitness metrics.
           </p>
-        </div>
-      </div>
+          <div className="text-xs text-muted-foreground">
+            <strong>Current:</strong> {imageCount} image{imageCount !== 1 ? 's' : ''}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
-      <div className="mt-3 pt-3 border-t">
-        <p className="text-xs text-muted-foreground">
-          <strong>{scoreInfo.label}:</strong>{" "}
-          {score >= 90 && "This style pack is well-configured and ready for production use."}
-          {score >= 70 && score < 90 && "Add more reference images and complete the analysis for better results."}
-          {score < 70 && "Upload at least 3 reference images and run auto-analysis to improve quality."}
-        </p>
-      </div>
-    </div>
+  return (
+    <Card className={fitnessScores ? scoreInfo.bg : ''}>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            {fitnessScores && <ScoreIcon className={`h-5 w-5 ${scoreInfo.color}`} />}
+            Style Fitness
+          </CardTitle>
+          <Button
+            onClick={calculateFitness}
+            disabled={isCalculating || imageCount < 2}
+            size="sm"
+            variant="outline"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isCalculating ? 'animate-spin' : ''}`} />
+            Calculate
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {fitnessScores ? (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-sm font-medium">Overall Score</span>
+              <Badge variant={overallScore >= 80 ? "default" : overallScore >= 60 ? "secondary" : "destructive"}>
+                {overallScore.toFixed(0)}/100
+              </Badge>
+            </div>
+
+            {/* Consistency */}
+            <div>
+              <div className="flex justify-between mb-2">
+                <span className="text-sm font-medium">Consistency</span>
+                <span className="text-sm text-muted-foreground">
+                  {(fitnessScores.consistency * 100).toFixed(0)}%
+                </span>
+              </div>
+              <Progress value={fitnessScores.consistency * 100} />
+              <p className="text-xs text-muted-foreground mt-1">
+                Visual consistency across reference images
+              </p>
+            </div>
+
+            {/* Palette Accuracy */}
+            <div>
+              <div className="flex justify-between mb-2">
+                <span className="text-sm font-medium">Palette Accuracy</span>
+                <span className="text-sm text-muted-foreground">
+                  {((1 - fitnessScores.palette_drift) * 100).toFixed(0)}%
+                </span>
+              </div>
+              <Progress value={(1 - fitnessScores.palette_drift) * 100} />
+              <p className="text-xs text-muted-foreground mt-1">
+                Color consistency (lower drift = better)
+              </p>
+            </div>
+
+            {/* Layout Fit */}
+            <div>
+              <div className="flex justify-between mb-2">
+                <span className="text-sm font-medium">Layout Fit</span>
+                <span className="text-sm text-muted-foreground">
+                  {(fitnessScores.layout_fit * 100).toFixed(0)}%
+                </span>
+              </div>
+              <Progress value={fitnessScores.layout_fit * 100} />
+              <p className="text-xs text-muted-foreground mt-1">
+                Fit with standard cake layouts
+              </p>
+            </div>
+
+            <div className="pt-3 border-t">
+              <p className="text-xs text-muted-foreground">
+                <strong>{scoreInfo.label}:</strong>{" "}
+                {overallScore >= 80 && "This style pack is well-configured and ready for production use."}
+                {overallScore >= 60 && overallScore < 80 && "Add more reference images for better results."}
+                {overallScore < 60 && "Upload more reference images and ensure consistency in visual style."}
+              </p>
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Click "Calculate" to analyze style fitness metrics
+            </p>
+            <div className="text-xs text-muted-foreground">
+              <strong>Reference images:</strong> {imageCount}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };

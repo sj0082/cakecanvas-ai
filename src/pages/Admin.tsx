@@ -9,8 +9,9 @@ import { LogOut, ArrowLeft } from "lucide-react";
 import { StylePacksManager } from "@/components/admin/StylePacksManager";
 import { SizeCategoriesManager } from "@/components/admin/SizeCategoriesManager";
 import { RealityRulesManager } from "@/components/admin/RealityRulesManager";
+import TrendsManager from "@/components/admin/TrendsManager";
 
-type AdminView = "dashboard" | "stylepacks" | "sizes" | "rules" | "requests" | "admins" | "deposit";
+type AdminView = "dashboard" | "stylepacks" | "sizes" | "rules" | "requests" | "admins" | "deposit" | "trends";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -50,6 +51,7 @@ const Admin = () => {
           {currentView === "stylepacks" && <StylePacksManager />}
           {currentView === "sizes" && <SizeCategoriesManager />}
           {currentView === "rules" && <RealityRulesManager />}
+          {currentView === "trends" && <TrendsManager />}
         </div>
         
         <Button 
@@ -94,6 +96,20 @@ const Admin = () => {
               <CardTitle>{t("admin.sizeCategories.title")}</CardTitle>
               <CardDescription>
                 {t("admin.sizeCategories.description")}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" variant="secondary">
+                {t("admin.manage")}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setCurrentView("trends")}>
+            <CardHeader>
+              <CardTitle>Trend Keywords</CardTitle>
+              <CardDescription>
+                Manage trend categories and keywords for design generation
               </CardDescription>
             </CardHeader>
             <CardContent>
