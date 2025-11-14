@@ -18,3 +18,12 @@ verify_jwt = true
 [functions.stylepack-quick-test]
 verify_jwt = true
 
+[functions.generate-embeddings]
+verify_jwt = true
+
+[functions.search-similar-styles]
+verify_jwt = false
+
+[functions.generate-layout-mask]
+verify_jwt = true
+
