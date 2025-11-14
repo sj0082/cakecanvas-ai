@@ -88,30 +88,50 @@ serve(async (req) => {
     for (const imagePath of imagePaths) {
       const fileName = imagePath.split('/').pop();
       if (fileName) {
-        // Generate embedding for this image
+        // Get public URL for embedding generation
+        const publicUrl = `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/public/${BUCKET}/${imagePath}`;
+        
+        // Generate IMAGE-based embedding using the actual image
         let embedding = null;
+        let description = null;
         try {
           const embeddingResponse = await supabase.functions.invoke('generate-embeddings', {
             body: { 
-              text: `cake design with ${textures.join(', ')} textures and ${density} density`
+              imageUrl: publicUrl,
+              type: 'image'
             }
           });
           
           if (embeddingResponse.data?.embedding) {
             embedding = embeddingResponse.data.embedding;
-            console.log(`Generated embedding with ${embedding.length} dimensions for ${fileName}`);
+            description = embeddingResponse.data.description;
+            console.log(`✅ Generated IMAGE embedding (${embedding.length}D) for ${fileName}`);
           }
         } catch (embError) {
-          console.error('Failed to generate embedding for', fileName, embError);
+          console.error('Failed to generate image embedding for', fileName, embError);
           // Continue without embedding
         }
 
+        // Convert palette to include ratios
+        const paletteWithRatios = palette.map((item: any) => {
+          if (typeof item === 'string') {
+            // Simple hex string - add default ratio
+            return { hex: item, ratio: parseFloat((1 / palette.length).toFixed(3)) };
+          }
+          // Already has ratio
+          return item;
+        });
+
         await supabase.from('stylepack_ref_images').update({
-          palette, 
+          palette: paletteWithRatios, 
           texture_tags: textures, 
           density,
           embedding: embedding,
-          meta: { analyzed_at: new Date().toISOString(), request_id: requestId }
+          meta: { 
+            analyzed_at: new Date().toISOString(), 
+            request_id: requestId,
+            description: description
+          }
         }).eq('stylepack_id', stylepackId).ilike('key', `%${fileName}%`);
       }
     }

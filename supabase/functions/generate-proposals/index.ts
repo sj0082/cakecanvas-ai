@@ -67,19 +67,99 @@ serve(async (req) => {
     const stylepack = request.stylepacks;
     const sizeCategory = request.size_categories;
 
-    // Fetch reference images for the stylepack
+    // Fetch reference images for the stylepack WITH embeddings
     const { data: refImages } = await supabase
       .from('stylepack_ref_images')
-      .select('url, palette, texture_tags, density')
+      .select('id, url, palette, texture_tags, density, embedding')
       .eq('stylepack_id', stylepack.id)
       .limit(3);
 
-    // Enforce minimum 2 reference images
+    // HARD CONSTRAINT: Enforce minimum 2 reference images requirement
     if (!refImages || refImages.length < 2) {
-      throw new Error(`Style pack requires at least 2 reference images (found: ${refImages?.length || 0})`);
+      throw new Error(`StylePack "${stylepack.name}" requires at least 2 reference images for generation. Currently has ${refImages?.length || 0}.`);
     }
 
-    console.log(`Using ${refImages.length} reference images for generation`);
+    console.log(`✅ Using ${refImages.length} reference images for style matching`);
+    
+    // Extract user text EARLY for all validations
+    let userText = request.user_text || '';
+    
+    // HARD CONSTRAINT: Generate layout mask based on tier structure
+    let layoutMaskUrl = null;
+    if (sizeCategory.tiers_spec) {
+      console.log('🎨 Generating layout mask for tier structure:', JSON.stringify(sizeCategory.tiers_spec));
+      
+      try {
+        const { data: maskData, error: maskError } = await supabase.functions.invoke(
+          'generate-layout-mask',
+          { 
+            body: { 
+              tiersSpec: sizeCategory.tiers_spec,
+              outputFormat: 'svg'
+            } 
+          }
+        );
+        
+        if (maskError) {
+          console.error('⚠️ Failed to generate layout mask:', maskError);
+        } else if (maskData?.maskUrl) {
+          layoutMaskUrl = maskData.maskUrl;
+          console.log('✅ Layout mask generated:', layoutMaskUrl);
+        }
+      } catch (maskErr) {
+        console.error('⚠️ Layout mask generation error:', maskErr);
+      }
+    }
+    
+    // HARD CONSTRAINT: Validate palette lock (ΔE ≤ 10)
+    const requestedColors = extractColorsFromText(userText);
+    let paletteViolations: Array<{color: string; closestMatch: string; deltaE: number}> = [];
+    
+    if (stylepack.palette_lock >= 0.9 && requestedColors.length > 0 && stylepack.palette_range) {
+      console.log('🎨 Validating palette lock constraint (ΔE ≤ 10)...');
+      console.log('Requested colors:', requestedColors);
+      
+      const paletteToValidate = Array.isArray(stylepack.palette_range) 
+        ? stylepack.palette_range 
+        : (stylepack.palette_range.primary || []);
+      
+      const validation = validatePaletteLock(requestedColors, paletteToValidate);
+      
+      if (!validation.isValid) {
+        paletteViolations = validation.violations;
+        console.warn('⚠️ Palette violations detected:', paletteViolations.length);
+        
+        // Log each violation for audit
+        for (const violation of paletteViolations) {
+          console.log(`  - ${violation.color} → ${violation.closestMatch} (ΔE: ${violation.deltaE.toFixed(2)})`);
+          
+          await supabase.from('logs_audit').insert({
+            action: 'palette_lock_violation',
+            request_id: requestId,
+            note: `Color ${violation.color} violated palette lock (ΔE: ${violation.deltaE.toFixed(2)}). Closest match: ${violation.closestMatch}`,
+          });
+        }
+        
+        // Auto-correct: replace violating colors with closest matches in the text
+        for (const violation of paletteViolations) {
+          const colorNames: Record<string, string> = {
+            '#FF0000': 'red', '#0000FF': 'blue', '#00FF00': 'green',
+            '#FFFF00': 'yellow', '#FFA500': 'orange', '#800080': 'purple',
+            '#FFC0CB': 'pink', '#FFD700': 'gold', '#C0C0C0': 'silver'
+          };
+          
+          const violatingName = colorNames[violation.color];
+          const matchName = colorNames[violation.closestMatch];
+          
+          if (violatingName && matchName) {
+            userText = userText.replace(new RegExp(violatingName, 'gi'), matchName);
+            console.log(`🔧 Auto-corrected "${violatingName}" → "${matchName}" in user text`);
+          }
+        }
+      } else {
+        console.log('✅ All requested colors within palette lock tolerance (ΔE ≤ 10)');
+      }
+    }
 
     const seed = Math.floor(Math.random() * 1000000);
     const provider = stylepack.generator_provider || 'gemini';
@@ -103,9 +183,6 @@ serve(async (req) => {
     const tiersSpec = sizeCategory.tiers_spec as any || {};
     const tierCount = tiersSpec.tiers || 1;
     const servingRange = `${sizeCategory.serving_min}-${sizeCategory.serving_max}`;
-    
-    // User preferences - filter forbidden terms
-    let userText = request.user_text || '';
     
     const filterResult = filterForbiddenTerms(userText);
     userText = filterResult.cleanedText;
@@ -229,8 +306,8 @@ serve(async (req) => {
       '2010s style', 'fondant roses overload', 'heavy traditional piping'
     ].join(', ');
 
-    // Build reference context from fetched images
-    const referenceContext = refImages.length > 0 ? `
+    // Build reference context with color ratios
+    const refContextForPrompt = refImages.length > 0 ? `
 REFERENCE IMAGES (${refImages.length} provided - MANDATORY to match):
 ${refImages.map((img: any, i: number) => {
   const paletteColors = img.palette?.colors || img.palette || [];
@@ -263,7 +340,6 @@ CRITICAL CONSTRAINT: Match the visual style, exact color palette proportions, an
           shapeTemplate,
           userText,
           negativePrompt,
-          referenceContext,  // Add reference context
           // Pass style control parameters
           styleStrength,
           sharpness,

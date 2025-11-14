@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { imageUrl, text } = await req.json();
+    const { imageUrl, text, type = 'text' } = await req.json();
 
     if (!imageUrl && !text) {
       return new Response(
@@ -25,11 +25,82 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    // For now, generate a simple embedding using text description
-    // In a production system, you'd use a proper image embedding model
-    let embeddingInput = text || 'cake design image';
+    // For IMAGE embeddings: Use vision model to analyze then generate embedding
+    if (imageUrl) {
+      console.log('🖼️ Generating IMAGE-based embedding for:', imageUrl);
+      
+      // Step 1: Use vision model to extract detailed visual features
+      const visionResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [{
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: 'Describe this cake image in comprehensive detail for similarity matching. Focus on: visual style, color palette composition, texture types (smooth/textured/ruffled), decoration density (minimal/moderate/elaborate), tier structure, decorative elements, overall aesthetic mood, and artistic techniques used. Be very specific and descriptive.'
+              },
+              {
+                type: 'image_url',
+                image_url: { url: imageUrl }
+              }
+            ]
+          }],
+          max_tokens: 600
+        }),
+      });
 
-    // Call Lovable AI for text embedding
+      if (!visionResponse.ok) {
+        const errorText = await visionResponse.text();
+        console.error('Vision analysis failed:', visionResponse.status, errorText);
+        throw new Error(`Vision analysis failed: ${visionResponse.status}`);
+      }
+
+      const visionData = await visionResponse.json();
+      const description = visionData.choices[0].message.content;
+      console.log('📝 Generated visual description:', description.substring(0, 200) + '...');
+      
+      // Step 2: Generate embedding from the rich visual description
+      const embeddingResponse = await fetch('https://ai.gateway.lovable.dev/v1/embeddings', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          input: description,
+          model: 'text-embedding-3-small',
+        }),
+      });
+
+      if (!embeddingResponse.ok) {
+        const errorText = await embeddingResponse.text();
+        console.error('Embedding generation failed:', embeddingResponse.status, errorText);
+        throw new Error(`Embedding generation failed: ${embeddingResponse.status}`);
+      }
+
+      const embeddingData = await embeddingResponse.json();
+      const embedding = embeddingData.data[0].embedding;
+
+      console.log(`✅ Generated ${embedding.length}-dimensional image embedding`);
+
+      return new Response(
+        JSON.stringify({ 
+          embedding, 
+          description,
+          dimensions: embedding.length 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // TEXT-based embeddings (fallback)
+    console.log('📝 Generating text-based embedding');
     const response = await fetch('https://ai.gateway.lovable.dev/v1/embeddings', {
       method: 'POST',
       headers: {
@@ -38,7 +109,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: 'text-embedding-3-small',
-        input: embeddingInput,
+        input: text,
       }),
     });
 
