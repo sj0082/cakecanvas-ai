@@ -100,7 +100,7 @@ export const StylePackEditor = ({
   const [trendKeywords, setTrendKeywords] = useState<string[]>([]);
   const [trendTechniques, setTrendTechniques] = useState<string[]>([]);
 
-  // Collapsible states
+  // Collapsible states - all collapsed by default for simplicity
   const [isStyleControlsOpen, setIsStyleControlsOpen] = useState(false);
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
   const [isPresetOpen, setIsPresetOpen] = useState(false);
@@ -359,7 +359,7 @@ export const StylePackEditor = ({
         palette_lock: paletteLock,
         uniformity: uniformity,
         performance_profile: performanceProfile,
-        // Save trend keywords and techniques
+        // ✅ CRITICAL: Save trend keywords and techniques (Phase 1 & 2)
         trend_keywords: trendKeywords.length > 0 ? trendKeywords : null,
         trend_techniques: trendTechniques.length > 0 ? trendTechniques : null,
       };
