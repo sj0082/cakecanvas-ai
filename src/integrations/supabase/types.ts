@@ -331,6 +331,51 @@ export type Database = {
         }
         Relationships: []
       }
+      stage1_cache: {
+        Row: {
+          created_at: string | null
+          expires_at: string
+          id: string
+          result: Json
+          size_category_id: string
+          stylepack_id: string
+          user_text_hash: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          result: Json
+          size_category_id: string
+          stylepack_id: string
+          user_text_hash: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          result?: Json
+          size_category_id?: string
+          stylepack_id?: string
+          user_text_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stage1_cache_size_category_id_fkey"
+            columns: ["size_category_id"]
+            isOneToOne: false
+            referencedRelation: "size_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stage1_cache_stylepack_id_fkey"
+            columns: ["stylepack_id"]
+            isOneToOne: false
+            referencedRelation: "stylepacks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stylepack_ref_images: {
         Row: {
           created_at: string
@@ -490,6 +535,119 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "stylepacks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trend_categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          source_type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          source_type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          source_type?: string | null
+        }
+        Relationships: []
+      }
+      trend_keywords: {
+        Row: {
+          category_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          keyword: string
+          palette_preset: Json | null
+          popularity_score: number | null
+          related_keywords: Json | null
+          trend_period: unknown
+          visual_examples: Json | null
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          keyword: string
+          palette_preset?: Json | null
+          popularity_score?: number | null
+          related_keywords?: Json | null
+          trend_period?: unknown
+          visual_examples?: Json | null
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          keyword?: string
+          palette_preset?: Json | null
+          popularity_score?: number | null
+          related_keywords?: Json | null
+          trend_period?: unknown
+          visual_examples?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trend_keywords_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "trend_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trend_stylepack_mappings: {
+        Row: {
+          created_at: string | null
+          id: string
+          relevance_score: number | null
+          stylepack_id: string | null
+          trend_keyword_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          relevance_score?: number | null
+          stylepack_id?: string | null
+          trend_keyword_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          relevance_score?: number | null
+          stylepack_id?: string | null
+          trend_keyword_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trend_stylepack_mappings_stylepack_id_fkey"
+            columns: ["stylepack_id"]
+            isOneToOne: false
+            referencedRelation: "stylepacks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trend_stylepack_mappings_trend_keyword_id_fkey"
+            columns: ["trend_keyword_id"]
+            isOneToOne: false
+            referencedRelation: "trend_keywords"
             referencedColumns: ["id"]
           },
         ]
