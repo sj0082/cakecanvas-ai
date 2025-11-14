@@ -146,6 +146,41 @@ export function validatePaletteLock(
 }
 
 /**
+ * Convert hex to OKLab color space for more perceptually uniform color difference
+ * OKLab provides better perceptual uniformity than CIE Lab
+ */
+export function hexToOKLab(hex: string): [number, number, number] {
+  const rgb = hexToRgb(hex);
+  
+  // Convert RGB [0-1] to linear RGB
+  const rLinear = rgb.r <= 0.04045 
+    ? rgb.r / 12.92 
+    : Math.pow((rgb.r + 0.055) / 1.055, 2.4);
+  const gLinear = rgb.g <= 0.04045 
+    ? rgb.g / 12.92 
+    : Math.pow((rgb.g + 0.055) / 1.055, 2.4);
+  const bLinear = rgb.b <= 0.04045 
+    ? rgb.b / 12.92 
+    : Math.pow((rgb.b + 0.055) / 1.055, 2.4);
+  
+  // Convert linear RGB to XYZ (D65 illuminant)
+  const x = rLinear * 0.4124564 + gLinear * 0.3575761 + bLinear * 0.1804375;
+  const y = rLinear * 0.2126729 + gLinear * 0.7151522 + bLinear * 0.0721750;
+  const z = rLinear * 0.0193339 + gLinear * 0.1191920 + bLinear * 0.9503041;
+  
+  // Convert XYZ to OKLab
+  const l_ = Math.cbrt(0.8189330101 * x + 0.3618667424 * y - 0.1288597137 * z);
+  const m_ = Math.cbrt(0.0329845436 * x + 0.9293118715 * y + 0.0361456387 * z);
+  const s_ = Math.cbrt(0.0482003018 * x + 0.2643662691 * y + 0.6338517070 * z);
+  
+  const L = 0.2104542553 * l_ + 0.7936177850 * m_ - 0.0040720468 * s_;
+  const a = 1.9779984951 * l_ - 2.4285922050 * m_ + 0.4505937099 * s_;
+  const b = 0.0259040371 * l_ + 0.7827717662 * m_ - 0.8086757660 * s_;
+  
+  return [L * 100, a * 100, b * 100];
+}
+
+/**
  * Extract colors from text (simple regex-based extraction)
  */
 export function extractColorsFromText(text: string): string[] {
