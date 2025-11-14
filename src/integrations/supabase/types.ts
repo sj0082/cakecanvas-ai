@@ -108,46 +108,64 @@ export type Database = {
         Row: {
           badges: string[] | null
           created_at: string
+          engine: string | null
           generator_request: Json | null
           generator_response: Json | null
           id: string
           image_url: string
           is_selected: boolean | null
+          payload: Json | null
           price_range_max: number
           price_range_min: number
+          rank_score: number | null
           request_id: string
+          scores: Json | null
           seed: number | null
+          seed_class: number | null
           spec_json: Json
+          stage: number | null
           variant: string
         }
         Insert: {
           badges?: string[] | null
           created_at?: string
+          engine?: string | null
           generator_request?: Json | null
           generator_response?: Json | null
           id?: string
           image_url: string
           is_selected?: boolean | null
+          payload?: Json | null
           price_range_max: number
           price_range_min: number
+          rank_score?: number | null
           request_id: string
+          scores?: Json | null
           seed?: number | null
+          seed_class?: number | null
           spec_json: Json
+          stage?: number | null
           variant: string
         }
         Update: {
           badges?: string[] | null
           created_at?: string
+          engine?: string | null
           generator_request?: Json | null
           generator_response?: Json | null
           id?: string
           image_url?: string
           is_selected?: boolean | null
+          payload?: Json | null
           price_range_max?: number
           price_range_min?: number
+          rank_score?: number | null
           request_id?: string
+          scores?: Json | null
           seed?: number | null
+          seed_class?: number | null
           spec_json?: Json
+          stage?: number | null
           variant?: string
         }
         Relationships: [
@@ -316,36 +334,54 @@ export type Database = {
       stylepack_ref_images: {
         Row: {
           created_at: string
+          density: string | null
+          embedding: string | null
           height: number | null
           id: string
           key: string
+          mask_thumbnail_path: string | null
+          meta: Json | null
           mime: string
+          palette: Json | null
           size_bytes: number
           stylepack_id: string
+          texture_tags: string[] | null
           uploaded_by: string
           url: string
           width: number | null
         }
         Insert: {
           created_at?: string
+          density?: string | null
+          embedding?: string | null
           height?: number | null
           id?: string
           key: string
+          mask_thumbnail_path?: string | null
+          meta?: Json | null
           mime: string
+          palette?: Json | null
           size_bytes: number
           stylepack_id: string
+          texture_tags?: string[] | null
           uploaded_by: string
           url: string
           width?: number | null
         }
         Update: {
           created_at?: string
+          density?: string | null
+          embedding?: string | null
           height?: number | null
           id?: string
           key?: string
+          mask_thumbnail_path?: string | null
+          meta?: Json | null
           mime?: string
+          palette?: Json | null
           size_bytes?: number
           stylepack_id?: string
+          texture_tags?: string[] | null
           uploaded_by?: string
           url?: string
           width?: number | null
@@ -367,6 +403,7 @@ export type Database = {
           complexity: number | null
           created_at: string
           description: string | null
+          fitness_scores: Json | null
           generator_provider: string | null
           id: string
           images: string[] | null
@@ -379,6 +416,7 @@ export type Database = {
           parent_id: string | null
           performance_profile: string | null
           realism: number | null
+          ref_image_count: number | null
           reference_stats: Json | null
           shape_template: string | null
           sharpness: number | null
@@ -394,6 +432,7 @@ export type Database = {
           complexity?: number | null
           created_at?: string
           description?: string | null
+          fitness_scores?: Json | null
           generator_provider?: string | null
           id?: string
           images?: string[] | null
@@ -406,6 +445,7 @@ export type Database = {
           parent_id?: string | null
           performance_profile?: string | null
           realism?: number | null
+          ref_image_count?: number | null
           reference_stats?: Json | null
           shape_template?: string | null
           sharpness?: number | null
@@ -421,6 +461,7 @@ export type Database = {
           complexity?: number | null
           created_at?: string
           description?: string | null
+          fitness_scores?: Json | null
           generator_provider?: string | null
           id?: string
           images?: string[] | null
@@ -433,6 +474,7 @@ export type Database = {
           parent_id?: string | null
           performance_profile?: string | null
           realism?: number | null
+          ref_image_count?: number | null
           reference_stats?: Json | null
           shape_template?: string | null
           sharpness?: number | null
