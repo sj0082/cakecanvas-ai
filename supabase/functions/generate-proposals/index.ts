@@ -260,7 +260,7 @@ serve(async (req) => {
       throw error;
     }
 
-    const proposalsToInsert = generatedProposals.map((imgData: any) => ({
+    const proposalsToInsert = generatedProposals.map((imgData: any, index: number) => ({
       request_id: requestId,
       variant: imgData.variant,
       image_url: imgData.url,
@@ -283,6 +283,28 @@ serve(async (req) => {
       },
       generator_response: imgData.metadata || {},
       seed: imgData.seed,
+      // New fields for improved tracking
+      seed_class: Math.floor((imgData.seed % 5) + 1), // Map seed to 1-5 class
+      stage: 1, // Stage 1: Initial generation (will be 2 for refinement, 3 for upscaling)
+      engine: provider === 'gemini' ? 'google/gemini-2.5-flash-image' : provider,
+      payload: {
+        stylepack_id: request.stylepack_id,
+        size_category_id: request.size_category_id,
+        user_text: userText,
+        variant_type: imgData.variantType,
+        style_params: {
+          style_strength: styleStrength,
+          sharpness,
+          realism,
+          complexity,
+          palette_lock: paletteLock
+        },
+        trend_keywords: styleTrendKeywords,
+        trend_techniques: styleTrendTechniques,
+        reference_images: referenceImages
+      },
+      scores: null, // Will be populated by quality evaluation
+      rank_score: null, // Will be populated by reranking
       price_range_min: sizeCategory.base_price_min,
       price_range_max: sizeCategory.base_price_max,
       badges: []
