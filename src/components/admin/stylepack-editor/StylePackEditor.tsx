@@ -468,10 +468,10 @@ export const StylePackEditor = ({
                 </div>
               </div>
 
-              {/* Reference Images */}
-              <div className="pb-4 border-b">
-                <div className="flex justify-between items-center mb-4">
-                  <Label className="font-semibold">Reference Images</Label>
+              {/* 🔥 SECTION 2: Reference Images - Always Visible */}
+              <div className="space-y-4 pb-4 border-b-2">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-semibold text-lg">Reference Images (최신 트렌드 이미지)</h3>
                   <Button 
                     onClick={handleAutoAnalyze}
                     disabled={isAnalyzing || eligibleImagesCount < 3}
