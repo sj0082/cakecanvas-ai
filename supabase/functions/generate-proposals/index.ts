@@ -737,16 +737,14 @@ async function generateWithGemini(params: any) {
   }
 
   // Build multimodal message content with reference images
-  const messageContent: any[] = [
-    { type: "text", text: params.prompt }
-  ];
+  const messageContent: any[] = [];
 
   // Add reference images if available (up to 3 for best results)
   if (params.referenceImages && params.referenceImages.length > 0) {
     const referencesToUse = params.referenceImages.slice(0, 3);
     
-    // Add detailed analysis instructions
-    messageContent.unshift({
+    // Step 1: Add detailed analysis instructions first
+    messageContent.push({
       type: "text",
       text: `REFERENCE IMAGE ANALYSIS INSTRUCTIONS:
 Study these reference images carefully and extract:
@@ -780,7 +778,7 @@ TREND INTEGRATION:
 Focus on elements that make these designs visually appealing and commercially successful.`
     });
     
-    // Add each reference image
+    // Step 2: Add each reference image
     for (const refUrl of referencesToUse) {
       messageContent.push({
         type: "image_url",
@@ -788,21 +786,32 @@ Focus on elements that make these designs visually appealing and commercially su
       });
     }
     
-    // Add improved generation requirements
+    // Step 3: Add generation requirements
     messageContent.push({
       type: "text",
       text: `GENERATION REQUIREMENTS:
 Create a NEW, TREND-FORWARD cake design that:
 1. Incorporates the most modern and appealing elements from the reference images
-2. Updates classic styles with 2025 trends (textured buttercream, natural botanicals, contemporary color palettes)
+2. Updates classic styles with 2025 trends:
+   • Textured buttercream finishes
+   • Natural botanicals (eucalyptus, pampas grass, dried florals)
+   • Contemporary color palettes (sage green + terracotta, dusty rose + champagne)
+   • Geometric patterns and ombré effects
+   • Wafer paper flowers and gold leaf accents
+   • Sculptural elements and artistic brushstrokes
 3. Creates an Instagram-worthy, Pinterest-pinnable design that customers want to purchase
 4. Maintains commercial viability - must be achievable by a skilled baker
-5. Follows the specific style requirements and parameters below
-6. Avoids outdated design elements from 2010s-2020s (overly ornate piping, dated color schemes)
+5. Avoids outdated design elements from 2010s-2020s (overly ornate piping, dated color schemes)
 
-Generate a cake that customers would be excited to order for their special occasion in 2025:`
+Now generate the cake design based on the following detailed specification:`
     });
   }
+
+  // Step 4: Add the actual prompt last
+  messageContent.push({
+    type: "text",
+    text: params.prompt
+  });
 
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
