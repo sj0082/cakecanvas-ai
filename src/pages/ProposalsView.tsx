@@ -127,9 +127,15 @@ const ProposalsView = () => {
                 <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-6 max-w-md mx-auto">
                   <p className="text-destructive font-semibold mb-2">Generation Failed</p>
                   <p className="text-sm text-muted-foreground mb-4">
-                    We encountered an error while generating your cake designs. Please try again or contact support if the problem persists.
+                    We encountered an error while generating your cake designs. 
+                    This usually happens when the selected style pack doesn't have enough reference images (minimum 2 required).
                   </p>
-                  <p className="text-xs text-muted-foreground">Request ID: {requestId}</p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Please try selecting a different style pack or contact support if the problem persists.
+                  </p>
+                  <p className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded">
+                    Request ID: {requestId}
+                  </p>
                 </div>
               </div>
             ) : request.status === "GENERATING" && request.proposals.length === 0 ? (
