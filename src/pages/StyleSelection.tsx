@@ -44,24 +44,16 @@ const StyleSelection = () => {
   useEffect(() => {
     if (selectedCategory) {
       const fetchStylePacks = async () => {
-        // Fetch level 2 style packs for selected category with ref image count
+        // Fetch level 2 style packs for selected category
+        // ref_image_count is already included in the stylepacks table
         const { data } = await supabase
           .from("stylepacks")
-          .select(`
-            *,
-            stylepack_ref_images(count)
-          `)
+          .select("*")
           .eq("parent_id", selectedCategory)
           .eq("is_active", true)
           .order("name");
         
-        // Transform data to include ref_image_count
-        const transformedData = (data || []).map((sp: any) => ({
-          ...sp,
-          ref_image_count: sp.stylepack_ref_images?.[0]?.count || 0
-        }));
-        
-        setStylePacks(transformedData);
+        setStylePacks(data || []);
       };
       fetchStylePacks();
     }
