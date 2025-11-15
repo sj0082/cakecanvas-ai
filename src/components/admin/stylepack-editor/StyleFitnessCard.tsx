@@ -48,22 +48,43 @@ export const StyleFitnessCard = ({ stylePackId, imageCount, referenceStats }: St
 
       if (error) {
         console.error('[StyleFitnessCard] Calculate error:', error);
+        console.error('[StyleFitnessCard] Calculate error type:', typeof error);
+        console.error('[StyleFitnessCard] Calculate error keys:', error ? Object.keys(error) : 'null');
         
         // Phase 5.1: Parse structured error messages from Edge Function
         let errorMessage = '알 수 없는 오류가 발생했습니다';
         let errorDetails = '';
         
         try {
-          // Try to parse JSON error response
-          const errorData = typeof error === 'string' ? JSON.parse(error) : error;
-          if (errorData.error === 'INSUFFICIENT_REFERENCE_IMAGES') {
-            errorMessage = errorData.message;
-            errorDetails = errorData.details;
-          } else if (errorData.error === 'MISSING_EMBEDDINGS') {
-            errorMessage = errorData.message;
-            errorDetails = errorData.details;
+          // Supabase functions.invoke wraps errors in a specific format
+          // The actual response is in error.context or error.message
+          let errorData = null;
+          
+          if (error.context && typeof error.context === 'object') {
+            errorData = error.context;
+          } else if (error.message) {
+            try {
+              errorData = JSON.parse(error.message);
+            } catch {
+              // message is not JSON
+            }
           }
-        } catch {
+          
+          if (errorData) {
+            console.error('[StyleFitnessCard] Parsed error data:', errorData);
+            if (errorData.error === 'INSUFFICIENT_REFERENCE_IMAGES') {
+              errorMessage = errorData.message;
+              errorDetails = errorData.details;
+            } else if (errorData.error === 'MISSING_EMBEDDINGS') {
+              errorMessage = errorData.message;
+              errorDetails = errorData.details;
+            } else if (errorData.error || errorData.message) {
+              errorMessage = errorData.message || errorData.error;
+              errorDetails = errorData.details || '';
+            }
+          }
+        } catch (parseError) {
+          console.error('[StyleFitnessCard] Error parsing:', parseError);
           // Fallback to string matching
           const errorStr = typeof error === 'string' ? error : error.message || '';
           if (errorStr.includes('embedding')) {
