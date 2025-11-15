@@ -217,6 +217,7 @@ serve(async (req) => {
         processed: successCount,
         total: imagePaths.length
       } 
+    });
   } catch (err: any) {
     return respondError({ status: 500, requestId, corsHeaders, code: "INTERNAL", message: err.message || "Error" });
   }
