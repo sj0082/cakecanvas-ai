@@ -328,7 +328,23 @@ export const StylePackEditor = ({
       }
       
       console.log(`[AutoAnalyze] [${requestId}] Success:`, data);
-      setReferenceStats(data);
+      
+      // Fetch updated stylepack data from database to get the actual reference_stats
+      const { data: updatedStylepack, error: fetchError } = await supabase
+        .from('stylepacks')
+        .select('reference_stats')
+        .eq('id', stylePack.id)
+        .single();
+      
+      if (fetchError) {
+        console.error(`[AutoAnalyze] Failed to fetch updated stats:`, fetchError);
+        // Fallback to edge function response
+        setReferenceStats(data);
+      } else {
+        console.log(`[AutoAnalyze] Updated reference_stats from DB:`, updatedStylepack.reference_stats);
+        setReferenceStats(updatedStylepack.reference_stats);
+      }
+      
       toast({
         title: "분석 완료",
         description: `팔레트 ${data.palette?.length || 0}개, 텍스처 ${data.textures?.length || 0}개 추출`
