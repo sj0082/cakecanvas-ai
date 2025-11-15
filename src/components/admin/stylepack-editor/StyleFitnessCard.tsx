@@ -46,7 +46,39 @@ export const StyleFitnessCard = ({ stylePackId, imageCount, referenceStats }: St
         body: { stylepackId: stylePackId }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[StyleFitnessCard] Calculate error:', error);
+        
+        // Phase 5.1: Parse structured error messages from Edge Function
+        let errorMessage = '알 수 없는 오류가 발생했습니다';
+        let errorDetails = '';
+        
+        try {
+          // Try to parse JSON error response
+          const errorData = typeof error === 'string' ? JSON.parse(error) : error;
+          if (errorData.error === 'INSUFFICIENT_REFERENCE_IMAGES') {
+            errorMessage = errorData.message;
+            errorDetails = errorData.details;
+          } else if (errorData.error === 'MISSING_EMBEDDINGS') {
+            errorMessage = errorData.message;
+            errorDetails = errorData.details;
+          }
+        } catch {
+          // Fallback to string matching
+          const errorStr = typeof error === 'string' ? error : error.message || '';
+          if (errorStr.includes('embedding')) {
+            errorMessage = 'Embedding 데이터가 없습니다';
+            errorDetails = 'Auto-Analyze를 먼저 실행해주세요.';
+          } else if (errorStr.includes('at least 2')) {
+            errorMessage = '최소 2개의 분석된 참조 이미지가 필요합니다';
+            errorDetails = '이미지를 더 업로드하고 Auto-Analyze를 실행해주세요.';
+          }
+        }
+        
+        toast.error(errorDetails || errorMessage);
+        setIsCalculating(false);
+        return;
+      }
 
       if (data?.fitnessScores) {
         setFitnessScores(data.fitnessScores);

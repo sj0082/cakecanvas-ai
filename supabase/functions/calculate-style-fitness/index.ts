@@ -100,8 +100,39 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to fetch reference images: ${refError.message}`);
     }
 
+    // Phase 4.2: Detailed error messages for insufficient reference images
     if (!refImages || refImages.length < 2) {
-      throw new Error('Need at least 2 reference images to calculate fitness');
+      return new Response(
+        JSON.stringify({
+          error: 'INSUFFICIENT_REFERENCE_IMAGES',
+          message: '최소 2개의 참조 이미지가 필요합니다',
+          details: `현재 ${refImages?.length || 0}개의 이미지가 분석되었습니다. 먼저 이미지를 업로드하고 Auto-Analyze를 실행해주세요.`,
+          refImageCount: refImages?.length || 0,
+          requiredCount: 2
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Validate embeddings exist
+    const validEmbeddings = refImages.filter(img => img.embedding);
+    if (validEmbeddings.length < 2) {
+      return new Response(
+        JSON.stringify({
+          error: 'MISSING_EMBEDDINGS',
+          message: 'Embedding 데이터가 부족합니다',
+          details: `${refImages.length}개의 이미지 중 ${validEmbeddings.length}개만 분석되었습니다. Auto-Analyze를 실행해주세요.`,
+          totalImages: refImages.length,
+          analyzedImages: validEmbeddings.length
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
 
     console.log(`Calculating fitness for stylepack ${stylepackId} with ${refImages.length} reference images`);
