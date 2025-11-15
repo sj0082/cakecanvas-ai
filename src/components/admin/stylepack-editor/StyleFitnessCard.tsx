@@ -36,7 +36,7 @@ export const StyleFitnessCard = ({ stylePackId, imageCount, referenceStats }: St
     }
 
     if (imageCount < 2) {
-      toast.error('Need at least 2 reference images to calculate fitness');
+      toast.error('최소 2장의 참조 이미지가 필요합니다. 먼저 Auto-Analyze를 실행해주세요.');
       return;
     }
 
@@ -92,10 +92,10 @@ export const StyleFitnessCard = ({ stylePackId, imageCount, referenceStats }: St
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">
-            Upload at least 2 reference images to calculate style fitness metrics.
+            최소 2장의 참조 이미지를 업로드한 후 <strong>Auto-Analyze</strong>를 실행해야 Fitness를 계산할 수 있습니다.
           </p>
           <div className="text-xs text-muted-foreground">
-            <strong>Current:</strong> {imageCount} image{imageCount !== 1 ? 's' : ''}
+            <strong>현재:</strong> {imageCount}개의 분석된 이미지
           </div>
         </CardContent>
       </Card>

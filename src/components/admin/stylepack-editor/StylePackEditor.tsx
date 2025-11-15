@@ -281,10 +281,24 @@ export const StylePackEditor = ({
         return;
       }
       
+      // Validate stylePackId exists
+      if (!stylePack?.id) {
+        toast({
+          title: "스타일팩 저장 필요",
+          description: "먼저 스타일팩을 저장한 후 분석을 실행해주세요.",
+          variant: "destructive",
+        });
+        setIsAnalyzing(false);
+        return;
+      }
+
       console.log(`[AutoAnalyze] [${requestId}] Calling stylepack-analyze function with paths:`, imagePaths);
       
       const { data, error } = await supabase.functions.invoke('stylepack-analyze', {
-        body: { imagePaths }
+        body: { 
+          imagePaths,
+          stylepackId: stylePack.id
+        }
       });
 
       if (error) {
