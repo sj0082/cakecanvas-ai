@@ -63,8 +63,8 @@ serve(async (req) => {
     }
 
     const messages: any[] = [
-      { role: "system", content: "Return only valid JSON." },
-      { role: "user", content: 'Extract: {"palette": [{"hex":"#FFF","ratio":0.3}], "textures": ["smooth"], "density": "mid"}' },
+      { role: "system", content: "Return only valid JSON. For density, ONLY use exactly 'low', 'mid', or 'high'." },
+      { role: "user", content: 'Extract: {"palette": [{"hex":"#FFFFFF","ratio":0.3}], "textures": ["smooth","textured"], "density": "mid"}. IMPORTANT: density must be exactly "low", "mid", or "high" only.' },
       ...signedUrls.slice(0, 5).map(url => ({ role: "user", content: [{ type: "image_url", image_url: { url } }] }))
     ];
 
@@ -83,7 +83,17 @@ serve(async (req) => {
     const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
     const palette = Array.isArray(parsed?.palette) ? parsed.palette : [];
     const textures = Array.isArray(parsed?.textures) ? parsed.textures : [];
-    const density = parsed?.density || "mid";
+    
+    // Normalize density to match CHECK constraint (low, mid, high)
+    let rawDensity = (parsed?.density || "mid").toLowerCase();
+    let density = "mid";
+    if (rawDensity.includes("low") || rawDensity.includes("minimal") || rawDensity.includes("sparse")) {
+      density = "low";
+    } else if (rawDensity.includes("high") || rawDensity.includes("elaborate") || rawDensity.includes("dense") || rawDensity.includes("heavy")) {
+      density = "high";
+    } else if (rawDensity.includes("mid") || rawDensity.includes("medium") || rawDensity.includes("moderate")) {
+      density = "mid";
+    }
 
     // Phase 4: Generate embeddings and upsert to stylepack_ref_images with error tracking
     const errors: Array<{ imagePath: string; error: string }> = [];
