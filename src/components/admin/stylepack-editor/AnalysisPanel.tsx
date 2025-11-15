@@ -4,7 +4,9 @@ import { AlertCircle, Palette, Layers } from "lucide-react";
 interface AnalysisPanelProps {
   referenceStats: {
     palette?: Array<{ hex: string; hsl: number[]; name: string }>;
+    palette_colors?: Array<{ hex: string; ratio: number }>;
     textures?: string[];
+    common_textures?: string[];
     techniques?: string[];
     safety?: {
       hasBannedContent: boolean;
@@ -45,18 +47,20 @@ export const AnalysisPanel = ({ referenceStats, isAnalyzing }: AnalysisPanelProp
         Analysis Results
       </h3>
 
-      {referenceStats.palette && referenceStats.palette.length > 0 && (
+      {/* Support both palette and palette_colors field names */}
+      {((referenceStats.palette && referenceStats.palette.length > 0) || 
+        (referenceStats.palette_colors && referenceStats.palette_colors.length > 0)) && (
         <div>
           <p className="text-sm text-muted-foreground mb-2">Color Palette</p>
           <div className="flex flex-wrap gap-2">
-            {referenceStats.palette.map((color, idx) => (
+            {(referenceStats.palette || referenceStats.palette_colors || []).map((color: any, idx: number) => (
               <div key={idx} className="flex items-center gap-2 border rounded-lg px-3 py-2">
                 <div
                   className="w-6 h-6 rounded border"
                   style={{ backgroundColor: color.hex }}
                 />
                 <div className="text-xs">
-                  <div className="font-medium">{color.name}</div>
+                  <div className="font-medium">{color.name || 'Color ' + (idx + 1)}</div>
                   <div className="text-muted-foreground">{color.hex}</div>
                 </div>
               </div>
@@ -65,11 +69,13 @@ export const AnalysisPanel = ({ referenceStats, isAnalyzing }: AnalysisPanelProp
         </div>
       )}
 
-      {referenceStats.textures && referenceStats.textures.length > 0 && (
+      {/* Support both textures and common_textures field names */}
+      {((referenceStats.textures && referenceStats.textures.length > 0) ||
+        (referenceStats.common_textures && referenceStats.common_textures.length > 0)) && (
         <div>
           <p className="text-sm text-muted-foreground mb-2">Textures & Techniques</p>
           <div className="flex flex-wrap gap-2">
-            {referenceStats.textures.map((texture, idx) => (
+            {(referenceStats.textures || referenceStats.common_textures || []).map((texture: string, idx: number) => (
               <Badge key={idx} variant="secondary">{texture}</Badge>
             ))}
             {referenceStats.techniques?.map((tech, idx) => (
