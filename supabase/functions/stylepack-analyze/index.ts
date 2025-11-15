@@ -70,30 +70,34 @@ serve(async (req) => {
     const messages: any[] = [
       { 
         role: "system", 
-        content: "You are a cake design analyzer. Analyze the provided cake images and extract color palette, textures, and decoration density. Return ONLY valid JSON with the exact structure specified." 
+        content: "You are a cake design analyzer. Analyze ALL provided cake images as a SET and extract the OVERALL color palette, textures, and decoration density for this entire collection. Return ONLY valid JSON with the exact structure specified." 
       },
       { 
         role: "user", 
         content: [
           {
             type: "text",
-            text: `Analyze these ${signedUrls.length} cake images and extract:
-1. Color Palette: Identify 3-7 dominant colors with their hex codes and approximate ratios (must sum to ~1.0)
-2. Textures: List texture types seen (e.g., "smooth fondant", "textured buttercream", "ruffled", "piped details", "fresh flowers")
-3. Density: Overall decoration density - MUST be exactly one of: "low" (minimal/clean), "mid" (moderate), or "high" (elaborate/heavily decorated)
+            text: `Analyze ALL ${signedUrls.length} cake images as a complete SET and extract the OVERALL characteristics:
 
-Return ONLY this JSON structure (no markdown, no explanations):
+1. Color Palette: Identify 3-7 dominant colors that appear ACROSS ALL IMAGES with their hex codes and approximate ratios (must sum to ~1.0)
+2. Textures: List ALL texture types seen ACROSS ALL IMAGES (e.g., "smooth fondant", "textured buttercream", "ruffled", "piped details", "fresh flowers")
+3. Density: OVERALL decoration density for this SET - MUST be exactly one of: "low" (minimal/clean), "mid" (moderate), or "high" (elaborate/heavily decorated)
+
+Return ONLY this SINGLE JSON object for the ENTIRE SET (no markdown, no explanations, no array):
 {
   "palette": [
-    {"hex": "#FFFFFF", "ratio": 0.5},
-    {"hex": "#F5E6D3", "ratio": 0.3},
-    {"hex": "#C4A57B", "ratio": 0.2}
+    {"hex": "#FFFFFF", "ratio": 0.6},
+    {"hex": "#F5E6D3", "ratio": 0.25},
+    {"hex": "#C4A57B", "ratio": 0.15}
   ],
-  "textures": ["smooth fondant", "fresh flowers", "gold accents"],
+  "textures": ["smooth fondant", "fresh flowers", "gold accents", "textured buttercream"],
   "density": "mid"
 }
 
-CRITICAL: density MUST be exactly "low", "mid", or "high" - no other values allowed.`
+CRITICAL: 
+- Return a SINGLE object, NOT an array
+- density MUST be exactly "low", "mid", or "high" - no other values allowed
+- Analyze the images as a complete set, not individually`
           },
           ...imageMessages
         ]
