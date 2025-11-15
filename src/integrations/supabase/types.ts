@@ -391,7 +391,7 @@ export type Database = {
           size_bytes: number
           stylepack_id: string
           texture_tags: string[] | null
-          uploaded_by: string
+          uploaded_by: string | null
           url: string
           width: number | null
         }
@@ -409,7 +409,7 @@ export type Database = {
           size_bytes: number
           stylepack_id: string
           texture_tags?: string[] | null
-          uploaded_by: string
+          uploaded_by?: string | null
           url: string
           width?: number | null
         }
@@ -427,7 +427,7 @@ export type Database = {
           size_bytes?: number
           stylepack_id?: string
           texture_tags?: string[] | null
-          uploaded_by?: string
+          uploaded_by?: string | null
           url?: string
           width?: number | null
         }

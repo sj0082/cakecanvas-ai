@@ -15,10 +15,18 @@ interface Lab {
 }
 
 /**
- * Convert hex color to RGB
+ * Convert hex color to RGB (supports both 3 and 6 digit formats)
  */
 export function hexToRgb(hex: string): RGB {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  // Remove # if present
+  let cleanHex = hex.replace(/^#/, '');
+  
+  // Convert 3-digit to 6-digit
+  if (cleanHex.length === 3) {
+    cleanHex = cleanHex[0] + cleanHex[0] + cleanHex[1] + cleanHex[1] + cleanHex[2] + cleanHex[2];
+  }
+  
+  const result = /^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(cleanHex);
   if (!result) {
     throw new Error(`Invalid hex color: ${hex}`);
   }
