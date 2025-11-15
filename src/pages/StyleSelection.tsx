@@ -61,16 +61,11 @@ const StyleSelection = () => {
 
   useEffect(() => {
     if (selectedStyle) {
-      const fetchRefImageCount = async () => {
-        const { count } = await supabase
-          .from("stylepack_ref_images")
-          .select("*", { count: 'exact', head: true })
-          .eq("stylepack_id", selectedStyle);
-        setSelectedStyleRefCount(count || 0);
-      };
-      fetchRefImageCount();
+      // Get ref_image_count from already loaded stylePacks array
+      const selectedPack = stylePacks.find(pack => pack.id === selectedStyle);
+      setSelectedStyleRefCount(selectedPack?.ref_image_count || 0);
     }
-  }, [selectedStyle]);
+  }, [selectedStyle, stylePacks]);
 
   const handleCategorySelect = (categoryId: string) => {
     setSelectedCategory(categoryId);
