@@ -65,80 +65,37 @@ serve(async (req) => {
       const description = visionData.choices[0].message.content;
       console.log('📝 Generated visual description:', description.substring(0, 200) + '...');
       
-      // Step 2: Generate embedding from the rich visual description
-      const embeddingResponse = await fetch('https://ai.gateway.lovable.dev/v1/embeddings', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          input: description,
-          model: 'text-embedding-3-small',
-        }),
-      });
-
-      if (!embeddingResponse.ok) {
-        const errorText = await embeddingResponse.text();
-        console.error('Embedding generation failed:', embeddingResponse.status, errorText);
-        throw new Error(`Embedding generation failed: ${embeddingResponse.status}`);
-      }
-
-      const embeddingData = await embeddingResponse.json();
-      const embedding = embeddingData.data[0].embedding;
-
-      console.log(`✅ Generated ${embedding.length}-dimensional image embedding`);
+      // Return description without embedding (Lovable AI doesn't support text-embedding models)
+      // The description itself will be used for similarity matching
+      console.log('⚠️ Note: Returning description only (embedding generation skipped)');
 
       return new Response(
         JSON.stringify({ 
-          embedding, 
+          embedding: null, // No embedding available
           description,
-          dimensions: embedding.length 
+          dimensions: 0
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // TEXT-based embeddings (fallback)
-    console.log('📝 Generating text-based embedding');
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/embeddings', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'text-embedding-3-small',
-        input: text,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Embedding API error:', response.status, errorText);
-      throw new Error(`Embedding API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const embedding = data.data?.[0]?.embedding;
-
-    if (!embedding) {
-      throw new Error('No embedding returned from API');
-    }
-
+    // TEXT-based embeddings (fallback - also disabled)
+    console.log('📝 Text-based embedding requested (skipping - not supported)');
+    
     return new Response(
       JSON.stringify({ 
-        embedding,
-        dimensions: embedding.length 
+        embedding: null,
+        description: text || '',
+        dimensions: 0
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-
   } catch (error) {
-    console.error('Error generating embedding:', error);
+    console.error('Error in generate-embeddings:', error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
+
