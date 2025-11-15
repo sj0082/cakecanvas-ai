@@ -85,92 +85,138 @@ serve(async (req) => {
     const textures = Array.isArray(parsed?.textures) ? parsed.textures : [];
     const density = parsed?.density || "mid";
 
-    // Update stylepack_ref_images with analysis
+    // Phase 4: Generate embeddings and upsert to stylepack_ref_images with error tracking
+    const errors: Array<{ imagePath: string; error: string }> = [];
+    let successCount = 0;
+    
     for (const imagePath of imagePaths) {
       const fileName = imagePath.split('/').pop();
-      if (fileName) {
-        // Get public URL for embedding generation
-        const publicUrl = `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/public/${BUCKET}/${imagePath}`;
-        
-        // Generate IMAGE-based embedding using the actual image
-        let embedding = null;
-        let description = null;
-        try {
-          const embeddingResponse = await supabase.functions.invoke('generate-embeddings', {
-            body: { 
-              imageUrl: publicUrl,
-              type: 'image'
+      
+      try {
+        if (fileName) {
+          // Get public URL for embedding generation
+          const publicUrl = `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/public/${BUCKET}/${imagePath}`;
+          
+          // Generate IMAGE-based embedding using the actual image
+          let embedding = null;
+          let description = null;
+          try {
+            const embeddingResponse = await supabase.functions.invoke('generate-embeddings', {
+              body: { 
+                imageUrl: publicUrl,
+                type: 'image'
+              }
+            });
+            
+            if (embeddingResponse.data?.embedding) {
+              embedding = embeddingResponse.data.embedding;
+              description = embeddingResponse.data.description;
+              console.log(`✅ Generated IMAGE embedding (${embedding.length}D) for ${fileName}`);
+            }
+          } catch (embError) {
+            console.error('Failed to generate image embedding for', fileName, embError);
+            // Continue without embedding - not critical
+          }
+
+          // Convert palette to include ratios AND OKLab coordinates
+          const paletteWithRatios = palette.map((item: any) => {
+            const hexValue = typeof item === 'string' ? item : item.hex;
+            const ratio = typeof item === 'string' ? parseFloat((1 / palette.length).toFixed(3)) : item.ratio;
+            
+            try {
+              const oklabCoords = hexToOKLab(hexValue);
+              return { 
+                hex: hexValue, 
+                ratio: ratio,
+                oklab: oklabCoords
+              };
+            } catch (e) {
+              console.warn(`Failed to convert ${hexValue} to OKLab:`, e);
+              return { hex: hexValue, ratio: ratio };
             }
           });
-          
-          if (embeddingResponse.data?.embedding) {
-            embedding = embeddingResponse.data.embedding;
-            description = embeddingResponse.data.description;
-            console.log(`✅ Generated IMAGE embedding (${embedding.length}D) for ${fileName}`);
+
+          // Phase 4.1: UPSERT stylepack_ref_images with analysis results
+          const { error: upsertError } = await supabase
+            .from('stylepack_ref_images')
+            .upsert({
+              stylepack_id: stylepackId,
+              key: imagePath,
+              url: publicUrl,
+              palette: paletteWithRatios,
+              texture_tags: textures,
+              density,
+              embedding: embedding,
+              meta: { 
+                analyzed_at: new Date().toISOString(), 
+                request_id: requestId,
+                description: description
+              },
+              mime: imagePath.endsWith('.png') ? 'image/png' : 
+                    imagePath.endsWith('.webp') ? 'image/webp' : 'image/jpeg',
+              size_bytes: 0,
+              uploaded_by: null
+            }, {
+              onConflict: 'stylepack_id,key'
+            });
+
+          if (upsertError) {
+            throw new Error(`UPSERT failed: ${upsertError.message}`);
           }
-        } catch (embError) {
-          console.error('Failed to generate image embedding for', fileName, embError);
-          // Continue without embedding
+
+          successCount++;
+          console.log(`[${requestId}] ✓ Upserted stylepack_ref_images for ${imagePath} (${successCount}/${imagePaths.length})`);
         }
-
-        // Convert palette to include ratios AND OKLab coordinates
-        const paletteWithRatios = palette.map((item: any) => {
-          const hexValue = typeof item === 'string' ? item : item.hex;
-          const ratio = typeof item === 'string' ? parseFloat((1 / palette.length).toFixed(3)) : item.ratio;
-          
-          try {
-            const oklabCoords = hexToOKLab(hexValue);
-            return { 
-              hex: hexValue, 
-              ratio: ratio,
-              oklab: oklabCoords // [L, a, b] for perceptually uniform color matching
-            };
-          } catch (e) {
-            console.warn(`Failed to convert ${hexValue} to OKLab:`, e);
-            return { hex: hexValue, ratio: ratio };
-          }
-        });
-
-        // Phase 4.1: UPSERT stylepack_ref_images with analysis results
-        // If record doesn't exist, INSERT; if it exists, UPDATE
-        const { error: upsertError } = await supabase
-          .from('stylepack_ref_images')
-          .upsert({
-            stylepack_id: stylepackId,
-            key: imagePath,
-            url: publicUrl,
-            palette: paletteWithRatios,
-            texture_tags: textures,
-            density,
-            embedding: embedding,
-            meta: { 
-              analyzed_at: new Date().toISOString(), 
-              request_id: requestId,
-              description: description
-            },
-            mime: imagePath.endsWith('.png') ? 'image/png' : 
-                  imagePath.endsWith('.webp') ? 'image/webp' : 'image/jpeg',
-            size_bytes: 0, // Will be populated by frontend upload
-            uploaded_by: null // Service role context
-          }, {
-            onConflict: 'stylepack_id,key'
-          });
-
-        if (upsertError) {
-          console.error(`[${requestId}] Failed to upsert stylepack_ref_images for ${imagePath}:`, upsertError);
-          throw upsertError;
-        }
-
-        console.log(`[${requestId}] ✓ Upserted stylepack_ref_images for ${imagePath}`);
+      } catch (err: any) {
+        const errorMessage = err.message || 'Unknown error';
+        errors.push({ imagePath, error: errorMessage });
+        console.error(`[${requestId}] ❌ Failed to process ${imagePath}:`, errorMessage);
       }
     }
 
-    // Update stylepacks.reference_stats
+    // Update stylepacks.reference_stats with actual success count
     await supabase.from('stylepacks').update({
-      reference_stats: { palette_colors: palette, common_textures: textures, avg_density: density, analyzed_count: imagePaths.length, last_analyzed: new Date().toISOString() }
+      reference_stats: { 
+        palette_colors: palette, 
+        common_textures: textures, 
+        avg_density: density, 
+        analyzed_count: successCount, 
+        last_analyzed: new Date().toISOString() 
+      }
     }).eq('id', stylepackId);
 
-    return respond({ status: 200, requestId, corsHeaders, body: { palette, textures, density } });
+    // Return response with success/error info (Phase 4.1)
+    if (errors.length > 0) {
+      console.warn(`[${requestId}] ⚠️ Partial success: ${successCount}/${imagePaths.length} images processed`);
+      return respond({ 
+        status: 200, 
+        requestId, 
+        corsHeaders, 
+        body: { 
+          success: successCount > 0,
+          palette, 
+          textures, 
+          density,
+          processed: successCount,
+          total: imagePaths.length,
+          errors: errors
+        } 
+      });
+    }
+
+    console.log(`[${requestId}] ✅ All ${successCount} images processed successfully`);
+    return respond({ 
+      status: 200, 
+      requestId, 
+      corsHeaders, 
+      body: { 
+        success: true,
+        palette, 
+        textures, 
+        density,
+        processed: successCount,
+        total: imagePaths.length
+      } 
   } catch (err: any) {
     return respondError({ status: 500, requestId, corsHeaders, code: "INTERNAL", message: err.message || "Error" });
   }
