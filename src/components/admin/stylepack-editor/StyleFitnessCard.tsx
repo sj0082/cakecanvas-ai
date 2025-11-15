@@ -4,7 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2, AlertTriangle, XCircle, RefreshCw } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { CheckCircle2, AlertTriangle, XCircle, RefreshCw, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 interface StyleFitnessCardProps {
@@ -134,7 +135,12 @@ export const StyleFitnessCard = ({ stylePackId, imageCount, referenceStats }: St
   const scoreInfo = getScoreColor(overallScore);
   const ScoreIcon = scoreInfo.icon;
 
-  if (!fitnessScores && imageCount < 2) {
+  // Phase 4.2: Check if Auto-Analyze has been run
+  const analyzedCount = referenceStats?.analyzed_count || 0;
+  const hasAnalyzedImages = analyzedCount >= 2;
+  
+  // If not enough images uploaded
+  if (imageCount < 2) {
     return (
       <Card>
         <CardHeader>
@@ -145,11 +151,32 @@ export const StyleFitnessCard = ({ stylePackId, imageCount, referenceStats }: St
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">
-            최소 2장의 참조 이미지를 업로드한 후 <strong>Auto-Analyze</strong>를 실행해야 Fitness를 계산할 수 있습니다.
+            최소 2장의 참조 이미지가 필요합니다. 이미지를 업로드한 후 "Auto-Analyze" 버튼을 클릭해주세요.
           </p>
-          <div className="text-xs text-muted-foreground">
-            <strong>현재:</strong> {imageCount}개의 분석된 이미지
-          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  // If images uploaded but Auto-Analyze not run yet
+  if (imageCount >= 2 && !hasAnalyzedImages) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-blue-600" />
+            Action Required
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Auto-Analyze를 먼저 실행해주세요</AlertTitle>
+            <AlertDescription>
+              {imageCount}개의 이미지가 업로드되었지만 아직 분석되지 않았습니다. 
+              아래 "Reference Images" 섹션에서 "Auto-Analyze" 버튼을 클릭하여 이미지를 분석한 후 Calculate를 실행해주세요.
+            </AlertDescription>
+          </Alert>
         </CardContent>
       </Card>
     );
