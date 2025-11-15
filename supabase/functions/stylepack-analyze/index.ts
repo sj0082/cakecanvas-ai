@@ -62,10 +62,42 @@ serve(async (req) => {
       signedUrls.push(data.signedUrl);
     }
 
+    const imageMessages = signedUrls.slice(0, 5).map(url => ({ 
+      type: "image_url", 
+      image_url: { url } 
+    }));
+
     const messages: any[] = [
-      { role: "system", content: "Return only valid JSON. For density, ONLY use exactly 'low', 'mid', or 'high'." },
-      { role: "user", content: 'Extract: {"palette": [{"hex":"#FFFFFF","ratio":0.3}], "textures": ["smooth","textured"], "density": "mid"}. IMPORTANT: density must be exactly "low", "mid", or "high" only.' },
-      ...signedUrls.slice(0, 5).map(url => ({ role: "user", content: [{ type: "image_url", image_url: { url } }] }))
+      { 
+        role: "system", 
+        content: "You are a cake design analyzer. Analyze the provided cake images and extract color palette, textures, and decoration density. Return ONLY valid JSON with the exact structure specified." 
+      },
+      { 
+        role: "user", 
+        content: [
+          {
+            type: "text",
+            text: `Analyze these ${signedUrls.length} cake images and extract:
+1. Color Palette: Identify 3-7 dominant colors with their hex codes and approximate ratios (must sum to ~1.0)
+2. Textures: List texture types seen (e.g., "smooth fondant", "textured buttercream", "ruffled", "piped details", "fresh flowers")
+3. Density: Overall decoration density - MUST be exactly one of: "low" (minimal/clean), "mid" (moderate), or "high" (elaborate/heavily decorated)
+
+Return ONLY this JSON structure (no markdown, no explanations):
+{
+  "palette": [
+    {"hex": "#FFFFFF", "ratio": 0.5},
+    {"hex": "#F5E6D3", "ratio": 0.3},
+    {"hex": "#C4A57B", "ratio": 0.2}
+  ],
+  "textures": ["smooth fondant", "fresh flowers", "gold accents"],
+  "density": "mid"
+}
+
+CRITICAL: density MUST be exactly "low", "mid", or "high" - no other values allowed.`
+          },
+          ...imageMessages
+        ]
+      }
     ];
 
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -78,11 +110,17 @@ serve(async (req) => {
 
     const completion = await aiResp.json();
     let raw = completion.choices?.[0]?.message?.content;
-    if (typeof raw === "string") raw = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+    console.log('[AI Response]:', raw);
+    
+    if (typeof raw === "string") {
+      raw = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+    }
     
     const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-    const palette = Array.isArray(parsed?.palette) ? parsed.palette : [];
-    const textures = Array.isArray(parsed?.textures) ? parsed.textures : [];
+    console.log('[Parsed]:', JSON.stringify(parsed, null, 2));
+    
+    const palette = Array.isArray(parsed?.palette) && parsed.palette.length > 0 ? parsed.palette : [];
+    const textures = Array.isArray(parsed?.textures) && parsed.textures.length > 0 ? parsed.textures : [];
     
     // Normalize density to match CHECK constraint (low, mid, high)
     let rawDensity = (parsed?.density || "mid").toLowerCase();
@@ -94,6 +132,8 @@ serve(async (req) => {
     } else if (rawDensity.includes("mid") || rawDensity.includes("medium") || rawDensity.includes("moderate")) {
       density = "mid";
     }
+    
+    console.log(`[Extracted] Palette: ${palette.length} colors, Textures: ${textures.length} items, Density: ${density}`);
 
     // Phase 4: Generate embeddings and upsert to stylepack_ref_images with error tracking
     const errors: Array<{ imagePath: string; error: string }> = [];
