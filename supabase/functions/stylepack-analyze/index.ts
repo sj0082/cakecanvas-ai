@@ -131,17 +131,37 @@ serve(async (req) => {
           }
         });
 
-        await supabase.from('stylepack_ref_images').update({
-          palette: paletteWithRatios, 
-          texture_tags: textures, 
-          density,
-          embedding: embedding,
-          meta: { 
-            analyzed_at: new Date().toISOString(), 
-            request_id: requestId,
-            description: description
-          }
-        }).eq('stylepack_id', stylepackId).ilike('key', `%${fileName}%`);
+        // Phase 4.1: UPSERT stylepack_ref_images with analysis results
+        // If record doesn't exist, INSERT; if it exists, UPDATE
+        const { error: upsertError } = await supabase
+          .from('stylepack_ref_images')
+          .upsert({
+            stylepack_id: stylepackId,
+            key: imagePath,
+            url: publicUrl,
+            palette: paletteWithRatios,
+            texture_tags: textures,
+            density,
+            embedding: embedding,
+            meta: { 
+              analyzed_at: new Date().toISOString(), 
+              request_id: requestId,
+              description: description
+            },
+            mime: imagePath.endsWith('.png') ? 'image/png' : 
+                  imagePath.endsWith('.webp') ? 'image/webp' : 'image/jpeg',
+            size_bytes: 0, // Will be populated by frontend upload
+            uploaded_by: null // Service role context
+          }, {
+            onConflict: 'stylepack_id,key'
+          });
+
+        if (upsertError) {
+          console.error(`[${requestId}] Failed to upsert stylepack_ref_images for ${imagePath}:`, upsertError);
+          throw upsertError;
+        }
+
+        console.log(`[${requestId}] ✓ Upserted stylepack_ref_images for ${imagePath}`);
       }
     }
 
