@@ -123,7 +123,8 @@ serve(async (req) => {
       layoutMaskUrl,
       forbiddenReplacements: filterResult.replacements,
       refImages: refImages.slice(0, 3),
-      negativePrompt: getFullNegativePrompt()
+      negativePrompt: getFullNegativePrompt(),
+      paletteLock: stylepack.palette_lock ?? 0.9
     };
 
     console.log('✅ Constraints built');
@@ -329,17 +330,28 @@ TREND INTEGRATION (2025):
 
 Generate 3 prompts as JSON:
 {
-  "conservative": "Classic design staying very close to reference style with subtle 2025 updates...",
-  "standard": "Balanced design blending reference style with modern 2025 trends...",
-  "bold": "Creative interpretation of reference style with bold 2025 trend elements..."
+  "conservative": "Classic [StylePack style] design with subtle 2025 updates. Start by describing the exact color palette from references (hex codes, proportions). Include: [textured buttercream finish, minimal fresh botanicals, refined gold accents]. Maintain reference textures and density. End with: 'Photorealistic, 4K, Instagram-worthy, natural lighting, shallow DOF, magazine quality'",
+  
+  "standard": "Modern [StylePack style] design balancing tradition and 2025 trends. Start by describing the color palette matching references. Incorporate: [textured buttercream, geometric patterns, fresh florals, ombré effects, wafer paper elements]. Match reference texture style. End with: 'Photorealistic, 4K, Pinterest-trending, contemporary aesthetic, professional photography'",
+  
+  "bold": "Artistic [StylePack style] design with bold 2025 interpretation. Start by describing the color palette inspired by references. Feature: [dramatic textured finishes, sculptural elements, unexpected botanical arrangements, artistic brushstrokes, gold leaf accents]. Preserve core style while pushing boundaries. End with: 'Photorealistic, 4K, Instagram editorial style, dramatic lighting, award-winning photography'"
 }
 
-Each prompt should be detailed, specific, and include:
-- Structure and tier details
-- Color palette (matching reference proportions)
-- Texture and finish techniques
-- Decoration elements (trending 2025 techniques)
-- Photography style (Instagram/Pinterest quality)`;
+CRITICAL PROMPT STRUCTURE (each prompt MUST follow this order):
+1. Introduction (2 sentences): Tier count, shape, overall impression
+2. Reference Style Matching (3 sentences):
+   - Exact color palette (hex codes + proportions from references)
+   - Texture techniques matching references (smooth fondant / textured buttercream)
+   - Decoration density matching references (minimalist / balanced / richly decorated)
+3. 2025 Trend Integration (4 sentences):
+   - Specific trending elements to incorporate
+   - How they enhance the base style
+4. Tier-by-Tier Details (4 sentences):
+   - Describe each tier's decoration, texture, and colors
+5. Photography Style (1 sentence):
+   - "Photorealistic, 4K, [Instagram/Pinterest]-worthy, [lighting style], [quality descriptor]"
+
+Each prompt should be 250-300 words, detailed, actionable, and vendor-style specific.`;
 
   const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
@@ -447,10 +459,28 @@ CRITICAL: The generated design must match the seller's signature style from thes
           text: `GENERATION REQUIREMENTS:
 Create a NEW, TREND-FORWARD cake design that:
 1. Matches the visual style, color palette, and texture techniques from the reference images above
-2. Incorporates 2025 trending elements (textured buttercream, natural botanicals, contemporary colors)
+
+2. Incorporates 2025 trending elements:
+   • Textured buttercream finishes (modern, organic textures)
+   • Natural botanicals and fresh flower arrangements (eucalyptus, pampas grass, dried florals)
+   • Contemporary color palettes:
+     - Sage green + terracotta + cream
+     - Dusty rose + champagne + gold
+     - Muted lavender + grey + white
+   • Geometric patterns and clean lines
+   • Ombré gradients and watercolor effects
+   • Wafer paper flowers and edible gold leaf accents
+   • Sculptural elements and artistic brushstrokes
+   • Minimalist negative space design
+
 3. Creates an Instagram-worthy, Pinterest-pinnable design
 4. Maintains commercial viability - achievable by a skilled baker
-5. Follows the specific prompt requirements below
+5. Preserves the seller's signature style while adding modern 2025 updates
+6. Avoids outdated design elements from 2010s-2020s:
+   ❌ Overly ornate traditional piping
+   ❌ Dated color schemes (bright primary colors, pastel overload)
+   ❌ Heavy fondant cascades
+   ❌ Excessive sugar flowers covering entire tiers
 
 Now generate the design based on this prompt:`
         });
