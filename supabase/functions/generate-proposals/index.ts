@@ -223,8 +223,16 @@ serve(async (req) => {
       }
     }
     
-    // Reference images for style guidance
-    const referenceImages = stylepack.images || [];
+    // Reference images for style guidance - use analyzed images from stylepack_ref_images
+    const referenceImages = refImages.map((img: any) => img.url).filter(Boolean);
+    
+    if (referenceImages.length === 0) {
+      console.warn('⚠️ No reference image URLs found from stylepack_ref_images, falling back to stylepack.images');
+      const fallbackImages = stylepack.images || [];
+      referenceImages.push(...fallbackImages);
+    }
+    
+    console.log(`📸 Using ${referenceImages.length} analyzed reference image URLs for generation`);
     
     // Extract StylePack trend keywords from database
     const styleTrendKeywords = (stylepack.trend_keywords as string[]) || [];
@@ -313,21 +321,46 @@ serve(async (req) => {
       '2010s style', 'fondant roses overload', 'heavy traditional piping'
     ].join(', ');
 
-    // Build reference context with color ratios
+    // Build reference context with detailed analysis information
     const refContextForPrompt = refImages.length > 0 ? `
-REFERENCE IMAGES (${refImages.length} provided - MANDATORY to match):
+REFERENCE IMAGE ANALYSIS (${refImages.length} images - MANDATORY STYLE MATCHING):
 ${refImages.map((img: any, i: number) => {
+  // Extract palette information
   const paletteColors = img.palette?.colors || img.palette || [];
   const colorStr = Array.isArray(paletteColors) 
-    ? paletteColors.map((c: any) => `${c.hex || c} (${((c.ratio || 0.1) * 100).toFixed(0)}%)`).join(', ')
+    ? paletteColors.map((c: any) => {
+        const hex = c.hex || c.color || c;
+        const ratio = c.ratio || 0.1;
+        const name = c.name || '';
+        return `${hex}${name ? ` (${name})` : ''} ${(ratio * 100).toFixed(0)}%`;
+      }).join(', ')
     : 'not analyzed';
-  return `
-  ${i + 1}. Color Palette: ${colorStr}
-     Texture Tags: ${img.texture_tags?.join(', ') || 'smooth fondant'}
-     Density Level: ${img.density || 'medium'}`;
+  
+  // Extract texture information
+  const textures = img.texture_tags || [];
+  const textureStr = textures.length > 0 
+    ? textures.join(', ')
+    : 'smooth fondant';
+  
+  // Extract density
+  const density = img.density || 'medium';
+  
+  return `Reference Image ${i + 1}:
+  - Color Palette: ${colorStr}
+  - Texture Techniques: ${textureStr}
+  - Decoration Density: ${density}
+  - Style Characteristics: ${textures.includes('textured') ? 'Modern textured finish' : 'Smooth elegant finish'}, ${density === 'high' ? 'Richly decorated' : density === 'low' ? 'Minimalist' : 'Balanced decoration'}`;
 }).join('\n')}
 
-CRITICAL CONSTRAINT: Match the visual style, exact color palette proportions, and texture details from these ${refImages.length} reference images. Palette lock is ${paletteLock >= 0.9 ? 'ACTIVE - colors must match exactly (ΔE ≤ 10)' : 'flexible'}.
+CRITICAL STYLE MATCHING REQUIREMENTS:
+1. Match the EXACT color palette proportions from these reference images
+2. Replicate the texture techniques (${refImages.map((img: any) => img.texture_tags?.join(', ') || 'smooth').join(', ')})
+3. Follow the decoration density level (${refImages[0]?.density || 'medium'})
+4. Maintain the overall aesthetic style and visual language
+5. Incorporate 2025 trending elements while preserving the core style identity
+6. Palette lock is ${paletteLock >= 0.9 ? 'ACTIVE - colors must match exactly (ΔE ≤ 10)' : 'flexible - inspired by palette'}
+
+These reference images represent the seller's signature style. The generated design must feel like it belongs to the same collection while incorporating modern 2025 trends.
 ` : '';
 
     let generatedProposals = [];
@@ -347,6 +380,7 @@ CRITICAL CONSTRAINT: Match the visual style, exact color palette proportions, an
           shapeTemplate,
           userText,
           negativePrompt,
+          referenceContext: refContextForPrompt,  // ✅ Pass analyzed reference context
           // Pass style control parameters
           styleStrength,
           sharpness,

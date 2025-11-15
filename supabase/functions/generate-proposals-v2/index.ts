@@ -285,20 +285,61 @@ serve(async (req) => {
 
 // Helper: Optimize prompts with LLM
 async function optimizePromptsWithLLM(context: any, constraints: any, apiKey: string) {
-  const systemPrompt = `You are an expert cake designer prompt engineer.
-Generate 3 creative prompts (Conservative, Standard, Bold) based on:
-- User request: "${context.userText}"
-- Style pack: "${context.stylepack.name}" (${context.stylepack.description || ''})
-- Reference images: ${context.refImages.length} images
-- Trend keywords: ${context.trendKeywords.join(', ')}
-- Tier structure: ${context.sizeCategory.tiers_spec?.tiers || 1} tiers
+  // Extract detailed style information from reference images
+  const styleInfo = context.refImages.map((img: any, i: number) => {
+    const paletteColors = img.palette?.colors || img.palette || [];
+    const colorStr = Array.isArray(paletteColors) 
+      ? paletteColors.map((c: any) => `${c.hex || c} (${((c.ratio || 0.1) * 100).toFixed(0)}%)`).join(', ')
+      : 'not analyzed';
+    return `Reference ${i + 1}:
+- Colors: ${colorStr}
+- Textures: ${img.texture_tags?.join(', ') || 'smooth fondant'}
+- Density: ${img.density || 'medium'}`;
+  }).join('\n');
 
-Format as JSON:
+  const systemPrompt = `You are an expert cake designer prompt engineer specializing in wedding cake design.
+
+Your task is to generate 3 creative prompts (Conservative, Standard, Bold) that:
+1. STRICTLY match the visual style from the reference images provided
+2. Incorporate 2025 trending elements from Instagram and Pinterest
+3. Blend user preferences with the seller's signature style
+4. Ensure commercial viability and bakeability
+
+CONTEXT:
+- User request: "${context.userText || 'No specific request'}"
+- Style pack: "${context.stylepack.name}" - ${context.stylepack.description || 'Elegant wedding cake style'}
+- Reference images analyzed: ${context.refImages.length} images
+${styleInfo}
+- Trend keywords (2025): ${context.trendKeywords.length > 0 ? context.trendKeywords.join(', ') : 'Modern elegance, textured buttercream, natural botanicals'}
+- Trend techniques: ${context.trendTechniques.length > 0 ? context.trendTechniques.join(', ') : 'Textured buttercream, wafer paper flowers, gold leaf accents'}
+- Tier structure: ${context.sizeCategory.tiers_spec?.tiers || 1} tiers
+- Palette lock: ${context.stylepack.palette_lock >= 0.9 ? 'STRICT - colors must match exactly' : 'Flexible - inspired by palette'}
+
+STYLE REQUIREMENTS:
+- Match the color palette proportions from reference images
+- Replicate texture techniques (${context.refImages[0]?.texture_tags?.join(', ') || 'smooth fondant'})
+- Follow decoration density (${context.refImages[0]?.density || 'medium'})
+- Maintain the seller's signature aesthetic while adding 2025 trends
+
+TREND INTEGRATION (2025):
+- Instagram-worthy: Natural lighting, organic textures, contemporary color palettes
+- Pinterest trending: Textured buttercream, fresh botanicals, geometric patterns, ombré effects
+- Modern techniques: Wafer paper flowers, gold leaf accents, sculptural elements
+- Avoid: Outdated 2010s-2020s styles, overly ornate traditional piping, dated color schemes
+
+Generate 3 prompts as JSON:
 {
-  "conservative": "Classic, elegant design...",
-  "standard": "Balanced, modern design...",
-  "bold": "Creative, artistic design..."
-}`;
+  "conservative": "Classic design staying very close to reference style with subtle 2025 updates...",
+  "standard": "Balanced design blending reference style with modern 2025 trends...",
+  "bold": "Creative interpretation of reference style with bold 2025 trend elements..."
+}
+
+Each prompt should be detailed, specific, and include:
+- Structure and tier details
+- Color palette (matching reference proportions)
+- Texture and finish techniques
+- Decoration elements (trending 2025 techniques)
+- Photography style (Instagram/Pinterest quality)`;
 
   const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
@@ -334,14 +375,65 @@ async function generateStage1(
 
   const proposals = [];
 
+  // Get reference image URLs
+  const referenceImageUrls = constraints.refImages
+    ? constraints.refImages.map((img: any) => img.url).filter(Boolean)
+    : [];
+
+  console.log(`📸 Using ${referenceImageUrls.length} reference images for generation`);
+
   for (const variant of variants) {
     // Generate 2-3 images per variant
     for (let i = 0; i < 2; i++) {
       const seed = Math.floor(Math.random() * 1000000);
       
-      const fullPrompt = `${variant.prompt}\n\nNegative prompt: ${constraints.negativePrompt}`;
+      // Build multimodal message content
+      const messageContent: any[] = [];
       
-      // Generate image using Nano banana
+      // Add reference image analysis instructions if images available
+      if (referenceImageUrls.length > 0) {
+        messageContent.push({
+          type: "text",
+          text: `REFERENCE IMAGE ANALYSIS INSTRUCTIONS:
+Study these reference images carefully and extract:
+- Color palette and proportions (match exactly)
+- Texture techniques (${constraints.refImages[0]?.texture_tags?.join(', ') || 'smooth fondant'})
+- Decoration density (${constraints.refImages[0]?.density || 'medium'})
+- Overall aesthetic style and visual language
+- Modern trending elements that would work well on Instagram and Pinterest
+
+CRITICAL: The generated design must match the seller's signature style from these references while incorporating 2025 trends.`
+        });
+        
+        // Add reference images
+        for (const refUrl of referenceImageUrls.slice(0, 3)) {
+          messageContent.push({
+            type: "image_url",
+            image_url: { url: refUrl }
+          });
+        }
+        
+        messageContent.push({
+          type: "text",
+          text: `GENERATION REQUIREMENTS:
+Create a NEW, TREND-FORWARD cake design that:
+1. Matches the visual style, color palette, and texture techniques from the reference images above
+2. Incorporates 2025 trending elements (textured buttercream, natural botanicals, contemporary colors)
+3. Creates an Instagram-worthy, Pinterest-pinnable design
+4. Maintains commercial viability - achievable by a skilled baker
+5. Follows the specific prompt requirements below
+
+Now generate the design based on this prompt:`
+        });
+      }
+      
+      // Add the actual prompt
+      messageContent.push({
+        type: "text",
+        text: `${variant.prompt}\n\nNegative prompt: ${constraints.negativePrompt}`
+      });
+      
+      // Generate image using Gemini with multimodal input
       const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -352,7 +444,7 @@ async function generateStage1(
           model: 'google/gemini-2.5-flash-image-preview',
           messages: [{
             role: 'user',
-            content: fullPrompt
+            content: messageContent  // ✅ Multimodal content with images
           }],
           modalities: ['image', 'text']
         }),
@@ -363,7 +455,6 @@ async function generateStage1(
         const imageBase64 = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
         
         if (imageBase64) {
-          // In production, would upload to storage. For now, use base64
           proposals.push({
             url: imageBase64,
             prompt: variant.prompt,
