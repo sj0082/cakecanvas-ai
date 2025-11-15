@@ -123,41 +123,48 @@ serve(async (req) => {
         ? stylepack.palette_range 
         : (stylepack.palette_range.primary || []);
       
-      const validation = validatePaletteLock(requestedColors, paletteToValidate);
-      
-      if (!validation.isValid) {
-        paletteViolations = validation.violations;
-        console.warn('⚠️ Palette violations detected:', paletteViolations.length);
-        
-        // Log each violation for audit
-        for (const violation of paletteViolations) {
-          console.log(`  - ${violation.color} → ${violation.closestMatch} (ΔE: ${violation.deltaE.toFixed(2)})`);
-          
-          await supabase.from('logs_audit').insert({
-            action: 'palette_lock_violation',
-            request_id: requestId,
-            note: `Color ${violation.color} violated palette lock (ΔE: ${violation.deltaE.toFixed(2)}). Closest match: ${violation.closestMatch}`,
-          });
-        }
-        
-        // Auto-correct: replace violating colors with closest matches in the text
-        for (const violation of paletteViolations) {
-          const colorNames: Record<string, string> = {
-            '#FF0000': 'red', '#0000FF': 'blue', '#00FF00': 'green',
-            '#FFFF00': 'yellow', '#FFA500': 'orange', '#800080': 'purple',
-            '#FFC0CB': 'pink', '#FFD700': 'gold', '#C0C0C0': 'silver'
-          };
-          
-          const violatingName = colorNames[violation.color];
-          const matchName = colorNames[violation.closestMatch];
-          
-          if (violatingName && matchName) {
-            userText = userText.replace(new RegExp(violatingName, 'gi'), matchName);
-            console.log(`🔧 Auto-corrected "${violatingName}" → "${matchName}" in user text`);
-          }
-        }
+      // Skip validation if palette is empty or invalid
+      if (!Array.isArray(paletteToValidate) || paletteToValidate.length === 0) {
+        console.warn('⚠️ No valid palette to validate against, skipping palette lock validation');
       } else {
-        console.log('✅ All requested colors within palette lock tolerance (ΔE ≤ 10)');
+        console.log('Palette to validate against:', paletteToValidate);
+        
+        const validation = validatePaletteLock(requestedColors, paletteToValidate);
+        
+        if (!validation.isValid) {
+          paletteViolations = validation.violations;
+          console.warn('⚠️ Palette violations detected:', paletteViolations.length);
+          
+          // Log each violation for audit
+          for (const violation of paletteViolations) {
+            console.log(`  - ${violation.color} → ${violation.closestMatch} (ΔE: ${violation.deltaE.toFixed(2)})`);
+            
+            await supabase.from('logs_audit').insert({
+              action: 'palette_lock_violation',
+              request_id: requestId,
+              note: `Color ${violation.color} violated palette lock (ΔE: ${violation.deltaE.toFixed(2)}). Closest match: ${violation.closestMatch}`,
+            });
+          }
+          
+          // Auto-correct: replace violating colors with closest matches in the text
+          for (const violation of paletteViolations) {
+            const colorNames: Record<string, string> = {
+              '#FF0000': 'red', '#0000FF': 'blue', '#00FF00': 'green',
+              '#FFFF00': 'yellow', '#FFA500': 'orange', '#800080': 'purple',
+              '#FFC0CB': 'pink', '#FFD700': 'gold', '#C0C0C0': 'silver'
+            };
+            
+            const violatingName = colorNames[violation.color];
+            const matchName = colorNames[violation.closestMatch];
+            
+            if (violatingName && matchName) {
+              userText = userText.replace(new RegExp(violatingName, 'gi'), matchName);
+              console.log(`🔧 Auto-corrected "${violatingName}" → "${matchName}" in user text`);
+            }
+          }
+        } else {
+          console.log('✅ All requested colors within palette lock tolerance (ΔE ≤ 10)');
+        }
       }
     }
 

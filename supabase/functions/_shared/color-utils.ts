@@ -18,6 +18,11 @@ interface Lab {
  * Convert hex color to RGB (supports both 3 and 6 digit formats)
  */
 export function hexToRgb(hex: string): RGB {
+  // Validate input
+  if (!hex || typeof hex !== 'string') {
+    throw new Error(`Invalid hex color input: ${hex}`);
+  }
+  
   // Remove # if present
   let cleanHex = hex.replace(/^#/, '');
   
@@ -28,7 +33,7 @@ export function hexToRgb(hex: string): RGB {
   
   const result = /^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(cleanHex);
   if (!result) {
-    throw new Error(`Invalid hex color: ${hex}`);
+    throw new Error(`Invalid hex color format: ${hex}`);
   }
   return {
     r: parseInt(result[1], 16) / 255,
@@ -125,15 +130,31 @@ export function validatePaletteLock(
   const violations: Array<{ color: string; closestMatch: string; deltaE: number }> = [];
 
   for (const requestedColor of requestedColors) {
+    // Skip invalid colors
+    if (!requestedColor || typeof requestedColor !== 'string') {
+      console.warn(`⚠️ Skipping invalid requested color:`, requestedColor);
+      continue;
+    }
+
     let minDeltaE = Infinity;
     let closestMatch = '';
 
     // Find closest color in locked palette
     for (const paletteColor of lockedPalette) {
-      const deltaE = calculateDeltaE(requestedColor, paletteColor.hex);
-      if (deltaE < minDeltaE) {
-        minDeltaE = deltaE;
-        closestMatch = paletteColor.hex;
+      // Skip invalid palette colors
+      if (!paletteColor?.hex || typeof paletteColor.hex !== 'string') {
+        console.warn(`⚠️ Skipping invalid palette color:`, paletteColor);
+        continue;
+      }
+      
+      try {
+        const deltaE = calculateDeltaE(requestedColor, paletteColor.hex);
+        if (deltaE < minDeltaE) {
+          minDeltaE = deltaE;
+          closestMatch = paletteColor.hex;
+        }
+      } catch (error) {
+        console.error(`❌ Error calculating deltaE for ${requestedColor} vs ${paletteColor.hex}:`, error);
       }
     }
 
