@@ -3,7 +3,7 @@
 // Technical Building Block: P01 - Detail Input Form + P03 - Multi-uploader
 // =============================================================================
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Sparkles, Upload, X } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ArrowLeft, Sparkles, Upload, X, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { DesignStepper } from "@/components/design/DesignStepper";
@@ -25,6 +26,8 @@ const DesignDetails = () => {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [compatibilityResult, setCompatibilityResult] = useState<any>(null);
+  const [isCheckingCompatibility, setIsCheckingCompatibility] = useState(false);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -112,6 +115,57 @@ const DesignDetails = () => {
     setUploadedImages(uploadedImages.filter((_, index) => index !== indexToRemove));
   };
 
+  const checkCompatibility = async () => {
+    if (!styleId || !userText) return;
+    
+    setIsCheckingCompatibility(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('check-style-compatibility', {
+        body: {
+          stylepackId: styleId,
+          userIntent: {
+            text: userText,
+            colors: [],
+            inspirationImages: uploadedImages
+          }
+        }
+      });
+      
+      if (error) throw error;
+      
+      if (data && !data.compatible) {
+        setCompatibilityResult(data);
+      } else if (data && data.compatible) {
+        setCompatibilityResult({ ...data, compatible: true });
+      }
+    } catch (error) {
+      console.error('Error checking compatibility:', error);
+    } finally {
+      setIsCheckingCompatibility(false);
+    }
+  };
+
+  // Auto-check compatibility when text changes (debounced)
+  useEffect(() => {
+    if (!userText || !styleId) {
+      setCompatibilityResult(null);
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      checkCompatibility();
+    }, 1000);
+
+    return () => clearTimeout(timeoutId);
+  }, [userText, styleId]);
+
+  // Check compatibility when images are uploaded
+  useEffect(() => {
+    if (uploadedImages.length > 0 && userText && styleId) {
+      checkCompatibility();
+    }
+  }, [uploadedImages.length]);
+
   const handleSubmit = async () => {
     if (!sizeId || !styleId || !contactEmail) {
       toast({ title: t('common.error'), description: t(!contactEmail ? 'details.error.missingEmail' : 'details.error.missingParams'), variant: "destructive" });
@@ -167,6 +221,71 @@ const DesignDetails = () => {
                   <Textarea id="user-text" placeholder={t('details.design.placeholder')} value={userText} onChange={(e) => setUserText(e.target.value)} rows={5} />
                   <p className="text-sm text-muted-foreground">{t('details.design.help')}</p>
                 </div>
+
+                {/* Compatibility Check Results */}
+                {isCheckingCompatibility && (
+                  <Alert>
+                    <Sparkles className="h-4 w-4 animate-pulse" />
+                    <AlertTitle>Checking compatibility...</AlertTitle>
+                    <AlertDescription>
+                      Analyzing your request against the selected style pack.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {compatibilityResult && !isCheckingCompatibility && !compatibilityResult.compatible && (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Style Compatibility Issues Detected</AlertTitle>
+                    <AlertDescription className="space-y-3 mt-2">
+                      <p className="text-sm">
+                        Confidence: {Math.round(compatibilityResult.confidence * 100)}%
+                      </p>
+                      <div className="space-y-2">
+                        {compatibilityResult.conflicts.map((conflict: any, idx: number) => (
+                          <div key={idx} className="bg-destructive/10 p-3 rounded-md space-y-1">
+                            <p className="font-medium text-sm flex items-center gap-2">
+                              <Badge variant={conflict.severity === 'high' ? 'destructive' : 'secondary'}>
+                                {conflict.severity}
+                              </Badge>
+                              {conflict.type} conflict
+                            </p>
+                            <p className="text-sm">{conflict.description}</p>
+                            <p className="text-sm text-muted-foreground italic">
+                              💡 {conflict.suggestion}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex gap-2 mt-4">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setCompatibilityResult(null)}
+                        >
+                          Edit Request
+                        </Button>
+                        <Button 
+                          variant="secondary" 
+                          size="sm"
+                          onClick={() => navigate(`/design/style?size=${sizeId}`)}
+                        >
+                          Choose Different Style
+                        </Button>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {compatibilityResult && !isCheckingCompatibility && compatibilityResult.compatible && (
+                  <Alert className="border-green-500/50 bg-green-500/10">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <AlertTitle className="text-green-600">Great Match!</AlertTitle>
+                    <AlertDescription className="text-green-600">
+                      Your request is compatible with this style pack (confidence: {Math.round(compatibilityResult.confidence * 100)}%)
+                    </AlertDescription>
+                  </Alert>
+                )}
 
                 <div className="space-y-2">
                   <Label>Inspiration Images</Label>

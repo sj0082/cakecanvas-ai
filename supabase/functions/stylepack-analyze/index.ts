@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { hexToOKLab } from '../_shared/color-utils.ts';
 
 const ALLOWED_ORIGINS = Deno.env.get("ALLOWED_ORIGINS")?.split(",").map((o) => o.trim()) || [];
 const BUCKET = "stylepack-ref";
@@ -112,14 +113,22 @@ serve(async (req) => {
           // Continue without embedding
         }
 
-        // Convert palette to include ratios
+        // Convert palette to include ratios AND OKLab coordinates
         const paletteWithRatios = palette.map((item: any) => {
-          if (typeof item === 'string') {
-            // Simple hex string - add default ratio
-            return { hex: item, ratio: parseFloat((1 / palette.length).toFixed(3)) };
+          const hexValue = typeof item === 'string' ? item : item.hex;
+          const ratio = typeof item === 'string' ? parseFloat((1 / palette.length).toFixed(3)) : item.ratio;
+          
+          try {
+            const oklabCoords = hexToOKLab(hexValue);
+            return { 
+              hex: hexValue, 
+              ratio: ratio,
+              oklab: oklabCoords // [L, a, b] for perceptually uniform color matching
+            };
+          } catch (e) {
+            console.warn(`Failed to convert ${hexValue} to OKLab:`, e);
+            return { hex: hexValue, ratio: ratio };
           }
-          // Already has ratio
-          return item;
         });
 
         await supabase.from('stylepack_ref_images').update({

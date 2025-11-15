@@ -5,6 +5,7 @@ import { evaluateProposal } from '../_shared/quality-evaluation.ts';
 import { filterForbiddenTerms } from '../_shared/forbidden-filter.ts';
 import { getFullNegativePrompt } from '../_shared/constants.ts';
 import { getCachedStage1, setCachedStage1, hashUserText } from '../_shared/cache-manager.ts';
+import { generateStage2 } from './stage2-generation.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -202,11 +203,22 @@ serve(async (req) => {
     console.log(`✅ Top 3 proposals selected for Stage 2 refinement`);
 
     // Step 7: Stage 2 - Refinement (1024px, Top-K only)
-    console.log('✨ Step 7: Stage 2 refinement (1024px)...');
+    console.log('✨ Step 7: Stage 2 refinement (1024px high-quality)...');
     
-    // For now, use Stage 1 results
-    // In full implementation, would refine top proposals to higher resolution
-    const finalProposals = topK;
+    const stage2Proposals = await generateStage2(
+      topK,
+      prompts,
+      constraints,
+      stylepack,
+      requestId!,
+      supabase,
+      LOVABLE_API_KEY
+    );
+    
+    console.log(`✅ Generated ${stage2Proposals.length} Stage 2 high-quality proposals`);
+    
+    // Combine Stage 1 and Stage 2 (prefer Stage 2 for top proposals)
+    const finalProposals = stage2Proposals.length > 0 ? stage2Proposals : topK;
 
     // Step 8: Save to Database
     console.log('💾 Step 8: Saving proposals to database...');
@@ -230,7 +242,8 @@ serve(async (req) => {
         size_category_id: sizeCategory.id,
         user_text: context.userText,
         layout_mask_url: layoutMaskUrl,
-        compatibility_confidence: compatibility?.confidence || 1.0
+        compatibility_confidence: compatibility?.confidence || 1.0,
+        resolution: p.stage === 2 ? '1024px' : '512px'
       },
       scores: p.scores,
       rank_score: p.rank_score,
