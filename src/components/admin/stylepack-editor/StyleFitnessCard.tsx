@@ -42,73 +42,93 @@ export const StyleFitnessCard = ({ stylePackId, imageCount, referenceStats }: St
     }
 
     setIsCalculating(true);
+    console.log('[StyleFitnessCard] Starting fitness calculation for:', stylePackId);
+    
     try {
       const { data, error } = await supabase.functions.invoke('calculate-style-fitness', {
         body: { stylepackId: stylePackId }
       });
 
+      console.log('[StyleFitnessCard] Raw response:', { data, error });
+
       if (error) {
-        console.error('[StyleFitnessCard] Calculate error:', error);
-        console.error('[StyleFitnessCard] Calculate error type:', typeof error);
-        console.error('[StyleFitnessCard] Calculate error keys:', error ? Object.keys(error) : 'null');
+        console.error('[StyleFitnessCard] Error object:', error);
+        console.error('[StyleFitnessCard] Error type:', error.constructor.name);
         
-        // Phase 5.1: Parse structured error messages from Edge Function
         let errorMessage = '알 수 없는 오류가 발생했습니다';
         let errorDetails = '';
         
         try {
-          // Supabase functions.invoke wraps errors in a specific format
-          // The actual response is in error.context or error.message
-          let errorData = null;
+          // For FunctionsHttpError, try multiple ways to get the error body
+          let errorBody = null;
           
+          // Method 1: Check error.context (newer Supabase client)
           if (error.context && typeof error.context === 'object') {
-            errorData = error.context;
-          } else if (error.message) {
+            errorBody = error.context;
+            console.log('[StyleFitnessCard] Error from context:', errorBody);
+          }
+          // Method 2: Try parsing error.message if it's JSON
+          else if (typeof error.message === 'string') {
             try {
-              errorData = JSON.parse(error.message);
-            } catch {
-              // message is not JSON
+              errorBody = JSON.parse(error.message);
+              console.log('[StyleFitnessCard] Error from parsed message:', errorBody);
+            } catch (e) {
+              console.log('[StyleFitnessCard] Message is not JSON:', error.message);
             }
           }
           
-          if (errorData) {
-            console.error('[StyleFitnessCard] Parsed error data:', errorData);
-            if (errorData.error === 'INSUFFICIENT_REFERENCE_IMAGES') {
-              errorMessage = errorData.message;
-              errorDetails = errorData.details;
-            } else if (errorData.error === 'MISSING_EMBEDDINGS') {
-              errorMessage = errorData.message;
-              errorDetails = errorData.details;
-            } else if (errorData.error || errorData.message) {
-              errorMessage = errorData.message || errorData.error;
-              errorDetails = errorData.details || '';
+          // Process the error body if we got it
+          if (errorBody) {
+            if (errorBody.error === 'INSUFFICIENT_REFERENCE_IMAGES') {
+              errorMessage = errorBody.message;
+              errorDetails = errorBody.details;
+            } else if (errorBody.error === 'MISSING_EMBEDDINGS') {
+              errorMessage = errorBody.message;
+              errorDetails = errorBody.details;
+            } else if (errorBody.error || errorBody.message) {
+              errorMessage = errorBody.message || errorBody.error;
+              errorDetails = errorBody.details || '';
             }
+          } else {
+            // Fallback: use error.message directly
+            errorMessage = error.message || '알 수 없는 오류가 발생했습니다';
           }
         } catch (parseError) {
-          console.error('[StyleFitnessCard] Error parsing:', parseError);
-          // Fallback to string matching
-          const errorStr = typeof error === 'string' ? error : error.message || '';
-          if (errorStr.includes('embedding')) {
-            errorMessage = 'Embedding 데이터가 없습니다';
-            errorDetails = 'Auto-Analyze를 먼저 실행해주세요.';
-          } else if (errorStr.includes('at least 2')) {
-            errorMessage = '최소 2개의 분석된 참조 이미지가 필요합니다';
-            errorDetails = '이미지를 더 업로드하고 Auto-Analyze를 실행해주세요.';
-          }
+          console.error('[StyleFitnessCard] Failed to parse error:', parseError);
+          errorMessage = error.message || '알 수 없는 오류가 발생했습니다';
         }
         
-        toast.error(errorDetails || errorMessage);
-        setIsCalculating(false);
+        toast.error(errorDetails ? `${errorMessage}\n${errorDetails}` : errorMessage);
         return;
       }
 
-      if (data?.fitnessScores) {
-        setFitnessScores(data.fitnessScores);
-        toast.success('Style fitness calculated successfully');
+      // Success case - fetch updated fitness scores from database
+      console.log('[StyleFitnessCard] Fitness calculation successful:', data);
+      
+      const { data: updatedStylepack, error: fetchError } = await supabase
+        .from('stylepacks')
+        .select('fitness_scores')
+        .eq('id', stylePackId)
+        .maybeSingle();
+      
+      if (fetchError) {
+        console.error('[StyleFitnessCard] Failed to fetch updated scores:', fetchError);
+        toast.error('점수는 계산되었지만 업데이트에 실패했습니다. 페이지를 새로고침해주세요.');
+        return;
+      }
+      
+      if (updatedStylepack?.fitness_scores) {
+        console.log('[StyleFitnessCard] Updated fitness scores from DB:', updatedStylepack.fitness_scores);
+        const scores = updatedStylepack.fitness_scores as unknown as FitnessScores;
+        setFitnessScores(scores);
+        toast.success('Style Fitness 점수가 성공적으로 계산되었습니다!');
+      } else {
+        console.warn('[StyleFitnessCard] No fitness scores found in DB');
+        toast.error('점수 계산은 완료되었으나 데이터를 찾을 수 없습니다.');
       }
     } catch (error) {
-      console.error('Failed to calculate fitness:', error);
-      toast.error('Failed to calculate style fitness');
+      console.error('[StyleFitnessCard] Unexpected error:', error);
+      toast.error(error instanceof Error ? error.message : '예상치 못한 오류가 발생했습니다');
     } finally {
       setIsCalculating(false);
     }
