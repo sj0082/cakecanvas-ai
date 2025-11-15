@@ -643,7 +643,12 @@ function buildDetailedPrompt(params: {
         '- Premium material finishes: satin buttercream, pearl dust accents',
         '- Refined color palettes: muted pastels, sophisticated neutrals',
         '- Classic shapes with modern proportions',
-        ...trendKeywords.map(k => `- ${k}`)
+        ...trendKeywords.map(k => `- ${k}`),
+        trendTechniques && trendTechniques.length > 0 
+          ? `- Recommended techniques: ${trendTechniques.join(', ')}`
+          : '',
+        '- Instagram trending: Natural lighting, organic textures, contemporary aesthetics',
+        '- Pinterest trending: Textured buttercream, fresh botanicals, geometric accents'
       ]
     : variantName === 'standard'
     ? [
@@ -655,7 +660,9 @@ function buildDetailedPrompt(params: {
         ...trendKeywords.map(k => `- ${k}`),
         trendTechniques && trendTechniques.length > 0 
           ? `- Recommended techniques: ${trendTechniques.join(', ')}`
-          : ''
+          : '',
+        '- Instagram trending: Textured buttercream, natural botanicals, sculptural elements',
+        '- Pinterest trending: Ombré gradients, wafer paper flowers, contemporary color palettes'
       ]
     : [ // bold
         '2025 TREND INSPIRATION (Avant-Garde):',
@@ -666,7 +673,9 @@ function buildDetailedPrompt(params: {
         ...trendKeywords.map(k => `- ${k}`),
         trendTechniques && trendTechniques.length > 0
           ? `- Advanced techniques: ${trendTechniques.join(', ')}`
-          : ''
+          : '',
+        '- Instagram trending: Bold artistic statements, dramatic textures, unexpected materials',
+        '- Pinterest trending: Sculptural designs, abstract patterns, mixed media finishes'
       ];
 
   // Build structured, detailed prompt with variant-specific 2025 trends
@@ -675,9 +684,9 @@ function buildDetailedPrompt(params: {
     stylepackDescription ? `Style essence: ${stylepackDescription}` : '',
     `Design approach: ${variantModifier}`,
     '',
-    ...trendSection.filter(Boolean),
+    referenceContext, // ✅ Move reference context earlier for emphasis
     '',
-    referenceContext, // Add reference image context
+    ...trendSection.filter(Boolean),
     '',
     'STYLE PARAMETERS:',
     `- Style adherence: ${styleText}`,
@@ -740,12 +749,33 @@ async function generateWithGemini(params: any) {
     messageContent.unshift({
       type: "text",
       text: `REFERENCE IMAGE ANALYSIS INSTRUCTIONS:
-Study these reference images carefully and extract the most modern, trending elements:
-- Color combinations and palettes that are popular in 2025
-- Texture techniques (smooth buttercream, textured surfaces, artistic finishes)
-- Decoration styles and placement patterns
-- Overall aesthetic appeal that would trend on Instagram and Pinterest
-- Modern proportions and contemporary design language
+Study these reference images carefully and extract:
+
+COLOR ANALYSIS:
+- Extract the exact color palette with proportions (hex codes and percentages)
+- Identify primary, secondary, and accent colors
+- Note color temperature and saturation levels
+- Match these colors EXACTLY in the generated design
+
+TEXTURE ANALYSIS:
+- Identify texture techniques: smooth buttercream, textured finishes, fondant, etc.
+- Note surface finishes: matte, satin, glossy, metallic
+- Replicate these texture techniques in the generated design
+
+DENSITY ANALYSIS:
+- Assess decoration density: low (minimalist), medium (balanced), high (richly decorated)
+- Note placement patterns and visual weight distribution
+- Maintain similar density level in the generated design
+
+STYLE ANALYSIS:
+- Identify the seller's signature aesthetic and visual language
+- Note design elements that make this style unique
+- Maintain the core style identity while incorporating 2025 trends
+
+TREND INTEGRATION:
+- Identify which elements from these references align with 2025 trends
+- Suggest modern updates that preserve the style essence
+- Focus on Instagram-worthy, Pinterest-pinnable aesthetic
 
 Focus on elements that make these designs visually appealing and commercially successful.`
     });

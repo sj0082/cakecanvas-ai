@@ -392,15 +392,44 @@ async function generateStage1(
       
       // Add reference image analysis instructions if images available
       if (referenceImageUrls.length > 0) {
+        // Extract detailed palette information from analyzed images
+        const paletteInfo = constraints.refImages.map((img: any, i: number) => {
+          const paletteColors = img.palette?.colors || img.palette || [];
+          const colorStr = Array.isArray(paletteColors) 
+            ? paletteColors.map((c: any) => {
+                const hex = c.hex || c.color || c;
+                const ratio = c.ratio || 0.1;
+                return `${hex} ${(ratio * 100).toFixed(0)}%`;
+              }).join(', ')
+            : 'not analyzed';
+          return `Reference ${i + 1}: Colors (${colorStr}), Textures (${img.texture_tags?.join(', ') || 'smooth fondant'}), Density (${img.density || 'medium'})`;
+        }).join('\n');
+        
         messageContent.push({
           type: "text",
           text: `REFERENCE IMAGE ANALYSIS INSTRUCTIONS:
 Study these reference images carefully and extract:
-- Color palette and proportions (match exactly)
-- Texture techniques (${constraints.refImages[0]?.texture_tags?.join(', ') || 'smooth fondant'})
-- Decoration density (${constraints.refImages[0]?.density || 'medium'})
+
+COLOR ANALYSIS:
+${paletteInfo}
+- Extract the EXACT color palette with proportions (hex codes and percentages)
+- Match these colors PRECISELY in the generated design
+- Palette lock is ${constraints.paletteLock >= 0.9 ? 'ACTIVE - colors must match exactly' : 'flexible - inspired by palette'}
+
+TEXTURE ANALYSIS:
+- Texture techniques: ${constraints.refImages[0]?.texture_tags?.join(', ') || 'smooth fondant'}
+- Replicate these texture techniques in the generated design
+- Note surface finishes: matte, satin, glossy, metallic
+
+DENSITY ANALYSIS:
+- Decoration density: ${constraints.refImages[0]?.density || 'medium'}
+- Maintain similar density level in the generated design
+- Note placement patterns and visual weight distribution
+
+STYLE ANALYSIS:
 - Overall aesthetic style and visual language
 - Modern trending elements that would work well on Instagram and Pinterest
+- Identify the seller's signature aesthetic
 
 CRITICAL: The generated design must match the seller's signature style from these references while incorporating 2025 trends.`
         });
