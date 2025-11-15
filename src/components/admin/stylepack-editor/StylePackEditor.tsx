@@ -354,7 +354,7 @@ export const StylePackEditor = ({
 
   const handleSave = async () => {
     try {
-      const data = {
+      let data: any = {
         name,
         description: description || null,
         images: images.map(img => img.url),
@@ -377,6 +377,57 @@ export const StylePackEditor = ({
         trend_keywords: trendKeywords.length > 0 ? trendKeywords : null,
         trend_techniques: trendTechniques.length > 0 ? trendTechniques : null,
       };
+      
+      // Phase 3.3: Synchronize stylepacks.images and stylepack_ref_images
+      if (stylePack?.id) {
+        const { data: existingRefs } = await supabase
+          .from('stylepack_ref_images')
+          .select('url')
+          .eq('stylepack_id', stylePack.id);
+
+        const existingUrls = new Set(existingRefs?.map(r => r.url) || []);
+        const newUrls = new Set(images.map(img => img.url));
+
+        // Delete removed images
+        const toDelete = [...existingUrls].filter(url => !newUrls.has(url));
+        if (toDelete.length > 0) {
+          await supabase
+            .from('stylepack_ref_images')
+            .delete()
+            .eq('stylepack_id', stylePack.id)
+            .in('url', toDelete);
+          console.log(`[StylePackEditor] Deleted ${toDelete.length} removed images from stylepack_ref_images`);
+        }
+
+        // Add new images (if not already added by MultiImageUpload)
+        const toAdd = [...newUrls].filter(url => !existingUrls.has(url));
+        if (toAdd.length > 0) {
+          const user = await supabase.auth.getUser();
+          await supabase
+            .from('stylepack_ref_images')
+            .insert(
+              toAdd.map(url => ({
+                stylepack_id: stylePack.id,
+                key: url.split('/stylepack-ref/')[1] || '',
+                url,
+                mime: 'image/jpeg',
+                size_bytes: 0,
+                uploaded_by: user.data.user?.id
+              }))
+            );
+          console.log(`[StylePackEditor] Added ${toAdd.length} new images to stylepack_ref_images`);
+        }
+
+        // Update ref_image_count
+        const { count } = await supabase
+          .from('stylepack_ref_images')
+          .select('*', { count: 'exact', head: true })
+          .eq('stylepack_id', stylePack.id);
+
+        data.ref_image_count = count || 0;
+        console.log(`[StylePackEditor] Updated ref_image_count to ${count || 0}`);
+      }
+      
       await onSave(data);
       onOpenChange(false);
     } catch (error) {

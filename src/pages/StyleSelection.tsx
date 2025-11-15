@@ -136,26 +136,32 @@ const StyleSelection = () => {
                   ))
                 ) : (
                   // Show level 2 style packs
-                  stylePacks.map((pack) => {
-                    const hasEnoughImages = pack.ref_image_count >= 2;
-                    return (
-                      <div key={pack.id} className="relative">
-                        <StyleCard
-                          id={pack.id}
-                          name={pack.name}
-                          description={pack.description}
-                          images={pack.images || []}
-                          isSelected={pack.id === selectedStyle}
-                          onClick={() => setSelectedStyle(pack.id)}
-                        />
-                        {!hasEnoughImages && (
-                          <div className="absolute top-2 right-2 bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded">
-                            ⚠️ No reference images
-                          </div>
+                  stylePacks.map((pack) => (
+                    <div key={pack.id} className="space-y-2">
+                      <StyleCard
+                        id={pack.id}
+                        name={pack.name}
+                        description={pack.description}
+                        images={pack.images || []}
+                        isSelected={pack.id === selectedStyle}
+                        onClick={() => setSelectedStyle(pack.id)}
+                      />
+                      {/* Phase 5.2: Display reference image count and warnings */}
+                      <div className="text-xs text-muted-foreground px-2">
+                        {(pack.ref_image_count || 0) >= 2 ? (
+                          <span className="flex items-center gap-1">
+                            <span className="text-green-600">✓</span>
+                            {pack.ref_image_count}개의 참조 이미지 분석됨
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 text-destructive">
+                            <span>⚠️</span>
+                            참조 이미지 부족 ({pack.ref_image_count || 0}/2)
+                          </span>
                         )}
                       </div>
-                    );
-                  })
+                    </div>
+                  ))
                 )}
               </div>
             )}

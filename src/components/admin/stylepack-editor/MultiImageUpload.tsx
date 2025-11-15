@@ -105,6 +105,19 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze, stylePackI
     }
   };
 
+  // Phase 3.2: Helper function to extract image metadata
+  const loadImageMetadata = (file: File): Promise<{width: number, height: number}> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        resolve({ width: img.width, height: img.height });
+        URL.revokeObjectURL(img.src);
+      };
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const uploadFile = async (file: File, requestId: string): Promise<ImageData | null> => {
     try {
       console.debug(`[MultiImageUpload] [${requestId}] Starting upload for:`, file.name, file.type, file.size);
@@ -118,6 +131,16 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze, stylePackI
           error: `로그인이 필요합니다 – ${requestId}`,
           file
         };
+      }
+
+      // Phase 3.2: Extract image metadata before upload
+      let metadata: {width: number, height: number} | null = null;
+      try {
+        console.debug(`[MultiImageUpload] [${requestId}] Extracting image metadata...`);
+        metadata = await loadImageMetadata(file);
+        console.debug(`[MultiImageUpload] [${requestId}] Image dimensions: ${metadata.width}x${metadata.height}`);
+      } catch (error) {
+        console.warn(`[MultiImageUpload] [${requestId}] Failed to extract image metadata:`, error);
       }
 
       console.debug(`[MultiImageUpload] [${requestId}] Session valid, token length:`, session.access_token?.length);
@@ -260,6 +283,36 @@ export const MultiImageUpload = ({ images, onImagesChange, onAnalyze, stylePackI
 
       if (uploadSuccess) {
         console.debug(`[MultiImageUpload] [${requestId}] Upload successful:`, signData.url);
+        
+        // Phase 3.1: Insert record into stylepack_ref_images with metadata
+        if (stylePackId) {
+          const { data: userData } = await supabase.auth.getUser();
+          
+          const { error: dbError } = await supabase
+            .from('stylepack_ref_images')
+            .insert({
+              stylepack_id: stylePackId,
+              key: signData.key,
+              url: signData.url,
+              mime: file.type,
+              size_bytes: file.size,
+              width: metadata?.width || null,
+              height: metadata?.height || null,
+              uploaded_by: userData.user?.id || null
+            });
+          
+          if (dbError) {
+            console.warn(`[MultiImageUpload] [${requestId}] Failed to insert ref image record:`, dbError);
+            toast({
+              title: "부분적 성공",
+              description: "이미지는 업로드되었으나 메타데이터 저장에 실패했습니다. Auto-Analyze를 실행해주세요.",
+              variant: "default"
+            });
+          } else {
+            console.log(`[MultiImageUpload] [${requestId}] ✓ Inserted stylepack_ref_images record`);
+          }
+        }
+        
         return {
           url: signData.url,
           key: signData.key,
