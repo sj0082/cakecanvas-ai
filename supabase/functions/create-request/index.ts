@@ -24,34 +24,36 @@ serve(async (req) => {
       contact_phone: requestBody.contact_phone ? '[REDACTED]' : undefined 
     });
 
-    // Validate required fields
-    if (!requestBody.size_category_id || !requestBody.stylepack_id || !requestBody.contact_email) {
-      console.error('Missing required fields');
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields: size_category_id, stylepack_id, contact_email' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+  // Validate required fields
+  if (!requestBody.size_category_id || !requestBody.stylepack_id || !requestBody.contact_email || !requestBody.contact_name) {
+    console.error('Missing required fields');
+    return new Response(
+      JSON.stringify({ error: 'Missing required fields: size_category_id, stylepack_id, contact_email, contact_name' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
 
     // Generate access token
     const accessToken = crypto.randomUUID();
 
     // Insert request using service role (bypasses RLS)
-    const { data, error } = await supabase
-      .from('requests')
-      .insert({
-        size_category_id: requestBody.size_category_id,
-        stylepack_id: requestBody.stylepack_id,
-        user_text: requestBody.user_text || null,
-        parsed_slots: requestBody.parsed_slots || null,
-        user_images: requestBody.user_images || null,
-        contact_email: requestBody.contact_email,
-        contact_phone: requestBody.contact_phone || null,
-        status: requestBody.status || 'GENERATING',
-        access_token: accessToken,
-      })
-      .select()
-      .single();
+  const { data, error } = await supabase
+    .from('requests')
+    .insert({
+      size_category_id: requestBody.size_category_id,
+      stylepack_id: requestBody.stylepack_id,
+      user_text: requestBody.user_text || null,
+      parsed_slots: requestBody.parsed_slots || null,
+      user_images: requestBody.user_images || null,
+      contact_name: requestBody.contact_name,
+      contact_email: requestBody.contact_email,
+      contact_phone: requestBody.contact_phone || null,
+      customer_notes: requestBody.customer_notes || null,
+      status: requestBody.status || 'GENERATING',
+      access_token: accessToken,
+    })
+    .select()
+    .single();
 
     if (error) {
       console.error('Database error:', error);

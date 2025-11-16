@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -32,8 +33,10 @@ const DesignDetails = () => {
     occasion: undefined
   });
   const [customMessageText, setCustomMessageText] = useState("");
+  const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
+  const [customerNotes, setCustomerNotes] = useState("");
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -233,8 +236,8 @@ const DesignDetails = () => {
   }, [uploadedImages.length]);
 
   const handleSubmit = async () => {
-    if (!sizeId || !styleId || !contactEmail) {
-      toast({ title: t('common.error'), description: t(!contactEmail ? 'details.error.missingEmail' : 'details.error.missingParams'), variant: "destructive" });
+    if (!sizeId || !styleId || !contactEmail || !contactName) {
+      toast({ title: t('common.error'), description: "Please fill in all required fields including your name", variant: "destructive" });
       return;
     }
     
@@ -245,7 +248,7 @@ const DesignDetails = () => {
       toast({ 
         title: t('common.error'), 
         description: "Please fill in all required design requirements (*)", 
-        variant: "destructive" 
+        variant: "destructive"
       });
       return;
     }
@@ -270,8 +273,10 @@ const DesignDetails = () => {
           user_text: userTextConverted,
           parsed_slots: parsedSlots,
           user_images: uploadedImages.length > 0 ? uploadedImages : null,
+          contact_name: contactName,
           contact_email: contactEmail,
           contact_phone: contactPhone || null,
+          customer_notes: customerNotes || null,
           status: "GENERATING"
         }
       });
@@ -609,8 +614,22 @@ const DesignDetails = () => {
               </CardContent>
             </Card>
             <Card className="mb-8">
-              <CardHeader><CardTitle>{t('details.contact.title')}</CardTitle><CardDescription>{t('details.contact.description')}</CardDescription></CardHeader>
+              <CardHeader>
+                <CardTitle>{t('details.contact.title')}</CardTitle>
+                <CardDescription>{t('details.contact.description')}</CardDescription>
+              </CardHeader>
               <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="contact-name">{t('details.contact.name.label')} *</Label>
+                  <Input
+                    id="contact-name"
+                    type="text"
+                    placeholder={t('details.contact.name.placeholder')}
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    required
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">{t('details.contact.email.label')} *</Label>
                   <Input id="email" type="email" placeholder={t('details.contact.email.placeholder')} value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} required />
@@ -621,14 +640,35 @@ const DesignDetails = () => {
                 </div>
               </CardContent>
             </Card>
+
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>{t('details.notes.title')}</CardTitle>
+                <CardDescription>{t('details.notes.description')}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Label htmlFor="customer-notes">{t('details.notes.label')}</Label>
+                  <Textarea
+                    id="customer-notes"
+                    placeholder={t('details.notes.placeholder')}
+                    value={customerNotes}
+                    onChange={(e) => setCustomerNotes(e.target.value)}
+                    rows={4}
+                  />
+                  <p className="text-sm text-muted-foreground">{t('details.notes.help')}</p>
+                </div>
+              </CardContent>
+            </Card>
             <div className="flex justify-between">
               <Button variant="outline" size="lg" onClick={() => navigate(`/design/style?size=${sizeId}`)} disabled={loading} className="px-8">
                 <ArrowLeft className="mr-2 h-5 w-5" />{t('details.prev')}
               </Button>
               <Button size="lg" onClick={handleSubmit} disabled={
                 loading || 
-                !contactEmail || 
-                !designRequirements.colorPalette || 
+                !contactEmail ||
+                !contactName ||
+                !designRequirements.colorPalette ||
                 !designRequirements.decorationStyle || 
                 !designRequirements.themeMood || 
                 !designRequirements.textureFinish || 

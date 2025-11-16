@@ -77,6 +77,13 @@
       "placeholder": "예: 핑크와 골드 컬러로, 장미 장식, '생일 축하합니다' 문구 포함",
       "help": "구체적으로 작성할수록 더 정확한 디자인을 받을 수 있습니다"
     },
+    "notes": {
+      "title": "추가 메모",
+      "description": "추가 정보나 특별 요청사항을 입력하세요",
+      "label": "메모 (선택사항)",
+      "placeholder": "추가 메모나 특별 요청사항을 입력하세요...",
+      "help": "이 정보는 견적서 요청에 포함됩니다."
+    },
     "requirements": {
       "colorPalette": "색상 팔레트",
       "colorPalette.placeholder": "색상 팔레트 선택",
@@ -180,6 +187,10 @@
     "contact": {
       "title": "연락처 정보",
       "description": "디자인 제안과 결제 정보를 받을 연락처를 입력해주세요",
+      "name": {
+        "label": "이름",
+        "placeholder": "성함을 입력하세요"
+      },
       "email": {
         "label": "이메일 주소",
         "placeholder": "your@email.com"

@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { ProposalCard } from "@/components/design/ProposalCard";
 import { DesignStepper } from "@/components/design/DesignStepper";
+import { useToast } from "@/hooks/use-toast";
 
 
 const ProposalsView = () => {
@@ -18,7 +19,11 @@ const ProposalsView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pollingCount, setPollingCount] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const { t } = useTranslation();
+  const { toast } = useToast();
   
   // Get access token from URL
   const urlParams = new URLSearchParams(window.location.search);
@@ -93,6 +98,54 @@ const ProposalsView = () => {
       clearInterval(pollInterval);
     };
   }, [requestId, accessToken, request?.status]);
+
+  const handleSelectProposal = async (proposalId: string) => {
+    if (!requestId || !accessToken || submitting) return;
+    
+    setSubmitting(true);
+    setSubmitError(null);
+    
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const functionUrl = `${supabaseUrl}/functions/v1/submit-qbo-estimate`;
+      
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          requestId,
+          proposalId,
+          accessToken
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to submit quote request');
+      }
+
+      const result = await response.json();
+      setSelectedProposal(proposalId);
+      setSubmitSuccess(true);
+      
+      toast({
+        title: t('proposals.success.title'),
+        description: t('proposals.success.description', { email: request.contact_email }),
+      });
+    } catch (error) {
+      console.error('Error submitting quote request:', error);
+      setSubmitError(error instanceof Error ? error.message : 'Unknown error');
+      toast({
+        title: t('common.error'),
+        description: error instanceof Error ? error.message : 'Failed to submit quote request',
+        variant: 'destructive'
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (loading || !request || error) return (
     <div className="fixed-frame">

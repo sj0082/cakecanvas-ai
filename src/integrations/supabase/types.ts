@@ -184,13 +184,19 @@ export type Database = {
           consent_marketing: boolean | null
           consent_terms: boolean | null
           contact_email: string | null
+          contact_name: string | null
           contact_phone: string | null
           created_at: string
+          customer_notes: string | null
           id: string
           parsed_slots: Json | null
           payment_provider: string | null
           payment_reference: string | null
           payment_status: string
+          qbo_estimate_id: string | null
+          qbo_estimate_url: string | null
+          qbo_sync_status: string | null
+          selected_proposal_id: string | null
           size_category_id: string
           status: string
           stylepack_id: string
@@ -203,13 +209,19 @@ export type Database = {
           consent_marketing?: boolean | null
           consent_terms?: boolean | null
           contact_email?: string | null
+          contact_name?: string | null
           contact_phone?: string | null
           created_at?: string
+          customer_notes?: string | null
           id?: string
           parsed_slots?: Json | null
           payment_provider?: string | null
           payment_reference?: string | null
           payment_status?: string
+          qbo_estimate_id?: string | null
+          qbo_estimate_url?: string | null
+          qbo_sync_status?: string | null
+          selected_proposal_id?: string | null
           size_category_id: string
           status?: string
           stylepack_id: string
@@ -222,13 +234,19 @@ export type Database = {
           consent_marketing?: boolean | null
           consent_terms?: boolean | null
           contact_email?: string | null
+          contact_name?: string | null
           contact_phone?: string | null
           created_at?: string
+          customer_notes?: string | null
           id?: string
           parsed_slots?: Json | null
           payment_provider?: string | null
           payment_reference?: string | null
           payment_status?: string
+          qbo_estimate_id?: string | null
+          qbo_estimate_url?: string | null
+          qbo_sync_status?: string | null
+          selected_proposal_id?: string | null
           size_category_id?: string
           status?: string
           stylepack_id?: string
@@ -237,6 +255,13 @@ export type Database = {
           user_text?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "requests_selected_proposal_id_fkey"
+            columns: ["selected_proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "requests_size_category_id_fkey"
             columns: ["size_category_id"]
