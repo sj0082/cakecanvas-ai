@@ -77,6 +77,106 @@
       "placeholder": "Example: Pink and gold colors, rose decorations, 'Happy Birthday' message",
       "help": "The more specific you are, the better we can match your vision"
     },
+    "requirements": {
+      "colorPalette": "Color Palette",
+      "colorPalette.placeholder": "Select color palette",
+      "colorPalette.options": {
+        "ivory-cream": "Ivory & Cream",
+        "blush-pink": "Blush Pink",
+        "sage-green": "Sage Green",
+        "dusty-rose": "Dusty Rose",
+        "champagne-gold": "Champagne & Gold",
+        "navy-blue": "Navy Blue",
+        "lavender-purple": "Lavender & Purple",
+        "terracotta-warm": "Terracotta & Warm",
+        "monochrome": "Monochrome",
+        "custom": "Custom"
+      },
+      "decorationStyle": "Decoration Style",
+      "decorationStyle.placeholder": "Select decoration style",
+      "decorationStyle.options": {
+        "minimalist": "Minimalist",
+        "classic-elegant": "Classic Elegant",
+        "romantic": "Romantic",
+        "modern-contemporary": "Modern Contemporary",
+        "rustic-natural": "Rustic & Natural",
+        "luxury-opulent": "Luxury & Opulent",
+        "artistic-creative": "Artistic & Creative",
+        "vintage": "Vintage"
+      },
+      "themeMood": "Theme / Mood",
+      "themeMood.placeholder": "Select theme or mood",
+      "themeMood.options": {
+        "elegant-sophisticated": "Elegant & Sophisticated",
+        "romantic-dreamy": "Romantic & Dreamy",
+        "cheerful-vibrant": "Cheerful & Vibrant",
+        "calm-serene": "Calm & Serene",
+        "dramatic-bold": "Dramatic & Bold",
+        "playful-whimsical": "Playful & Whimsical",
+        "timeless-classic": "Timeless & Classic"
+      },
+      "messageText": "Message / Text",
+      "messageText.placeholder": "Select message type",
+      "messageText.customPlaceholder": "Enter custom message",
+      "messageText.options": {
+        "none": "No message",
+        "happy-birthday": "Happy Birthday",
+        "congratulations": "Congratulations",
+        "thank-you": "Thank You",
+        "custom": "Custom message"
+      },
+      "flowerType": "Flower Type",
+      "flowerType.placeholder": "Select flower type",
+      "flowerType.options": {
+        "none": "No flowers",
+        "roses": "Roses",
+        "peonies": "Peonies",
+        "hydrangeas": "Hydrangeas",
+        "eucalyptus": "Eucalyptus",
+        "baby-breath": "Baby's Breath",
+        "ranunculus": "Ranunculus",
+        "garden-roses": "Garden Roses",
+        "mixed-botanicals": "Mixed Botanicals",
+        "sugar-flowers": "Sugar Flowers"
+      },
+      "textureFinish": "Texture / Finish",
+      "textureFinish.placeholder": "Select texture finish",
+      "textureFinish.options": {
+        "smooth-fondant": "Smooth Fondant",
+        "textured-buttercream": "Textured Buttercream",
+        "naked-semi-naked": "Naked / Semi-Naked",
+        "ruffled": "Ruffled",
+        "brushstroke": "Brushstroke",
+        "watercolor": "Watercolor Effect",
+        "metallic": "Metallic Finish",
+        "mirror-glaze": "Mirror Glaze"
+      },
+      "specialElements": "Special Elements",
+      "specialElements.options": {
+        "fresh-flowers": "Fresh Flowers",
+        "dried-flowers": "Dried Flowers",
+        "berries-fruits": "Berries / Fruits",
+        "macarons": "Macarons",
+        "topper": "Cake Topper",
+        "drip-effect": "Drip Effect",
+        "ombre-gradient": "Ombré / Gradient",
+        "geometric-shapes": "Geometric Shapes",
+        "gold-leaf": "Gold Leaf Accents",
+        "fresh-fruits": "Fresh Fruits"
+      },
+      "occasion": "Occasion",
+      "occasion.placeholder": "Select occasion",
+      "occasion.options": {
+        "wedding": "Wedding",
+        "birthday": "Birthday",
+        "anniversary": "Anniversary",
+        "engagement": "Engagement",
+        "baby-shower": "Baby Shower",
+        "graduation": "Graduation",
+        "corporate": "Corporate Event",
+        "other": "Other"
+      }
+    },
     "contact": {
       "title": "Contact Information",
       "description": "Enter your contact details to receive design proposals and payment information",

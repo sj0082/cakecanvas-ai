@@ -43,6 +43,7 @@ serve(async (req) => {
         size_category_id: requestBody.size_category_id,
         stylepack_id: requestBody.stylepack_id,
         user_text: requestBody.user_text || null,
+        parsed_slots: requestBody.parsed_slots || null,
         user_images: requestBody.user_images || null,
         contact_email: requestBody.contact_email,
         contact_phone: requestBody.contact_phone || null,
