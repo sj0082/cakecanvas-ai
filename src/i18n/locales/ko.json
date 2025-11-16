@@ -77,6 +77,106 @@
       "placeholder": "예: 핑크와 골드 컬러로, 장미 장식, '생일 축하합니다' 문구 포함",
       "help": "구체적으로 작성할수록 더 정확한 디자인을 받을 수 있습니다"
     },
+    "requirements": {
+      "colorPalette": "색상 팔레트",
+      "colorPalette.placeholder": "색상 팔레트 선택",
+      "colorPalette.options": {
+        "ivory-cream": "아이보리 & 크림",
+        "blush-pink": "블러시 핑크",
+        "sage-green": "세이지 그린",
+        "dusty-rose": "더스티 로즈",
+        "champagne-gold": "샴페인 & 골드",
+        "navy-blue": "네이비 블루",
+        "lavender-purple": "라벤더 & 퍼플",
+        "terracotta-warm": "테라코타 & 웜톤",
+        "monochrome": "모노크롬",
+        "custom": "커스텀"
+      },
+      "decorationStyle": "장식 스타일",
+      "decorationStyle.placeholder": "장식 스타일 선택",
+      "decorationStyle.options": {
+        "minimalist": "미니멀리스트",
+        "classic-elegant": "클래식 엘레강트",
+        "romantic": "로맨틱",
+        "modern-contemporary": "모던 컨템포러리",
+        "rustic-natural": "러스틱 & 내추럴",
+        "luxury-opulent": "럭셔리 & 오펄런트",
+        "artistic-creative": "아티스틱 & 크리에이티브",
+        "vintage": "빈티지"
+      },
+      "themeMood": "테마 / 분위기",
+      "themeMood.placeholder": "테마 또는 분위기 선택",
+      "themeMood.options": {
+        "elegant-sophisticated": "우아하고 세련된",
+        "romantic-dreamy": "로맨틱하고 몽환적인",
+        "cheerful-vibrant": "밝고 활기찬",
+        "calm-serene": "차분하고 평온한",
+        "dramatic-bold": "드라마틱하고 대담한",
+        "playful-whimsical": "장난스럽고 기발한",
+        "timeless-classic": "시대를 초월한 클래식"
+      },
+      "messageText": "메시지 / 텍스트",
+      "messageText.placeholder": "메시지 유형 선택",
+      "messageText.customPlaceholder": "커스텀 메시지 입력",
+      "messageText.options": {
+        "none": "메시지 없음",
+        "happy-birthday": "Happy Birthday",
+        "congratulations": "Congratulations",
+        "thank-you": "Thank You",
+        "custom": "커스텀 메시지"
+      },
+      "flowerType": "꽃 종류",
+      "flowerType.placeholder": "꽃 종류 선택",
+      "flowerType.options": {
+        "none": "꽃 없음",
+        "roses": "장미",
+        "peonies": "작약",
+        "hydrangeas": "수국",
+        "eucalyptus": "유칼립투스",
+        "baby-breath": "베이비 브레스",
+        "ranunculus": "라넌큘러스",
+        "garden-roses": "가든 로즈",
+        "mixed-botanicals": "혼합 식물",
+        "sugar-flowers": "설탕 꽃"
+      },
+      "textureFinish": "텍스처 / 마감",
+      "textureFinish.placeholder": "텍스처 마감 선택",
+      "textureFinish.options": {
+        "smooth-fondant": "부드러운 퐁당",
+        "textured-buttercream": "텍스처드 버터크림",
+        "naked-semi-naked": "네이키드 / 세미 네이키드",
+        "ruffled": "러플",
+        "brushstroke": "브러시스트로크",
+        "watercolor": "워터컬러 효과",
+        "metallic": "메탈릭 마감",
+        "mirror-glaze": "미러 글레이즈"
+      },
+      "specialElements": "특별 요소",
+      "specialElements.options": {
+        "fresh-flowers": "생화",
+        "dried-flowers": "드라이 플라워",
+        "berries-fruits": "베리 / 과일",
+        "macarons": "마카롱",
+        "topper": "케이크 토퍼",
+        "drip-effect": "드립 이펙트",
+        "ombre-gradient": "옴브레 / 그라데이션",
+        "geometric-shapes": "기하학적 도형",
+        "gold-leaf": "골드 리프 액센트",
+        "fresh-fruits": "신선한 과일"
+      },
+      "occasion": "행사 유형",
+      "occasion.placeholder": "행사 유형 선택",
+      "occasion.options": {
+        "wedding": "결혼식",
+        "birthday": "생일",
+        "anniversary": "기념일",
+        "engagement": "약혼식",
+        "baby-shower": "베이비 샤워",
+        "graduation": "졸업식",
+        "corporate": "기업 행사",
+        "other": "기타"
+      }
+    },
     "contact": {
       "title": "연락처 정보",
       "description": "디자인 제안과 결제 정보를 받을 연락처를 입력해주세요",

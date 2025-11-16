@@ -9,18 +9,29 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Sparkles, Upload, X, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { DesignStepper } from "@/components/design/DesignStepper";
+import { DesignRequirements, DESIGN_REQUIREMENT_OPTIONS } from "@/types/design-requirements";
 
 
 const DesignDetails = () => {
-  const [userText, setUserText] = useState("");
+  const [designRequirements, setDesignRequirements] = useState<DesignRequirements>({
+    colorPalette: undefined,
+    decorationStyle: undefined,
+    themeMood: undefined,
+    messageText: undefined,
+    flowerType: undefined,
+    textureFinish: undefined,
+    specialElements: [],
+    occasion: undefined
+  });
+  const [customMessageText, setCustomMessageText] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
@@ -35,6 +46,59 @@ const DesignDetails = () => {
 
   const sizeId = searchParams.get("size");
   const styleId = searchParams.get("style");
+
+  const convertRequirementsToText = (req: DesignRequirements): string => {
+    const parts: string[] = [];
+    
+    if (req.colorPalette && req.colorPalette !== 'custom') {
+      const option = DESIGN_REQUIREMENT_OPTIONS.colorPalette.find(o => o.value === req.colorPalette);
+      parts.push(`Color palette: ${option?.label || req.colorPalette}`);
+    }
+    
+    if (req.decorationStyle) {
+      const option = DESIGN_REQUIREMENT_OPTIONS.decorationStyle.find(o => o.value === req.decorationStyle);
+      parts.push(`Decoration style: ${option?.label || req.decorationStyle}`);
+    }
+    
+    if (req.themeMood) {
+      const option = DESIGN_REQUIREMENT_OPTIONS.themeMood.find(o => o.value === req.themeMood);
+      parts.push(`Theme: ${option?.label || req.themeMood}`);
+    }
+    
+    if (req.messageText && req.messageText !== 'none') {
+      if (req.messageText === 'custom' && customMessageText) {
+        parts.push(`Message: ${customMessageText}`);
+      } else {
+        const option = DESIGN_REQUIREMENT_OPTIONS.messageText.find(o => o.value === req.messageText);
+        parts.push(`Message: ${option?.label || req.messageText}`);
+      }
+    }
+    
+    if (req.flowerType && req.flowerType !== 'none') {
+      const option = DESIGN_REQUIREMENT_OPTIONS.flowerType.find(o => o.value === req.flowerType);
+      parts.push(`Flowers: ${option?.label || req.flowerType}`);
+    }
+    
+    if (req.textureFinish) {
+      const option = DESIGN_REQUIREMENT_OPTIONS.textureFinish.find(o => o.value === req.textureFinish);
+      parts.push(`Texture: ${option?.label || req.textureFinish}`);
+    }
+    
+    if (req.specialElements && req.specialElements.length > 0) {
+      const elements = req.specialElements.map(e => {
+        const option = DESIGN_REQUIREMENT_OPTIONS.specialElements.find(o => o.value === e);
+        return option?.label || e;
+      }).join(', ');
+      parts.push(`Special elements: ${elements}`);
+    }
+    
+    if (req.occasion) {
+      const option = DESIGN_REQUIREMENT_OPTIONS.occasion.find(o => o.value === req.occasion);
+      parts.push(`Occasion: ${option?.label || req.occasion}`);
+    }
+    
+    return parts.join('. ');
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -116,15 +180,17 @@ const DesignDetails = () => {
   };
 
   const checkCompatibility = async () => {
-    if (!styleId || !userText) return;
+    if (!styleId || !designRequirements.colorPalette) return;
     
     setIsCheckingCompatibility(true);
     try {
+      const userTextConverted = convertRequirementsToText(designRequirements);
+      
       const { data, error } = await supabase.functions.invoke('check-style-compatibility', {
         body: {
           stylepackId: styleId,
           userIntent: {
-            text: userText,
+            text: userTextConverted,
             colors: [],
             inspirationImages: uploadedImages
           }
@@ -145,9 +211,9 @@ const DesignDetails = () => {
     }
   };
 
-  // Auto-check compatibility when text changes (debounced)
+  // Auto-check compatibility when requirements change (debounced)
   useEffect(() => {
-    if (!userText || !styleId) {
+    if (!designRequirements.colorPalette || !styleId) {
       setCompatibilityResult(null);
       return;
     }
@@ -157,11 +223,11 @@ const DesignDetails = () => {
     }, 1000);
 
     return () => clearTimeout(timeoutId);
-  }, [userText, styleId]);
+  }, [designRequirements, customMessageText, styleId]);
 
   // Check compatibility when images are uploaded
   useEffect(() => {
-    if (uploadedImages.length > 0 && userText && styleId) {
+    if (uploadedImages.length > 0 && designRequirements.colorPalette && styleId) {
       checkCompatibility();
     }
   }, [uploadedImages.length]);
@@ -171,14 +237,38 @@ const DesignDetails = () => {
       toast({ title: t('common.error'), description: t(!contactEmail ? 'details.error.missingEmail' : 'details.error.missingParams'), variant: "destructive" });
       return;
     }
+    
+    // Validate required fields
+    if (!designRequirements.colorPalette || !designRequirements.decorationStyle || 
+        !designRequirements.themeMood || !designRequirements.textureFinish || 
+        !designRequirements.occasion) {
+      toast({ 
+        title: t('common.error'), 
+        description: "Please fill in all required design requirements (*)", 
+        variant: "destructive" 
+      });
+      return;
+    }
 
     setLoading(true);
     try {
+      // Prepare structured data
+      const parsedSlots = {
+        ...designRequirements,
+        messageText: designRequirements.messageText === 'custom' 
+          ? customMessageText 
+          : designRequirements.messageText
+      };
+      
+      // Convert to text for backward compatibility
+      const userTextConverted = convertRequirementsToText(designRequirements);
+      
       const { data, error } = await supabase.functions.invoke('create-request', {
         body: {
           size_category_id: sizeId,
           stylepack_id: styleId,
-          user_text: userText || null,
+          user_text: userTextConverted,
+          parsed_slots: parsedSlots,
           user_images: uploadedImages.length > 0 ? uploadedImages : null,
           contact_email: contactEmail,
           contact_phone: contactPhone || null,
@@ -216,10 +306,196 @@ const DesignDetails = () => {
             <Card className="mb-8">
               <CardHeader><CardTitle>{t('details.design.title')}</CardTitle><CardDescription>{t('details.design.description')}</CardDescription></CardHeader>
               <CardContent className="space-y-6">
+                {/* 1. Color Palette */}
                 <div className="space-y-2">
-                  <Label htmlFor="user-text">{t('details.design.label')}</Label>
-                  <Textarea id="user-text" placeholder={t('details.design.placeholder')} value={userText} onChange={(e) => setUserText(e.target.value)} rows={5} />
-                  <p className="text-sm text-muted-foreground">{t('details.design.help')}</p>
+                  <Label htmlFor="color-palette">
+                    {t('details.requirements.colorPalette')} *
+                  </Label>
+                  <Select
+                    value={designRequirements.colorPalette || ""}
+                    onValueChange={(value) => setDesignRequirements(prev => ({ ...prev, colorPalette: value }))}
+                  >
+                    <SelectTrigger id="color-palette">
+                      <SelectValue placeholder={t('details.requirements.colorPalette.placeholder')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DESIGN_REQUIREMENT_OPTIONS.colorPalette.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {t(`details.requirements.colorPalette.options.${option.value}`, option.label)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* 2. Decoration Style */}
+                <div className="space-y-2">
+                  <Label htmlFor="decoration-style">
+                    {t('details.requirements.decorationStyle')} *
+                  </Label>
+                  <Select
+                    value={designRequirements.decorationStyle || ""}
+                    onValueChange={(value) => setDesignRequirements(prev => ({ ...prev, decorationStyle: value }))}
+                  >
+                    <SelectTrigger id="decoration-style">
+                      <SelectValue placeholder={t('details.requirements.decorationStyle.placeholder')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DESIGN_REQUIREMENT_OPTIONS.decorationStyle.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {t(`details.requirements.decorationStyle.options.${option.value}`, option.label)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* 3. Theme / Mood */}
+                <div className="space-y-2">
+                  <Label htmlFor="theme-mood">
+                    {t('details.requirements.themeMood')} *
+                  </Label>
+                  <Select
+                    value={designRequirements.themeMood || ""}
+                    onValueChange={(value) => setDesignRequirements(prev => ({ ...prev, themeMood: value }))}
+                  >
+                    <SelectTrigger id="theme-mood">
+                      <SelectValue placeholder={t('details.requirements.themeMood.placeholder')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DESIGN_REQUIREMENT_OPTIONS.themeMood.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {t(`details.requirements.themeMood.options.${option.value}`, option.label)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* 4. Message / Text */}
+                <div className="space-y-2">
+                  <Label htmlFor="message-text">
+                    {t('details.requirements.messageText')}
+                  </Label>
+                  <Select
+                    value={designRequirements.messageText || "none"}
+                    onValueChange={(value) => setDesignRequirements(prev => ({ ...prev, messageText: value }))}
+                  >
+                    <SelectTrigger id="message-text">
+                      <SelectValue placeholder={t('details.requirements.messageText.placeholder')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DESIGN_REQUIREMENT_OPTIONS.messageText.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {t(`details.requirements.messageText.options.${option.value}`, option.label)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  {/* Custom message input */}
+                  {designRequirements.messageText === 'custom' && (
+                    <Input
+                      placeholder={t('details.requirements.messageText.customPlaceholder')}
+                      value={customMessageText}
+                      onChange={(e) => setCustomMessageText(e.target.value)}
+                      className="mt-2"
+                    />
+                  )}
+                </div>
+
+                {/* 5. Flower Type */}
+                <div className="space-y-2">
+                  <Label htmlFor="flower-type">
+                    {t('details.requirements.flowerType')}
+                  </Label>
+                  <Select
+                    value={designRequirements.flowerType || "none"}
+                    onValueChange={(value) => setDesignRequirements(prev => ({ ...prev, flowerType: value }))}
+                  >
+                    <SelectTrigger id="flower-type">
+                      <SelectValue placeholder={t('details.requirements.flowerType.placeholder')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DESIGN_REQUIREMENT_OPTIONS.flowerType.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {t(`details.requirements.flowerType.options.${option.value}`, option.label)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* 6. Texture Finish */}
+                <div className="space-y-2">
+                  <Label htmlFor="texture-finish">
+                    {t('details.requirements.textureFinish')} *
+                  </Label>
+                  <Select
+                    value={designRequirements.textureFinish || ""}
+                    onValueChange={(value) => setDesignRequirements(prev => ({ ...prev, textureFinish: value }))}
+                  >
+                    <SelectTrigger id="texture-finish">
+                      <SelectValue placeholder={t('details.requirements.textureFinish.placeholder')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DESIGN_REQUIREMENT_OPTIONS.textureFinish.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {t(`details.requirements.textureFinish.options.${option.value}`, option.label)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* 7. Special Elements */}
+                <div className="space-y-2">
+                  <Label>{t('details.requirements.specialElements')}</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {DESIGN_REQUIREMENT_OPTIONS.specialElements.map(option => {
+                      const isSelected = designRequirements.specialElements?.includes(option.value);
+                      return (
+                        <Badge
+                          key={option.value}
+                          variant={isSelected ? "default" : "outline"}
+                          className="cursor-pointer"
+                          onClick={() => {
+                            setDesignRequirements(prev => {
+                              const current = prev.specialElements || [];
+                              const updated = current.includes(option.value)
+                                ? current.filter(v => v !== option.value)
+                                : [...current, option.value];
+                              return { ...prev, specialElements: updated };
+                            });
+                          }}
+                        >
+                          {t(`details.requirements.specialElements.options.${option.value}`, option.label)}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 8. Occasion */}
+                <div className="space-y-2">
+                  <Label htmlFor="occasion">
+                    {t('details.requirements.occasion')} *
+                  </Label>
+                  <Select
+                    value={designRequirements.occasion || ""}
+                    onValueChange={(value) => setDesignRequirements(prev => ({ ...prev, occasion: value }))}
+                  >
+                    <SelectTrigger id="occasion">
+                      <SelectValue placeholder={t('details.requirements.occasion.placeholder')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DESIGN_REQUIREMENT_OPTIONS.occasion.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {t(`details.requirements.occasion.options.${option.value}`, option.label)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Compatibility Check Results */}
@@ -349,7 +625,15 @@ const DesignDetails = () => {
               <Button variant="outline" size="lg" onClick={() => navigate(`/design/style?size=${sizeId}`)} disabled={loading} className="px-8">
                 <ArrowLeft className="mr-2 h-5 w-5" />{t('details.prev')}
               </Button>
-              <Button size="lg" onClick={handleSubmit} disabled={loading || !contactEmail} className="px-8">
+              <Button size="lg" onClick={handleSubmit} disabled={
+                loading || 
+                !contactEmail || 
+                !designRequirements.colorPalette || 
+                !designRequirements.decorationStyle || 
+                !designRequirements.themeMood || 
+                !designRequirements.textureFinish || 
+                !designRequirements.occasion
+              } className="px-8">
                 {loading ? t('details.submitting') : <>{t('details.submit')}<Sparkles className="ml-2 h-5 w-5" /></>}
               </Button>
             </div>

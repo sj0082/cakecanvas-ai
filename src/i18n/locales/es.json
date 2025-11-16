@@ -77,6 +77,106 @@
       "placeholder": "Ejemplo: Colores rosa y dorado, decoraciones de rosas, mensaje 'Feliz Cumpleaños'",
       "help": "Cuanto más específico seas, mejor podremos cumplir tu visión"
     },
+    "requirements": {
+      "colorPalette": "Paleta de Colores",
+      "colorPalette.placeholder": "Seleccione paleta de colores",
+      "colorPalette.options": {
+        "ivory-cream": "Marfil y Crema",
+        "blush-pink": "Rosa Rubor",
+        "sage-green": "Verde Salvia",
+        "dusty-rose": "Rosa Polvoriento",
+        "champagne-gold": "Champán y Oro",
+        "navy-blue": "Azul Marino",
+        "lavender-purple": "Lavanda y Púrpura",
+        "terracotta-warm": "Terracota y Tonos Cálidos",
+        "monochrome": "Monocromo",
+        "custom": "Personalizado"
+      },
+      "decorationStyle": "Estilo de Decoración",
+      "decorationStyle.placeholder": "Seleccione estilo de decoración",
+      "decorationStyle.options": {
+        "minimalist": "Minimalista",
+        "classic-elegant": "Clásico Elegante",
+        "romantic": "Romántico",
+        "modern-contemporary": "Moderno Contemporáneo",
+        "rustic-natural": "Rústico y Natural",
+        "luxury-opulent": "Lujo y Opulencia",
+        "artistic-creative": "Artístico y Creativo",
+        "vintage": "Vintage"
+      },
+      "themeMood": "Tema / Ambiente",
+      "themeMood.placeholder": "Seleccione tema o ambiente",
+      "themeMood.options": {
+        "elegant-sophisticated": "Elegante y Sofisticado",
+        "romantic-dreamy": "Romántico y Soñador",
+        "cheerful-vibrant": "Alegre y Vibrante",
+        "calm-serene": "Calmado y Sereno",
+        "dramatic-bold": "Dramático y Audaz",
+        "playful-whimsical": "Juguetón y Caprichoso",
+        "timeless-classic": "Clásico Atemporal"
+      },
+      "messageText": "Mensaje / Texto",
+      "messageText.placeholder": "Seleccione tipo de mensaje",
+      "messageText.customPlaceholder": "Ingrese mensaje personalizado",
+      "messageText.options": {
+        "none": "Sin mensaje",
+        "happy-birthday": "Feliz Cumpleaños",
+        "congratulations": "Felicitaciones",
+        "thank-you": "Gracias",
+        "custom": "Mensaje personalizado"
+      },
+      "flowerType": "Tipo de Flores",
+      "flowerType.placeholder": "Seleccione tipo de flores",
+      "flowerType.options": {
+        "none": "Sin flores",
+        "roses": "Rosas",
+        "peonies": "Peonías",
+        "hydrangeas": "Hortensias",
+        "eucalyptus": "Eucalipto",
+        "baby-breath": "Aliento de Bebé",
+        "ranunculus": "Ranúnculos",
+        "garden-roses": "Rosas de Jardín",
+        "mixed-botanicals": "Botánicos Mixtos",
+        "sugar-flowers": "Flores de Azúcar"
+      },
+      "textureFinish": "Textura / Acabado",
+      "textureFinish.placeholder": "Seleccione textura acabado",
+      "textureFinish.options": {
+        "smooth-fondant": "Fondant Suave",
+        "textured-buttercream": "Buttercream Texturizado",
+        "naked-semi-naked": "Desnudo / Semi-Desnudo",
+        "ruffled": "Con Volantes",
+        "brushstroke": "Pincelada",
+        "watercolor": "Efecto Acuarela",
+        "metallic": "Acabado Metálico",
+        "mirror-glaze": "Glaseado Espejo"
+      },
+      "specialElements": "Elementos Especiales",
+      "specialElements.options": {
+        "fresh-flowers": "Flores Frescas",
+        "dried-flowers": "Flores Secas",
+        "berries-fruits": "Bayas / Frutas",
+        "macarons": "Macarons",
+        "topper": "Adorno de Pastel",
+        "drip-effect": "Efecto Goteo",
+        "ombre-gradient": "Ombré / Gradiente",
+        "geometric-shapes": "Formas Geométricas",
+        "gold-leaf": "Hojas de Oro",
+        "fresh-fruits": "Frutas Frescas"
+      },
+      "occasion": "Ocasión",
+      "occasion.placeholder": "Seleccione ocasión",
+      "occasion.options": {
+        "wedding": "Boda",
+        "birthday": "Cumpleaños",
+        "anniversary": "Aniversario",
+        "engagement": "Compromiso",
+        "baby-shower": "Baby Shower",
+        "graduation": "Graduación",
+        "corporate": "Evento Corporativo",
+        "other": "Otro"
+      }
+    },
     "contact": {
       "title": "Información de Contacto",
       "description": "Ingresa tus datos de contacto para recibir propuestas de diseño e información de pago",

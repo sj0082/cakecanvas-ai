@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { filterForbiddenTerms } from '../_shared/forbidden-filter.ts';
 import { getFullNegativePrompt } from '../_shared/constants.ts';
 import { validatePaletteLock, extractColorsFromText } from '../_shared/color-utils.ts';
+import { DESIGN_REQUIREMENT_OPTIONS } from '../_shared/design-requirements.ts';
 
 // Latest 2025 cake design trends (Instagram/Pinterest)
 const LATEST_2025_TRENDS = {
@@ -182,6 +183,103 @@ serve(async (req) => {
       };
     }
     
+    /**
+     * Parse structured design requirements (parsed_slots) into prompt-friendly data
+     */
+    function parseStructuredRequirements(parsedSlots: any, tierCount: number) {
+      if (!parsedSlots) {
+        return { keywords: [], inspiration: '', originalLength: 0, cleanedLength: 0 };
+      }
+      
+      const keywords: string[] = [];
+      const inspirationParts: string[] = [];
+      
+      if (parsedSlots.colorPalette && parsedSlots.colorPalette !== 'custom') {
+        const colorOption = DESIGN_REQUIREMENT_OPTIONS.colorPalette?.find(
+          (o: any) => o.value === parsedSlots.colorPalette
+        );
+        if (colorOption) {
+          keywords.push(colorOption.label.toLowerCase());
+          inspirationParts.push(`Color palette: ${colorOption.label}`);
+        }
+      }
+      
+      if (parsedSlots.decorationStyle) {
+        const styleOption = DESIGN_REQUIREMENT_OPTIONS.decorationStyle?.find(
+          (o: any) => o.value === parsedSlots.decorationStyle
+        );
+        if (styleOption) {
+          keywords.push(styleOption.label.toLowerCase());
+          inspirationParts.push(`Decoration style: ${styleOption.label}`);
+        }
+      }
+      
+      if (parsedSlots.themeMood) {
+        const themeOption = DESIGN_REQUIREMENT_OPTIONS.themeMood?.find(
+          (o: any) => o.value === parsedSlots.themeMood
+        );
+        if (themeOption) {
+          keywords.push(themeOption.label.toLowerCase());
+          inspirationParts.push(`Theme: ${themeOption.label}`);
+        }
+      }
+      
+      if (parsedSlots.messageText && parsedSlots.messageText !== 'none') {
+        if (typeof parsedSlots.messageText === 'string' && parsedSlots.messageText.length > 0) {
+          inspirationParts.push(`Message: ${parsedSlots.messageText}`);
+          keywords.push('message', 'text');
+        }
+      }
+      
+      if (parsedSlots.flowerType && parsedSlots.flowerType !== 'none') {
+        const flowerOption = DESIGN_REQUIREMENT_OPTIONS.flowerType?.find(
+          (o: any) => o.value === parsedSlots.flowerType
+        );
+        if (flowerOption) {
+          keywords.push(flowerOption.label.toLowerCase());
+          inspirationParts.push(`Flowers: ${flowerOption.label}`);
+        }
+      }
+      
+      if (parsedSlots.textureFinish) {
+        const textureOption = DESIGN_REQUIREMENT_OPTIONS.textureFinish?.find(
+          (o: any) => o.value === parsedSlots.textureFinish
+        );
+        if (textureOption) {
+          keywords.push(textureOption.label.toLowerCase());
+          inspirationParts.push(`Texture: ${textureOption.label}`);
+        }
+      }
+      
+      if (parsedSlots.specialElements && Array.isArray(parsedSlots.specialElements) && parsedSlots.specialElements.length > 0) {
+        const elements = parsedSlots.specialElements.map((e: string) => {
+          const elementOption = DESIGN_REQUIREMENT_OPTIONS.specialElements?.find((o: any) => o.value === e);
+          return elementOption?.label || e;
+        });
+        keywords.push(...elements.map((e: string) => e.toLowerCase()));
+        inspirationParts.push(`Special elements: ${elements.join(', ')}`);
+      }
+      
+      if (parsedSlots.occasion) {
+        const occasionOption = DESIGN_REQUIREMENT_OPTIONS.occasion?.find(
+          (o: any) => o.value === parsedSlots.occasion
+        );
+        if (occasionOption) {
+          keywords.push(occasionOption.label.toLowerCase());
+          inspirationParts.push(`Occasion: ${occasionOption.label}`);
+        }
+      }
+      
+      const inspiration = inspirationParts.join('. ');
+      
+      return {
+        keywords: keywords.filter((v, i, a) => a.indexOf(v) === i),
+        inspiration,
+        originalLength: inspiration.length,
+        cleanedLength: inspiration.length
+      };
+    }
+    
     // ✅ userTextParsed is now parsed AFTER tierCount is defined (see line 297)
     
     // HARD CONSTRAINT: Generate layout mask based on tier structure
@@ -291,10 +389,18 @@ serve(async (req) => {
     const tierCount = tiersSpec.tiers || 1;
     const servingRange = `${sizeCategory.serving_min}-${sizeCategory.serving_max}`;
     
-    // ✅ Parse user text AFTER tierCount is defined (moved from line 185)
-    // Remove structural elements that conflict with size_category
-    const userTextParsed = parseUserTextForStyleBlending(userText, tierCount);
-    console.log(`📝 Parsed user text: ${userTextParsed.keywords.length} keywords extracted, ${userTextParsed.cleanedLength} chars after removing structural elements`);
+    // ✅ Parse user requirements: prioritize structured data (parsed_slots), fallback to user_text
+    let userTextParsed: any;
+    if (request.parsed_slots) {
+      console.log('📋 Using structured design requirements (parsed_slots)');
+      userTextParsed = parseStructuredRequirements(request.parsed_slots, tierCount);
+    } else if (userText) {
+      console.log('📝 Falling back to free-text user_text (legacy)');
+      userTextParsed = parseUserTextForStyleBlending(userText, tierCount);
+    } else {
+      userTextParsed = { keywords: [], inspiration: '', originalLength: 0, cleanedLength: 0 };
+    }
+    console.log(`📝 Parsed requirements: ${userTextParsed.keywords.length} keywords extracted, ${userTextParsed.cleanedLength} chars`);
     
     const filterResult = filterForbiddenTerms(userText);
     userText = filterResult.cleanedText;
