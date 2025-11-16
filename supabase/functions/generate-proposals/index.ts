@@ -84,6 +84,63 @@ serve(async (req) => {
     // Extract user text EARLY for all validations
     let userText = request.user_text || '';
     
+    // Parse user text to extract keywords and remove structural elements that conflict with StylePack
+    function parseUserTextForStyleBlending(userText: string, tierCount: number) {
+      if (!userText) return { keywords: [], inspiration: '', originalLength: 0, cleanedLength: 0 };
+      
+      // Structural patterns to remove (these come from size_category and StylePack)
+      const structuralPatterns = [
+        /\d+\s*tier/gi,
+        /tiered/gi,
+        /pedestal\s*stand/gi,
+        /cake\s*stand/gi,
+        /serving\s*\d+/gi,
+        /people/gi,
+        /\d+\s*inch/gi,
+        /round\s*cake/gi,
+        /square\s*cake/gi
+      ];
+      
+      let cleanedText = userText;
+      for (const pattern of structuralPatterns) {
+        cleanedText = cleanedText.replace(pattern, '');
+      }
+      
+      // Extract color keywords (for palette comparison)
+      const colorKeywords = extractColorsFromText(cleanedText);
+      
+      // Extract decoration/material keywords
+      const decorationKeywords = cleanedText.match(/\b(peonies|roses|hydrangeas|eucalyptus|pampas|ribbon|piping|quilted|pearls|lace|fondant|buttercream|flowers|botanicals|gold|silver)\b/gi) || [];
+      
+      // Extract style/mood keywords
+      const styleKeywords = cleanedText.match(/\b(classic|elegant|luxury|luxurious|romantic|modern|traditional|minimalist|dramatic|bold|vintage|contemporary|sophisticated)\b/gi) || [];
+      
+      // Combine all keywords and remove duplicates
+      const allKeywords = [
+        ...colorKeywords.map(c => c.toLowerCase()),
+        ...decorationKeywords.map(d => d.toLowerCase()),
+        ...styleKeywords.map(s => s.toLowerCase())
+      ].filter((v, i, a) => a.indexOf(v) === i);
+      
+      // Create inspiration text (cleaned of structural elements, max 200 chars)
+      const inspiration = cleanedText
+        .replace(/\s+/g, ' ')
+        .trim()
+        .substring(0, 200);
+      
+      return {
+        keywords: allKeywords,
+        inspiration: inspiration,
+        originalLength: userText.length,
+        cleanedLength: cleanedText.length,
+        decorationKeywords: decorationKeywords.map(d => d.toLowerCase()),
+        styleKeywords: styleKeywords.map(s => s.toLowerCase())
+      };
+    }
+    
+    const userTextParsed = parseUserTextForStyleBlending(userText, sizeCategory.tiers_spec?.length || 1);
+    console.log(`📝 Parsed user text: ${userTextParsed.keywords.length} keywords extracted, ${userTextParsed.cleanedLength} chars after removing structural elements`);
+    
     // HARD CONSTRAINT: Generate layout mask based on tier structure
     let layoutMaskUrl = null;
     if (sizeCategory.tiers_spec) {
@@ -379,6 +436,7 @@ These reference images represent the seller's signature style. The generated des
           allowedAccents,
           shapeTemplate,
           userText,
+          userTextParsed,  // ✅ Pass parsed user text with keywords
           negativePrompt,
           referenceContext: refContextForPrompt,  // ✅ Pass analyzed reference context
           // Pass style control parameters
@@ -399,6 +457,8 @@ These reference images represent the seller's signature style. The generated des
           prompt: detailedPrompt,
           referenceImages,
           variant: variant.name,
+          tierCount,  // ✅ Pass tier count for priority instructions
+          shapeTemplate,  // ✅ Pass shape for priority instructions
           supabase
         });
         
@@ -566,6 +626,7 @@ function buildDetailedPrompt(params: {
   allowedAccents: string[];
   shapeTemplate: string;
   userText: string;
+  userTextParsed?: any;  // ✅ Add userTextParsed parameter
   negativePrompt: string;
   referenceContext?: string;
   styleStrength: number;
@@ -678,16 +739,16 @@ function buildDetailedPrompt(params: {
         '- Pinterest trending: Sculptural designs, abstract patterns, mixed media finishes'
       ];
 
-  // Build structured, detailed prompt with variant-specific 2025 trends
+  // Build structured, detailed prompt with PRIORITIZED sections
   const sections = [
     `Professional cake design photography in ${stylepackName} style.`,
     stylepackDescription ? `Style essence: ${stylepackDescription}` : '',
     `Design approach: ${variantModifier}`,
     '',
-    referenceContext, // ✅ Move reference context earlier for emphasis
+    // ✅ PRIORITY 1: Reference context at the very top
+    referenceContext,
     '',
-    ...trendSection.filter(Boolean),
-    '',
+    // ✅ PRIORITY 2: Style parameters (strength, realism, detail)
     'STYLE PARAMETERS:',
     `- Style adherence: ${styleText}`,
     `- Realism: ${realismText}`,
@@ -695,20 +756,44 @@ function buildDetailedPrompt(params: {
     `- Image quality: ${sharpnessText}`,
     `- Color accuracy: ${paletteText}`,
     '',
-    'STRUCTURE REQUIREMENTS:',
+    // ✅ PRIORITY 3: Structure requirements (FIXED from size category, NOT customer)
+    'STRUCTURE REQUIREMENTS (FIXED - from size category, NOT from customer input):',
     `- ${tierCount} tier${tierCount > 1 ? 's' : ''} cake (serving ${servingRange} people)`,
     `- Shape: ${shapeTemplate}`,
     `- Professional bakery quality construction with modern techniques`,
+    `- Stand style: Match the StylePack's typical aesthetic (ignore any customer stand requests)`,
     '',
-    'COLOR PALETTE:',
+    // ✅ PRIORITY 4: Color palette (from StylePack reference images)
+    'COLOR PALETTE (from StylePack reference images - PRIORITY OVER customer colors):',
     primaryColors.length > 0 ? `- Primary colors: ${primaryColors.join(', ')}` : '',
     accentColors.length > 0 ? `- Accent colors: ${accentColors.join(', ')}` : '',
+    paletteLock >= 0.9 ? '- Palette lock ACTIVE: Use ONLY these exact colors (ΔE ≤ 10)' : '- Flexible palette: Use these as primary inspiration',
     '',
-    'DECORATION ELEMENTS:',
+    // ✅ PRIORITY 5: Decoration elements (StylePack-based)
+    'DECORATION ELEMENTS (from StylePack):',
     allowedAccents.length > 0 ? `- Allowed accents: ${allowedAccents.join(', ')}` : '',
     '- Use trending decoration techniques: textured buttercream, wafer paper flowers, gold leaf accents',
     '',
-    userText ? `CUSTOMER PREFERENCES: ${userText}` : '',
+    // ✅ PRIORITY 6: 2025 Trends
+    ...trendSection.filter(Boolean),
+    '',
+    // ✅ PRIORITY 7 (LAST): Customer inspiration - BLEND, don't override
+    userText && params.userTextParsed ? `CUSTOMER INSPIRATION (to be BLENDED with StylePack style, NOT overriding):
+
+IMPORTANT: The following customer preferences should be INTERPRETED and BLENDED with the StylePack's signature style shown in the reference images above. Do NOT override the StylePack's color palette, texture techniques, or decoration density. Use these preferences as INSPIRATION to guide the overall aesthetic direction.
+
+Customer inspiration text: ${params.userTextParsed.inspiration || userText.substring(0, 200)}
+
+Key elements to consider: ${params.userTextParsed.keywords.join(', ')}
+
+BLENDING INSTRUCTIONS:
+- Decoration preferences: ${params.userTextParsed.decorationKeywords?.join(', ') || 'none specified'} - use ONLY if aligned with StylePack's aesthetic
+- Style mood: ${params.userTextParsed.styleKeywords?.join(', ') || 'none specified'} - blend with StylePack's signature style
+- Color preferences: If customer colors conflict with StylePack palette, PRIORITIZE StylePack colors
+- Structural elements: The tier count (${tierCount}), shape (${shapeTemplate}), and stand style come from size category and StylePack defaults, NOT from customer preferences
+- Texture techniques: Maintain the StylePack's texture style from reference images
+
+The final design MUST feel like it belongs to the ${stylepackName} collection while incorporating customer preferences as subtle inspiration.` : '',
     '',
     'PHOTOGRAPHY REQUIREMENTS:',
     '- Professional studio lighting with soft, flattering shadows',
@@ -786,22 +871,45 @@ Focus on elements that make these designs visually appealing and commercially su
       });
     }
     
-    // Step 3: Add generation requirements
+    // Step 3: Add generation requirements with PRIORITY ORDER
     messageContent.push({
       type: "text",
-      text: `GENERATION REQUIREMENTS:
-Create a NEW, TREND-FORWARD cake design that:
-1. Incorporates the most modern and appealing elements from the reference images
-2. Updates classic styles with 2025 trends:
-   • Textured buttercream finishes
-   • Natural botanicals (eucalyptus, pampas grass, dried florals)
-   • Contemporary color palettes (sage green + terracotta, dusty rose + champagne)
-   • Geometric patterns and ombré effects
-   • Wafer paper flowers and gold leaf accents
-   • Sculptural elements and artistic brushstrokes
-3. Creates an Instagram-worthy, Pinterest-pinnable design that customers want to purchase
-4. Maintains commercial viability - must be achievable by a skilled baker
-5. Avoids outdated design elements from 2010s-2020s (overly ornate piping, dated color schemes)
+      text: `GENERATION REQUIREMENTS (PRIORITY ORDER):
+
+1. FIRST PRIORITY: Match the StylePack's signature style from the reference images above
+   - Use the EXACT color palette from references (hex codes + proportions shown above)
+   - Replicate the texture techniques shown in reference images
+   - Match the decoration density level from references
+   - Maintain the overall aesthetic and visual language
+   - This is the seller's signature style - the design must feel like it belongs to their collection
+
+2. SECOND PRIORITY: Incorporate 2025 trending elements
+   - Modern techniques: textured buttercream, natural botanicals, contemporary color palettes
+   - Trending aesthetics: Instagram-worthy, Pinterest-pinnable presentation
+   - 2025 trends: ombré effects, wafer paper flowers, gold leaf accents, geometric patterns
+   - Sculptural elements and artistic brushstrokes
+   - Update classic styles with subtle contemporary touches
+
+3. THIRD PRIORITY: Blend customer preferences (if provided in the prompt below)
+   - Use customer preferences as INSPIRATION only, not as strict requirements
+   - If customer preferences conflict with StylePack style, PRIORITIZE StylePack style
+   - Customer's structural requests (tier count, stand type) are IGNORED - use size category defaults
+   - Customer's color preferences are IGNORED if they conflict with StylePack palette
+   - Customer's decoration ideas are considered ONLY if they align with StylePack aesthetic
+
+4. STRUCTURAL REQUIREMENTS (FIXED from size category, NOT from customer):
+   - Tier count: ${params.tierCount || 'as specified'} tiers (this is FIXED, do NOT change based on customer preferences)
+   - Shape: ${params.shapeTemplate || 'round'} (this is FIXED)
+   - Stand: Use StylePack's typical stand style (do NOT use customer's specific stand request)
+   - Construction: Professional bakery quality with modern techniques
+
+5. QUALITY REQUIREMENTS:
+   - Commercial viability - achievable by a skilled baker
+   - Avoid outdated design elements from 2010s-2020s (overly ornate piping, dated color schemes, fondant overload)
+   - Professional photography quality (Instagram/Pinterest standards)
+   - Natural, appealing presentation
+
+CRITICAL: The generated design must look like it belongs to the StylePack's collection. Customer preferences are secondary to StylePack style. The reference images define the style - follow them closely.
 
 Now generate the cake design based on the following detailed specification:`
     });
@@ -813,17 +921,17 @@ Now generate the cake design based on the following detailed specification:`
     text: params.prompt
   });
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
+  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    method: 'POST',
     headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "Content-Type": "application/json",
+      'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: "google/gemini-2.5-flash-image",
+      model: 'google/gemini-2.5-flash-image-preview',  // ✅ Use consistent model name
       messages: [
-        { 
-          role: "user", 
+        {
+          role: 'user',
           content: messageContent
         }
       ],
@@ -854,7 +962,7 @@ Now generate the cake design based on the following detailed specification:`
     url, 
     metadata: { 
       provider: 'gemini',
-      model: 'gemini-2.5-flash-image',
+      model: 'gemini-2.5-flash-image-preview',
       hasReferences: (params.referenceImages?.length || 0) > 0,
       referenceCount: params.referenceImages?.length || 0
     } 
