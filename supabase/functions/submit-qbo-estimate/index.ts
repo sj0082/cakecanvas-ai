@@ -29,9 +29,10 @@ serve(async (req) => {
     );
 
     // Verify access token and fetch request with proposals
+    // Use proposals_request_id_fkey to specify the one-to-many relationship
     const { data: request, error: requestError } = await supabase
       .from('requests')
-      .select('*, proposals!inner(*)')
+      .select('*, proposals!proposals_request_id_fkey!inner(*)')
       .eq('id', requestId)
       .eq('access_token', accessToken)
       .single();
