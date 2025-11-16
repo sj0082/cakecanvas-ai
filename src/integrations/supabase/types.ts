@@ -190,6 +190,7 @@ export type Database = {
           customer_notes: string | null
           id: string
           parsed_slots: Json | null
+          payment_amount: number | null
           payment_provider: string | null
           payment_reference: string | null
           payment_status: string
@@ -199,6 +200,9 @@ export type Database = {
           selected_proposal_id: string | null
           size_category_id: string
           status: string
+          stripe_checkout_session_id: string | null
+          stripe_payment_intent_id: string | null
+          stripe_payment_status: string | null
           stylepack_id: string
           updated_at: string
           user_images: string[] | null
@@ -215,6 +219,7 @@ export type Database = {
           customer_notes?: string | null
           id?: string
           parsed_slots?: Json | null
+          payment_amount?: number | null
           payment_provider?: string | null
           payment_reference?: string | null
           payment_status?: string
@@ -224,6 +229,9 @@ export type Database = {
           selected_proposal_id?: string | null
           size_category_id: string
           status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_payment_status?: string | null
           stylepack_id: string
           updated_at?: string
           user_images?: string[] | null
@@ -240,6 +248,7 @@ export type Database = {
           customer_notes?: string | null
           id?: string
           parsed_slots?: Json | null
+          payment_amount?: number | null
           payment_provider?: string | null
           payment_reference?: string | null
           payment_status?: string
@@ -249,6 +258,9 @@ export type Database = {
           selected_proposal_id?: string | null
           size_category_id?: string
           status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_payment_status?: string | null
           stylepack_id?: string
           updated_at?: string
           user_images?: string[] | null
