@@ -237,7 +237,16 @@
     "select": "Seleccionar Este Diseño",
     "selected": "Seleccionado",
     "contactInfo": "Te contactaremos en",
-    "next": "Completar Pedido"
+    "next": "Completar Pedido",
+    "readyToRequest": "¿Listo para proceder con este diseño?",
+    "requestQuote": "Solicitar Cotización QuickBooks",
+    "requesting": "Enviando Solicitud...",
+    "quoteInfo": "Se creará una cotización detallada en QuickBooks y se enviará a su correo electrónico",
+    "tryAgain": "Intentar de Nuevo",
+    "success": {
+      "title": "¡Solicitud de Cotización Enviada con Éxito!",
+      "description": "Su solicitud ha sido enviada a {{email}}. Recibirá una cotización detallada por correo electrónico pronto."
+    }
   },
   "common": {
     "error": "Error",
