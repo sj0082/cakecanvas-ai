@@ -359,6 +359,7 @@ serve(async (req) => {
           )
         `)
         .eq('stylepack_id', stylepack.id)
+        .eq('trend_keywords.is_active', true)
         .gte('trend_keywords.popularity_score', 0.6)
         .order('relevance_score', { ascending: false })
         .limit(10);
@@ -374,7 +375,7 @@ serve(async (req) => {
             }
           }
         }
-        console.log(`✅ Loaded ${latestTrendKeywords.length} trends from database`);
+        console.log(`✅ Loaded ${latestTrendKeywords.length} active trends from database (stylepack mappings)`);
       }
     } catch (error) {
       console.warn('⚠️ Failed to fetch trends from database:', error);
@@ -385,6 +386,7 @@ serve(async (req) => {
       const { data: globalTrends } = await supabase
         .from('trend_keywords')
         .select('keyword, description, popularity_score, related_keywords')
+        .eq('is_active', true)
         .gte('popularity_score', 0.7) // Only high popularity trends
         .order('popularity_score', { ascending: false })
         .order('created_at', { ascending: false }) // Most recent first
@@ -403,7 +405,7 @@ serve(async (req) => {
             }
           }
         }
-        console.log(`🌍 Added ${globalTrends.length} global trending keywords`);
+        console.log(`🌍 Added ${globalTrends.length} active global trending keywords`);
       }
     } catch (error) {
       console.warn('⚠️ Failed to fetch global trends:', error);
