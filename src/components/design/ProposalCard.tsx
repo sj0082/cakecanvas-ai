@@ -10,19 +10,21 @@ import { useTranslation } from "react-i18next";
 
 interface ProposalCardProps {
   id: string;
-  variant: "conservative" | "standard" | "bold";
+  variant: "conservative" | "standard" | "bold" | "customer-priority" | "balanced" | "stylepack-priority";
   image_url: string;
   spec_json: {
     tiers?: string;
     palette?: string;
     accents?: string[];
     variantLabel?: string;
+    variant?: string;
   };
   price_range_min: number;
   price_range_max: number;
   badges: string[];
   isSelected: boolean;
   onSelect: () => void;
+  disabled?: boolean;
 }
 
 export const ProposalCard = ({
@@ -34,11 +36,23 @@ export const ProposalCard = ({
   badges,
   isSelected,
   onSelect,
+  disabled = false,
 }: ProposalCardProps) => {
   const { t } = useTranslation();
+  const spec = typeof spec_json === 'string' ? JSON.parse(spec_json) : spec_json;
+  const actualVariant = spec?.variant || variant;
   
-  // Use variantLabel if available for display, otherwise fall back to variant
-  const displayLabel = spec_json.variantLabel || t(`proposals.variant.${variant}`);
+  // Map old variant names to new V1/V2/V3 labels
+  const variantLabelMap: Record<string, string> = {
+    'conservative': 'V1-Customer Priority',
+    'customer-priority': 'V1-Customer Priority',
+    'standard': 'V2-Balanced',
+    'balanced': 'V2-Balanced',
+    'bold': 'V3-StylePack Priority',
+    'stylepack-priority': 'V3-StylePack Priority'
+  };
+  
+  const displayLabel = variantLabelMap[actualVariant] || spec?.variantLabel || t(`proposals.variant.${actualVariant}`);
 
   const getBadgeVariant = (badge: string) => {
     if (badge.includes("risk") || badge.includes("warning")) return "destructive";
@@ -90,8 +104,14 @@ export const ProposalCard = ({
           onClick={onSelect}
           variant={isSelected ? "default" : "outline"}
           className="w-full"
+          disabled={disabled}
         >
-          {isSelected ? t('proposals.selected') : t('proposals.select')}
+          {disabled 
+            ? t('proposals.submitting') 
+            : isSelected 
+            ? t('proposals.selected') 
+            : t('proposals.select')
+          }
         </Button>
       </CardContent>
     </Card>

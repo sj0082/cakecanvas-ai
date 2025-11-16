@@ -77,6 +77,13 @@
       "placeholder": "Ejemplo: Colores rosa y dorado, decoraciones de rosas, mensaje 'Feliz Cumpleaños'",
       "help": "Cuanto más específico seas, mejor podremos cumplir tu visión"
     },
+    "notes": {
+      "title": "Notas Adicionales",
+      "description": "Información adicional o solicitudes especiales",
+      "label": "Notas (Opcional)",
+      "placeholder": "Ingrese notas adicionales o solicitudes especiales...",
+      "help": "Esta información se incluirá en su solicitud de cotización."
+    },
     "requirements": {
       "colorPalette": "Paleta de Colores",
       "colorPalette.placeholder": "Seleccione paleta de colores",
@@ -180,6 +187,10 @@
     "contact": {
       "title": "Información de Contacto",
       "description": "Ingresa tus datos de contacto para recibir propuestas de diseño e información de pago",
+      "name": {
+        "label": "Nombre Completo",
+        "placeholder": "Ingrese su nombre completo"
+      },
       "email": {
         "label": "Correo Electrónico",
         "placeholder": "tu@email.com"

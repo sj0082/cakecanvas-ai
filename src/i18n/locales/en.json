@@ -77,6 +77,13 @@
       "placeholder": "Example: Pink and gold colors, rose decorations, 'Happy Birthday' message",
       "help": "The more specific you are, the better we can match your vision"
     },
+    "notes": {
+      "title": "Additional Notes",
+      "description": "Any additional information or special requests",
+      "label": "Notes (Optional)",
+      "placeholder": "Enter any additional notes or special requests...",
+      "help": "This information will be included in your quote request."
+    },
     "requirements": {
       "colorPalette": "Color Palette",
       "colorPalette.placeholder": "Select color palette",
@@ -180,6 +187,10 @@
     "contact": {
       "title": "Contact Information",
       "description": "Enter your contact details to receive design proposals and payment information",
+      "name": {
+        "label": "Full Name",
+        "placeholder": "Enter your full name"
+      },
       "email": {
         "label": "Email Address",
         "placeholder": "your@email.com"
