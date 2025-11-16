@@ -16,10 +16,10 @@ serve(async (req) => {
   try {
     console.log("[CREATE-STRIPE-CHECKOUT] Function started");
 
-    // Initialize Supabase client
+    // Initialize Supabase client (service role for RLS-bypassed secure server-side access)
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { auth: { persistSession: false } }
     );
 
@@ -31,16 +31,16 @@ serve(async (req) => {
       throw new Error("Missing required parameters: requestId, proposalId, or accessToken");
     }
 
-    // Verify access token and fetch request with proposals
+    // 1) Verify request by id + access_token (no joins to avoid ambiguity)
     const { data: request, error: requestError } = await supabaseClient
       .from('requests')
-      .select('*, proposals!proposals_request_id_fkey(*)')
+      .select('id, contact_email, contact_name, contact_phone, access_token')
       .eq('id', requestId)
       .eq('access_token', accessToken)
       .maybeSingle();
 
     if (requestError) {
-      console.error("[CREATE-STRIPE-CHECKOUT] Database error:", requestError);
+      console.error("[CREATE-STRIPE-CHECKOUT] Database error (requests):", requestError);
       throw new Error("Database error: " + requestError.message);
     }
 
@@ -51,10 +51,22 @@ serve(async (req) => {
 
     console.log("[CREATE-STRIPE-CHECKOUT] Request verified");
 
-    // Find the selected proposal
-    const proposal = request.proposals.find((p: any) => p.id === proposalId);
+    // 2) Verify the proposal belongs to the request
+    const { data: proposal, error: proposalError } = await supabaseClient
+      .from('proposals')
+      .select('id, image_url, variant')
+      .eq('id', proposalId)
+      .eq('request_id', requestId)
+      .maybeSingle();
+
+    if (proposalError) {
+      console.error("[CREATE-STRIPE-CHECKOUT] Database error (proposals):", proposalError);
+      throw new Error("Database error: " + proposalError.message);
+    }
+
     if (!proposal) {
-      throw new Error("Proposal not found");
+      console.error("[CREATE-STRIPE-CHECKOUT] Proposal not found for request", { requestId, proposalId });
+      throw new Error("Invalid proposal for request");
     }
 
     console.log("[CREATE-STRIPE-CHECKOUT] Proposal found", { proposalId });
