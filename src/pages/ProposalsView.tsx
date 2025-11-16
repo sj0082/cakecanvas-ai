@@ -11,7 +11,7 @@ import { ProposalCard } from "@/components/design/ProposalCard";
 import { DesignStepper } from "@/components/design/DesignStepper";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { FileText, Loader2, Check } from "lucide-react";
+import { CreditCard, Loader2, Check } from "lucide-react";
 
 
 const ProposalsView = () => {
@@ -96,10 +96,22 @@ const ProposalsView = () => {
       }
     }, 5000);
 
+    // Check for successful payment on mount
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('session_id');
+    
+    if (sessionId && !submitSuccess) {
+      setSubmitSuccess(true);
+      toast({
+        title: t('proposals.paymentSuccess'),
+        description: t('proposals.paymentSuccessDescription', { email: request?.contact_email || '' }),
+      });
+    }
+
     return () => {
       clearInterval(pollInterval);
     };
-  }, [requestId, accessToken, request?.status]);
+  }, [requestId, accessToken, request?.status, submitSuccess, toast, t]);
 
   const handleSelectProposal = async (proposalId: string) => {
     if (!requestId || !accessToken || submitting) return;
@@ -109,7 +121,7 @@ const ProposalsView = () => {
     
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const functionUrl = `${supabaseUrl}/functions/v1/submit-qbo-estimate`;
+      const functionUrl = `${supabaseUrl}/functions/v1/create-stripe-checkout`;
       
       const response = await fetch(functionUrl, {
         method: 'POST',
@@ -119,32 +131,28 @@ const ProposalsView = () => {
         body: JSON.stringify({
           requestId,
           proposalId,
-          accessToken
-        })
+          accessToken,
+        }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to submit quote request');
+        throw new Error(errorData.error || 'Failed to create checkout session');
       }
 
-      const result = await response.json();
-      setSelectedProposal(proposalId);
-      setSubmitSuccess(true);
+      const { checkoutUrl } = await response.json();
       
-      toast({
-        title: t('proposals.success.title'),
-        description: t('proposals.success.description', { email: request.contact_email }),
-      });
+      // Redirect to Stripe Checkout
+      window.location.href = checkoutUrl;
+      
     } catch (error) {
-      console.error('Error submitting quote request:', error);
-      setSubmitError(error instanceof Error ? error.message : 'Unknown error');
+      console.error('Error creating checkout:', error);
+      setSubmitError(error instanceof Error ? error.message : 'Failed to start payment process');
       toast({
         title: t('common.error'),
-        description: error instanceof Error ? error.message : 'Failed to submit quote request',
-        variant: 'destructive'
+        description: t('proposals.paymentError'),
+        variant: 'destructive',
       });
-    } finally {
       setSubmitting(false);
     }
   };
@@ -215,22 +223,22 @@ const ProposalsView = () => {
                       onClick={() => handleSelectProposal(selectedProposal)}
                       disabled={submitting}
                       size="lg"
-                      className="min-w-[250px]"
+                      className="min-w-[250px] bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                     >
                       {submitting ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          {t('proposals.requesting')}
+                          {t('proposals.processingPayment')}
                         </>
                       ) : (
                         <>
-                          <FileText className="mr-2 h-4 w-4" />
-                          {t('proposals.requestQuote')}
+                          <CreditCard className="mr-2 h-4 w-4" />
+                          {t('proposals.proceedToPayment')} - $30 USD
                         </>
                       )}
                     </Button>
                     <p className="text-xs text-muted-foreground mt-3">
-                      {t('proposals.quoteInfo')}
+                      {t('proposals.paymentInfo')}
                     </p>
                   </div>
                 )}

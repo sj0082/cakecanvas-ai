@@ -39,3 +39,6 @@ verify_jwt = true
 [functions.submit-qbo-estimate]
 verify_jwt = false
 
+[functions.create-stripe-checkout]
+verify_jwt = false
+
