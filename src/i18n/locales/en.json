@@ -237,7 +237,16 @@
     "select": "Select This Design",
     "selected": "Selected",
     "contactInfo": "We'll contact you at",
-    "next": "Complete Order"
+    "next": "Complete Order",
+    "readyToRequest": "Ready to proceed with this design?",
+    "requestQuote": "Request QuickBooks Estimate",
+    "requesting": "Submitting Request...",
+    "quoteInfo": "A detailed estimate will be created in QuickBooks and sent to your email",
+    "tryAgain": "Try Again",
+    "success": {
+      "title": "Quote Request Submitted Successfully!",
+      "description": "Your quote request has been sent to {{email}}. You'll receive a detailed estimate via email soon."
+    }
   },
   "common": {
     "error": "Error",

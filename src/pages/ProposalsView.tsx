@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { ProposalCard } from "@/components/design/ProposalCard";
 import { DesignStepper } from "@/components/design/DesignStepper";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { FileText, Loader2, Check } from "lucide-react";
 
 
 const ProposalsView = () => {
@@ -204,10 +206,61 @@ const ProposalsView = () => {
                 <div className="grid md:grid-cols-3 gap-6 mb-8">
                   {request.proposals.map((proposal: any) => <ProposalCard key={proposal.id} {...proposal} isSelected={selectedProposal === proposal.id} onSelect={() => setSelectedProposal(proposal.id)} />)}
                 </div>
-                {selectedProposal && (
-                  <div className="text-center p-6 bg-muted rounded-lg">
-                    <p className="text-sm text-muted-foreground mb-2">{t('proposals.contactInfo')} {request.contact_email}</p>
-                    <p className="text-xs text-muted-foreground">{t('proposals.next')}</p>
+                {selectedProposal && !submitSuccess && (
+                  <div className="text-center p-6 bg-gradient-to-r from-brand/10 to-brand/5 border border-brand/20 rounded-lg">
+                    <p className="text-sm font-medium mb-4">
+                      {t('proposals.readyToRequest')}
+                    </p>
+                    <Button
+                      onClick={() => handleSelectProposal(selectedProposal)}
+                      disabled={submitting}
+                      size="lg"
+                      className="min-w-[250px]"
+                    >
+                      {submitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          {t('proposals.requesting')}
+                        </>
+                      ) : (
+                        <>
+                          <FileText className="mr-2 h-4 w-4" />
+                          {t('proposals.requestQuote')}
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-3">
+                      {t('proposals.quoteInfo')}
+                    </p>
+                  </div>
+                )}
+
+                {submitSuccess && (
+                  <div className="text-center p-6 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg">
+                    <div className="flex items-center justify-center mb-3">
+                      <Check className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    </div>
+                    <p className="text-green-800 dark:text-green-300 font-semibold mb-2">
+                      {t('proposals.success.title')}
+                    </p>
+                    <p className="text-sm text-green-700 dark:text-green-400">
+                      {t('proposals.success.description', { email: 'mariencarolyn2013@gmail.com' })}
+                    </p>
+                  </div>
+                )}
+
+                {submitError && (
+                  <div className="text-center p-6 bg-destructive/10 border border-destructive/20 rounded-lg">
+                    <p className="text-destructive font-semibold mb-2">{t('common.error')}</p>
+                    <p className="text-sm text-destructive/80">{submitError}</p>
+                    <Button
+                      onClick={() => handleSelectProposal(selectedProposal!)}
+                      variant="outline"
+                      size="sm"
+                      className="mt-4"
+                    >
+                      {t('proposals.tryAgain')}
+                    </Button>
                   </div>
                 )}
               </>

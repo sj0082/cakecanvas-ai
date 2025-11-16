@@ -237,7 +237,16 @@
     "select": "이 디자인 선택",
     "selected": "선택됨",
     "contactInfo": "다음 연락처로 연락드리겠습니다",
-    "next": "주문 완료"
+    "next": "주문 완료",
+    "readyToRequest": "이 디자인으로 진행하시겠습니까?",
+    "requestQuote": "QuickBooks 견적서 요청",
+    "requesting": "요청 중...",
+    "quoteInfo": "상세 견적서가 QuickBooks에 생성되어 이메일로 전송됩니다",
+    "tryAgain": "다시 시도",
+    "success": {
+      "title": "견적서 요청이 성공적으로 제출되었습니다!",
+      "description": "{{email}}로 견적서 요청이 전송되었습니다. 곧 이메일로 상세 견적서를 받으실 수 있습니다."
+    }
   },
   "common": {
     "error": "오류",
