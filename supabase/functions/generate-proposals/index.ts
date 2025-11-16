@@ -4,6 +4,50 @@ import { filterForbiddenTerms } from '../_shared/forbidden-filter.ts';
 import { getFullNegativePrompt } from '../_shared/constants.ts';
 import { validatePaletteLock, extractColorsFromText } from '../_shared/color-utils.ts';
 
+// Latest 2025 cake design trends (Instagram/Pinterest)
+const LATEST_2025_TRENDS = {
+  techniques: [
+    'textured buttercream finishes (modern organic textures)',
+    'natural botanicals (eucalyptus, pampas grass, dried florals)',
+    'wafer paper flowers with realistic details',
+    'edible gold leaf accents and metallic touches',
+    'geometric patterns and clean architectural lines',
+    'ombré gradients and watercolor effects',
+    'sculptural elements and artistic brushstrokes',
+    'minimalist negative space design',
+    'fresh flower arrangements (not sugar flowers)',
+    'artistic hand-painted details'
+  ],
+  colorPalettes: [
+    'sage green + terracotta + cream',
+    'dusty rose + champagne + gold',
+    'muted lavender + grey + white',
+    'warm neutrals + caramel + ivory',
+    'soft peach + blush + pearl white'
+  ],
+  avoidOutdated: [
+    'overly ornate traditional royal icing piping',
+    'dated color schemes (bright primary colors, heavy pastels)',
+    'heavy fondant cascades and swags',
+    'excessive sugar flowers covering entire tiers',
+    'traditional tiered cake stands with columns'
+  ],
+  instagramTrends: [
+    'natural lighting with soft shadows',
+    'organic textures over smooth fondant',
+    'contemporary minimalism',
+    'botanical-forward designs',
+    'artistic imperfection (intentional brushstrokes)'
+  ],
+  pinterestTrends: [
+    'textured buttercream tutorials trending',
+    'fresh flower cake toppers (not cascades)',
+    'geometric tier designs',
+    'neutral color palette inspiration',
+    'modern wedding cake alternatives'
+  ]
+};
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, idempotency-key',
@@ -291,9 +335,83 @@ serve(async (req) => {
     
     console.log(`📸 Using ${referenceImages.length} analyzed reference image URLs for generation`);
     
-    // Extract StylePack trend keywords from database
-    const styleTrendKeywords = (stylepack.trend_keywords as string[]) || [];
-    const styleTrendTechniques = (stylepack.trend_techniques as string[]) || [];
+    // ✅ Fetch latest trends from database (with fallback to hardcoded trends)
+    console.log('📊 Fetching latest 2025 trends...');
+    
+    let latestTrendKeywords: string[] = [];
+    let latestTrendTechniques: string[] = [];
+    let latestTrendDescriptions: string[] = [];
+    
+    // Try to fetch from database first
+    try {
+      const { data: trendMappings } = await supabase
+        .from('trend_stylepack_mappings')
+        .select(`
+          trend_keywords!inner(
+            keyword,
+            description,
+            popularity_score,
+            related_keywords
+          )
+        `)
+        .eq('stylepack_id', stylepack.id)
+        .gte('trend_keywords.popularity_score', 0.6)
+        .order('relevance_score', { ascending: false })
+        .limit(10);
+
+      if (trendMappings && trendMappings.length > 0) {
+        for (const mapping of trendMappings) {
+          const keyword = mapping.trend_keywords as any;
+          if (keyword) {
+            latestTrendKeywords.push(keyword.keyword);
+            if (keyword.description) latestTrendDescriptions.push(keyword.description);
+            if (keyword.related_keywords && Array.isArray(keyword.related_keywords)) {
+              latestTrendTechniques.push(...keyword.related_keywords);
+            }
+          }
+        }
+        console.log(`✅ Loaded ${latestTrendKeywords.length} trends from database`);
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to fetch trends from database:', error);
+    }
+    
+    // Fallback to hardcoded 2025 trends if database is empty
+    if (latestTrendKeywords.length === 0) {
+      console.log('📌 Using hardcoded 2025 trends (database empty)');
+      latestTrendKeywords = [
+        'textured buttercream',
+        'natural botanicals',
+        'contemporary minimalism',
+        'organic textures',
+        'geometric patterns',
+        'fresh florals',
+        'artistic brushstrokes'
+      ];
+      latestTrendTechniques = LATEST_2025_TRENDS.techniques;
+      latestTrendDescriptions = [
+        'Textured buttercream is THE trend of 2025 - organic, imperfect finishes',
+        'Natural botanicals replace heavy sugar flowers - eucalyptus, pampas, dried florals',
+        'Contemporary color palettes dominate Instagram - muted, sophisticated, neutral'
+      ];
+    }
+    
+    // Merge with StylePack's own trends (database/hardcoded takes priority)
+    const styleTrendKeywords = [
+      ...latestTrendKeywords,
+      ...((stylepack.trend_keywords as string[]) || [])
+    ].filter((v, i, a) => a.indexOf(v) === i).slice(0, 15);
+    
+    const styleTrendTechniques = [
+      ...latestTrendTechniques,
+      ...((stylepack.trend_techniques as string[]) || [])
+    ].filter((v, i, a) => a.indexOf(v) === i).slice(0, 20);
+    
+    console.log(`📊 Trend Summary:
+  - Keywords: ${styleTrendKeywords.join(', ')}
+  - Techniques: ${styleTrendTechniques.slice(0, 5).join(', ')}...
+  - Source: ${latestTrendKeywords.length > 0 ? (latestTrendKeywords.length > 7 ? 'Database' : 'Hardcoded 2025 trends') : 'StylePack only'}`);
+    
     
     // Define 3 variants with different creative approaches and trend differentiation
     const variants = [
@@ -448,10 +566,15 @@ These reference images represent the seller's signature style. The generated des
           // Pass variant-specific trend data
           variantName: variant.name,
           trendKeywords: variant.trendKeywords,
-          trendTechniques: variant.trendTechniques
+          trendTechniques: variant.trendTechniques,
+          latestTrendDescriptions  // ✅ Pass latest trend descriptions from database/hardcoded
         });
         
-        console.log(`Generating ${variant.label} with prompt:`, detailedPrompt);
+        console.log(`📝 Prompt Summary for ${variant.label}:
+  - Tier count mentions: ${(detailedPrompt.match(new RegExp(`\\b${tierCount}\\s*tier`, 'gi')) || []).length} times
+  - "CRITICAL" emphasis: ${(detailedPrompt.match(/CRITICAL/gi) || []).length} times
+  - "RIGHT NOW" trend emphasis: ${(detailedPrompt.match(/RIGHT NOW/gi) || []).length} times
+  - Prompt length: ${detailedPrompt.length} chars`);
         
         const imageData = await generateWithGemini({
           prompt: detailedPrompt,
@@ -637,6 +760,7 @@ function buildDetailedPrompt(params: {
   variantName: string;
   trendKeywords?: string[];
   trendTechniques?: string[];
+  latestTrendDescriptions?: string[];  // ✅ Add latestTrendDescriptions parameter
 }): string {
   const {
     stylepackName,
@@ -658,7 +782,8 @@ function buildDetailedPrompt(params: {
     paletteLock,
     variantName,
     trendKeywords = [],
-    trendTechniques = []
+    trendTechniques = [],
+    latestTrendDescriptions = []  // ✅ Extract latestTrendDescriptions
   } = params;
 
   // Build complexity description based on parameter
@@ -696,51 +821,104 @@ function buildDetailedPrompt(params: {
     ? 'Primarily use specified colors with subtle complementary tones'
     : 'Inspired by color palette with flexible color interpretation';
 
-  // Build variant-specific trend section
+  // Build variant-specific trend section with LATEST 2025 emphasis
   const trendSection = variantName === 'conservative'
     ? [
-        '2025 TREND INSPIRATION (Refined Classic):',
-        '- Timeless elegance with subtle contemporary updates',
-        '- Premium material finishes: satin buttercream, pearl dust accents',
-        '- Refined color palettes: muted pastels, sophisticated neutrals',
-        '- Classic shapes with modern proportions',
-        ...trendKeywords.map(k => `- ${k}`),
-        trendTechniques && trendTechniques.length > 0 
-          ? `- Recommended techniques: ${trendTechniques.join(', ')}`
-          : '',
-        '- Instagram trending: Natural lighting, organic textures, contemporary aesthetics',
-        '- Pinterest trending: Textured buttercream, fresh botanicals, geometric accents'
+        '🌟 LATEST 2025 TREND INSPIRATION (Refined Classic) - CURRENT INSTAGRAM/PINTEREST TRENDS:',
+        '',
+        '📸 Instagram Trending RIGHT NOW (as of 2025):',
+        ...LATEST_2025_TRENDS.instagramTrends.map(t => `   - ${t}`),
+        '',
+        '📌 Pinterest Trending RIGHT NOW (as of 2025):',
+        ...LATEST_2025_TRENDS.pinterestTrends.map(t => `   - ${t}`),
+        '',
+        '🎨 Latest Trending Techniques (2025):',
+        ...trendTechniques.slice(0, 6).map(t => `   - ${t}`),
+        '',
+        '🎨 Current Color Palettes (Instagram/Pinterest 2025):',
+        ...LATEST_2025_TRENDS.colorPalettes.slice(0, 3).map(p => `   - ${p}`),
+        '',
+        '❌ AVOID Outdated Elements (2010s-2020s):',
+        ...LATEST_2025_TRENDS.avoidOutdated.map(a => `   - ${a}`),
+        '',
+        ...(latestTrendDescriptions && latestTrendDescriptions.length > 0 ? [
+          '📊 Trend Analysis from Database:',
+          ...latestTrendDescriptions.slice(0, 3).map((d: string) => `   - ${d}`)
+        ] : [])
       ]
     : variantName === 'standard'
     ? [
-        '2025 TREND INSPIRATION (Modern Romantic):',
-        '- Instagram-worthy aesthetics: natural lighting, organic textures',
-        '- Trending techniques: textured buttercream, fresh botanicals, geometric patterns',
-        '- Contemporary color combinations: sage green + terracotta, dusty rose + champagne',
-        '- Pinterest-inspired: ombré effects, wafer paper flowers, gold leaf accents',
-        ...trendKeywords.map(k => `- ${k}`),
-        trendTechniques && trendTechniques.length > 0 
-          ? `- Recommended techniques: ${trendTechniques.join(', ')}`
-          : '',
-        '- Instagram trending: Textured buttercream, natural botanicals, sculptural elements',
-        '- Pinterest trending: Ombré gradients, wafer paper flowers, contemporary color palettes'
+        '🌟 LATEST 2025 TREND INSPIRATION (Modern Romantic) - CURRENT INSTAGRAM/PINTEREST TRENDS:',
+        '',
+        '📸 Instagram Trending RIGHT NOW (as of 2025):',
+        ...LATEST_2025_TRENDS.instagramTrends.map(t => `   - ${t}`),
+        '',
+        '📌 Pinterest Trending RIGHT NOW (as of 2025):',
+        ...LATEST_2025_TRENDS.pinterestTrends.map(t => `   - ${t}`),
+        '',
+        '🎨 Latest Trending Techniques (2025):',
+        ...trendTechniques.slice(0, 8).map(t => `   - ${t}`),
+        '',
+        '🎨 Current Color Palettes (Instagram/Pinterest 2025):',
+        ...LATEST_2025_TRENDS.colorPalettes.map(p => `   - ${p}`),
+        '',
+        '❌ AVOID Outdated Elements (2010s-2020s):',
+        ...LATEST_2025_TRENDS.avoidOutdated.map(a => `   - ${a}`),
+        '',
+        ...(latestTrendDescriptions && latestTrendDescriptions.length > 0 ? [
+          '📊 Trend Analysis from Database:',
+          ...latestTrendDescriptions.map((d: string) => `   - ${d}`)
+        ] : [])
       ]
     : [ // bold
-        '2025 TREND INSPIRATION (Avant-Garde):',
-        '- Cutting-edge design trends: maximalist aesthetics, artistic expressions',
-        '- Viral Instagram styles: dramatic textures, unexpected color combinations',
-        '- Contemporary art influences: sculptural elements, abstract patterns',
-        '- Pinterest trending: bold statements, artistic brushstrokes, mixed media',
-        ...trendKeywords.map(k => `- ${k}`),
-        trendTechniques && trendTechniques.length > 0
-          ? `- Advanced techniques: ${trendTechniques.join(', ')}`
-          : '',
-        '- Instagram trending: Bold artistic statements, dramatic textures, unexpected materials',
-        '- Pinterest trending: Sculptural designs, abstract patterns, mixed media finishes'
+        '🌟 LATEST 2025 TREND INSPIRATION (Avant-Garde) - CURRENT INSTAGRAM/PINTEREST TRENDS:',
+        '',
+        '📸 Instagram Viral Styles RIGHT NOW (as of 2025):',
+        '   - Dramatic textured finishes pushing boundaries',
+        '   - Unexpected color combinations (bold + neutral mixes)',
+        '   - Sculptural architectural elements',
+        ...LATEST_2025_TRENDS.instagramTrends.map(t => `   - ${t} (bold interpretation)`),
+        '',
+        '📌 Pinterest Trending RIGHT NOW (as of 2025):',
+        '   - Artistic statement cakes',
+        '   - Mixed media finishes',
+        '   - Unconventional arrangements',
+        ...LATEST_2025_TRENDS.pinterestTrends.map(t => `   - ${t} (avant-garde version)`),
+        '',
+        '🎨 Advanced Techniques (2025 Cutting Edge):',
+        ...trendTechniques.map(t => `   - ${t} (bold application)`),
+        '',
+        '🎨 Bold Color Palettes (Instagram/Pinterest 2025):',
+        '   - Dramatic contrasts with neutral bases',
+        ...LATEST_2025_TRENDS.colorPalettes.map(p => `   - ${p} (with bold accents)`),
+        '',
+        '❌ AVOID Outdated Elements (2010s-2020s):',
+        ...LATEST_2025_TRENDS.avoidOutdated.map(a => `   - ${a}`),
+        '',
+        ...(latestTrendDescriptions && latestTrendDescriptions.length > 0 ? [
+          '📊 Trend Analysis from Database:',
+          ...latestTrendDescriptions.map((d: string) => `   - ${d} (push creative boundaries)`)
+        ] : [])
       ];
 
   // Build structured, detailed prompt with PRIORITIZED sections
   const sections = [
+    // ✅ CRITICAL: Tier count at the very top (HIGHEST PRIORITY - Gemini reads top-to-bottom)
+    `⚠️ CRITICAL STRUCTURAL REQUIREMENT - HIGHEST PRIORITY - DO NOT CHANGE:`,
+    `THIS CAKE MUST HAVE EXACTLY ${tierCount} TIER${tierCount > 1 ? 'S' : ''} (${
+      tierCount === 1 ? 'SINGLE-TIER' :
+      tierCount === 2 ? 'TWO-TIER' :
+      tierCount === 3 ? 'THREE-TIER' :
+      tierCount === 4 ? 'FOUR-TIER' :
+      tierCount === 5 ? 'FIVE-TIER' : tierCount + '-TIER'
+    } STRUCTURE)`,
+    `- Tier count is FIXED and MANDATORY from size category (serving ${servingRange} people)`,
+    `- DO NOT generate ${tierCount + 1} tiers, ${tierCount - 1} tiers, or any other number`,
+    `- DO NOT use tier count from customer preferences, reference images, or any other source`,
+    `- IGNORE any tier count mentioned elsewhere in this prompt`,
+    `- THIS IS NON-NEGOTIABLE: ${tierCount} tiers ONLY`,
+    '',
+    
     `Professional cake design photography in ${stylepackName} style.`,
     stylepackDescription ? `Style essence: ${stylepackDescription}` : '',
     `Design approach: ${variantModifier}`,
@@ -758,7 +936,7 @@ function buildDetailedPrompt(params: {
     '',
     // ✅ PRIORITY 3: Structure requirements (FIXED from size category, NOT customer)
     'STRUCTURE REQUIREMENTS (FIXED - from size category, NOT from customer input):',
-    `- ${tierCount} tier${tierCount > 1 ? 's' : ''} cake (serving ${servingRange} people)`,
+    `- ${tierCount} tier${tierCount > 1 ? 's' : ''} cake (serving ${servingRange} people) - THIS IS MANDATORY AND CANNOT BE CHANGED`,
     `- Shape: ${shapeTemplate}`,
     `- Professional bakery quality construction with modern techniques`,
     `- Stand style: Match the StylePack's typical aesthetic (ignore any customer stand requests)`,
@@ -871,47 +1049,54 @@ Focus on elements that make these designs visually appealing and commercially su
       });
     }
     
-    // Step 3: Add generation requirements with PRIORITY ORDER
+    // Step 3: Add generation requirements with ABSOLUTE PRIORITY ORDER
     messageContent.push({
       type: "text",
-      text: `GENERATION REQUIREMENTS (PRIORITY ORDER):
+      text: `⚠️ GENERATION REQUIREMENTS (PRIORITY ORDER):
 
-1. FIRST PRIORITY: Match the StylePack's signature style from the reference images above
-   - Use the EXACT color palette from references (hex codes + proportions shown above)
-   - Replicate the texture techniques shown in reference images
-   - Match the decoration density level from references
-   - Maintain the overall aesthetic and visual language
-   - This is the seller's signature style - the design must feel like it belongs to their collection
+🔴 ABSOLUTE PRIORITY #1 - STRUCTURAL REQUIREMENT (CANNOT BE VIOLATED):
+- The cake MUST have EXACTLY ${params.tierCount || 'as specified'} TIER${(params.tierCount || 1) > 1 ? 'S' : ''}
+- This is a ${
+  (params.tierCount || 1) === 1 ? 'SINGLE-TIER' :
+  (params.tierCount || 1) === 2 ? 'TWO-TIER' :
+  (params.tierCount || 1) === 3 ? 'THREE-TIER' :
+  (params.tierCount || 1) === 4 ? 'FOUR-TIER' :
+  (params.tierCount || 1) === 5 ? 'FIVE-TIER' : (params.tierCount || 1) + '-TIER'
+} cake structure (FIXED, NON-NEGOTIABLE)
+- DO NOT generate ${(params.tierCount || 1) + 1} tiers or ${(params.tierCount || 1) - 1} tiers
+- If the prompt below mentions a different tier count, IGNORE IT
+- If reference images show different tier counts, IGNORE THEM
+- Tier count comes from size category ONLY: ${params.tierCount || 'as specified'} tiers
 
-2. SECOND PRIORITY: Incorporate 2025 trending elements
-   - Modern techniques: textured buttercream, natural botanicals, contemporary color palettes
-   - Trending aesthetics: Instagram-worthy, Pinterest-pinnable presentation
-   - 2025 trends: ombré effects, wafer paper flowers, gold leaf accents, geometric patterns
-   - Sculptural elements and artistic brushstrokes
-   - Update classic styles with subtle contemporary touches
+🟠 PRIORITY #2 - StylePack Signature Style:
+1. Match the EXACT color palette from reference images (hex codes, proportions)
+2. Replicate texture techniques from references
+3. Follow decoration density level from references
+4. Maintain overall aesthetic and visual language
 
-3. THIRD PRIORITY: Blend customer preferences (if provided in the prompt below)
-   - Use customer preferences as INSPIRATION only, not as strict requirements
-   - If customer preferences conflict with StylePack style, PRIORITIZE StylePack style
-   - Customer's structural requests (tier count, stand type) are IGNORED - use size category defaults
-   - Customer's color preferences are IGNORED if they conflict with StylePack palette
-   - Customer's decoration ideas are considered ONLY if they align with StylePack aesthetic
+🟡 PRIORITY #3 - LATEST 2025 Instagram/Pinterest Trends (RIGHT NOW):
+${LATEST_2025_TRENDS.techniques.slice(0, 5).map(t => `   - ${t}`).join('\n')}
 
-4. STRUCTURAL REQUIREMENTS (FIXED from size category, NOT from customer):
-   - Tier count: ${params.tierCount || 'as specified'} tiers (this is FIXED, do NOT change based on customer preferences)
-   - Shape: ${params.shapeTemplate || 'round'} (this is FIXED)
-   - Stand: Use StylePack's typical stand style (do NOT use customer's specific stand request)
-   - Construction: Professional bakery quality with modern techniques
+Current trending color palettes:
+${LATEST_2025_TRENDS.colorPalettes.slice(0, 3).map(p => `   - ${p}`).join('\n')}
 
-5. QUALITY REQUIREMENTS:
-   - Commercial viability - achievable by a skilled baker
-   - Avoid outdated design elements from 2010s-2020s (overly ornate piping, dated color schemes, fondant overload)
-   - Professional photography quality (Instagram/Pinterest standards)
-   - Natural, appealing presentation
+Instagram trending RIGHT NOW:
+${LATEST_2025_TRENDS.instagramTrends.slice(0, 3).map(t => `   - ${t}`).join('\n')}
 
-CRITICAL: The generated design must look like it belongs to the StylePack's collection. Customer preferences are secondary to StylePack style. The reference images define the style - follow them closely.
+Pinterest trending RIGHT NOW:
+${LATEST_2025_TRENDS.pinterestTrends.slice(0, 3).map(t => `   - ${t}`).join('\n')}
 
-Now generate the cake design based on the following detailed specification:`
+🟢 PRIORITY #4 - Customer Preferences (INSPIRATION ONLY):
+- Use customer preferences as LOOSE INSPIRATION
+- If conflicts arise with StylePack or structural requirements, IGNORE customer preferences
+- Customer's tier count is ALWAYS IGNORED
+
+🔵 PRIORITY #5 - Quality Requirements:
+- Commercial viability (achievable by skilled baker)
+- Avoid outdated 2010s-2020s elements: ${LATEST_2025_TRENDS.avoidOutdated.slice(0, 2).join(', ')}
+- Professional photography quality
+
+CRITICAL REMINDER: This is a ${params.tierCount || 'as specified'}-tier cake. Generate EXACTLY ${params.tierCount || 'as specified'} tiers.`
     });
   }
 
