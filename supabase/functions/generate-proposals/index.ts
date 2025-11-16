@@ -182,8 +182,7 @@ serve(async (req) => {
       };
     }
     
-    const userTextParsed = parseUserTextForStyleBlending(userText, sizeCategory.tiers_spec?.length || 1);
-    console.log(`📝 Parsed user text: ${userTextParsed.keywords.length} keywords extracted, ${userTextParsed.cleanedLength} chars after removing structural elements`);
+    // ✅ userTextParsed is now parsed AFTER tierCount is defined (see line 297)
     
     // HARD CONSTRAINT: Generate layout mask based on tier structure
     let layoutMaskUrl = null;
@@ -292,6 +291,11 @@ serve(async (req) => {
     const tierCount = tiersSpec.tiers || 1;
     const servingRange = `${sizeCategory.serving_min}-${sizeCategory.serving_max}`;
     
+    // ✅ Parse user text AFTER tierCount is defined (moved from line 185)
+    // Remove structural elements that conflict with size_category
+    const userTextParsed = parseUserTextForStyleBlending(userText, tierCount);
+    console.log(`📝 Parsed user text: ${userTextParsed.keywords.length} keywords extracted, ${userTextParsed.cleanedLength} chars after removing structural elements`);
+    
     const filterResult = filterForbiddenTerms(userText);
     userText = filterResult.cleanedText;
     
@@ -374,6 +378,35 @@ serve(async (req) => {
       }
     } catch (error) {
       console.warn('⚠️ Failed to fetch trends from database:', error);
+    }
+    
+    // ✅ Also fetch global trending keywords (not mapped to specific stylepacks)
+    try {
+      const { data: globalTrends } = await supabase
+        .from('trend_keywords')
+        .select('keyword, description, popularity_score, related_keywords')
+        .gte('popularity_score', 0.7) // Only high popularity trends
+        .order('popularity_score', { ascending: false })
+        .order('created_at', { ascending: false }) // Most recent first
+        .limit(5); // Top 5 global trends
+
+      if (globalTrends && globalTrends.length > 0) {
+        for (const trend of globalTrends) {
+          // Only add if not already in latestTrendKeywords
+          if (!latestTrendKeywords.includes(trend.keyword)) {
+            latestTrendKeywords.push(trend.keyword);
+            if (trend.description) {
+              latestTrendDescriptions.push(trend.description);
+            }
+            if (trend.related_keywords && Array.isArray(trend.related_keywords)) {
+              latestTrendTechniques.push(...trend.related_keywords);
+            }
+          }
+        }
+        console.log(`🌍 Added ${globalTrends.length} global trending keywords`);
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to fetch global trends:', error);
     }
     
     // Fallback to hardcoded 2025 trends if database is empty
