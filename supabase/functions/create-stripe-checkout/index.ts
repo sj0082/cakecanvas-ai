@@ -34,14 +34,19 @@ serve(async (req) => {
     // Verify access token and fetch request with proposals
     const { data: request, error: requestError } = await supabaseClient
       .from('requests')
-      .select('*, proposals!proposals_request_id_fkey!inner(*)')
+      .select('*, proposals!proposals_request_id_fkey(*)')
       .eq('id', requestId)
       .eq('access_token', accessToken)
-      .single();
+      .maybeSingle();
 
-    if (requestError || !request) {
-      console.error("[CREATE-STRIPE-CHECKOUT] Request fetch error:", requestError);
-      throw new Error("Invalid request or access token");
+    if (requestError) {
+      console.error("[CREATE-STRIPE-CHECKOUT] Database error:", requestError);
+      throw new Error("Database error: " + requestError.message);
+    }
+
+    if (!request) {
+      console.error("[CREATE-STRIPE-CHECKOUT] No request found with provided credentials");
+      throw new Error("Invalid request ID or access token");
     }
 
     console.log("[CREATE-STRIPE-CHECKOUT] Request verified");
