@@ -110,6 +110,7 @@ serve(async (req) => {
     const origin = req.headers.get("origin") || "https://a93fb606-c302-4789-8379-9c9510e8f384.lovableproject.com";
 
     // Create Stripe Checkout session
+    console.log("[CREATE-STRIPE-CHECKOUT] Creating session", { origin, requestId, proposalId });
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : request.contact_email,
@@ -156,6 +157,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ 
+        success: true,
         checkoutUrl: session.url,
         sessionId: session.id,
       }),
@@ -168,6 +170,7 @@ serve(async (req) => {
     console.error("[CREATE-STRIPE-CHECKOUT] Error:", error);
     return new Response(
       JSON.stringify({ 
+        success: false,
         error: error instanceof Error ? error.message : "An unknown error occurred" 
       }),
       {

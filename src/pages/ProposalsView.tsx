@@ -12,6 +12,7 @@ import { DesignStepper } from "@/components/design/DesignStepper";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { CreditCard, Loader2, Check } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 
 const ProposalsView = () => {
@@ -120,29 +121,27 @@ const ProposalsView = () => {
     setSubmitError(null);
     
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const functionUrl = `${supabaseUrl}/functions/v1/create-stripe-checkout`;
-      
-      const response = await fetch(functionUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      console.log('[PAYMENT] Start', { requestId, proposalId, hasToken: Boolean(accessToken) });
+      const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
+        body: {
           requestId,
           proposalId,
           accessToken,
-        }),
+        },
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create checkout session');
+      if (error) {
+        console.error('[PAYMENT] Function error', error);
+        throw new Error(error.message || 'Failed to create checkout session');
       }
 
-      const { checkoutUrl } = await response.json();
-      
-      // Redirect to Stripe Checkout
+      console.log('[PAYMENT] Function response', data);
+      const checkoutUrl = data?.checkoutUrl;
+      if (!checkoutUrl) {
+        throw new Error('Missing checkout URL from server');
+      }
+
+      console.log('[PAYMENT] Redirecting to', checkoutUrl);
       window.location.href = checkoutUrl;
       
     } catch (error) {
