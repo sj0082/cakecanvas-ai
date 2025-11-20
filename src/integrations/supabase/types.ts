@@ -603,6 +603,132 @@ export type Database = {
         }
         Relationships: []
       }
+      trend_image_stylepack_mappings: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          stylepack_id: string | null
+          trend_image_id: string | null
+          weight: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          stylepack_id?: string | null
+          trend_image_id?: string | null
+          weight?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          stylepack_id?: string | null
+          trend_image_id?: string | null
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trend_image_stylepack_mappings_stylepack_id_fkey"
+            columns: ["stylepack_id"]
+            isOneToOne: false
+            referencedRelation: "stylepacks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trend_image_stylepack_mappings_trend_image_id_fkey"
+            columns: ["trend_image_id"]
+            isOneToOne: false
+            referencedRelation: "trend_images"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trend_images: {
+        Row: {
+          approved_for_stylepack_id: string | null
+          attribution_required: boolean | null
+          attribution_text: string | null
+          caption: string | null
+          category_suggestions: Json | null
+          copyright_notes: string | null
+          copyright_status: string | null
+          created_at: string | null
+          density: string | null
+          embedding: string | null
+          engagement_score: number | null
+          id: string
+          image_path: string
+          is_approved: boolean | null
+          original_url: string | null
+          palette: Json | null
+          posted_at: string | null
+          source_id: string | null
+          texture_tags: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          approved_for_stylepack_id?: string | null
+          attribution_required?: boolean | null
+          attribution_text?: string | null
+          caption?: string | null
+          category_suggestions?: Json | null
+          copyright_notes?: string | null
+          copyright_status?: string | null
+          created_at?: string | null
+          density?: string | null
+          embedding?: string | null
+          engagement_score?: number | null
+          id?: string
+          image_path: string
+          is_approved?: boolean | null
+          original_url?: string | null
+          palette?: Json | null
+          posted_at?: string | null
+          source_id?: string | null
+          texture_tags?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          approved_for_stylepack_id?: string | null
+          attribution_required?: boolean | null
+          attribution_text?: string | null
+          caption?: string | null
+          category_suggestions?: Json | null
+          copyright_notes?: string | null
+          copyright_status?: string | null
+          created_at?: string | null
+          density?: string | null
+          embedding?: string | null
+          engagement_score?: number | null
+          id?: string
+          image_path?: string
+          is_approved?: boolean | null
+          original_url?: string | null
+          palette?: Json | null
+          posted_at?: string | null
+          source_id?: string | null
+          texture_tags?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trend_images_approved_for_stylepack_id_fkey"
+            columns: ["approved_for_stylepack_id"]
+            isOneToOne: false
+            referencedRelation: "stylepacks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trend_images_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "trend_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trend_keywords: {
         Row: {
           category_id: string | null
@@ -649,6 +775,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      trend_sources: {
+        Row: {
+          account_handle: string | null
+          created_at: string | null
+          credibility_score: number | null
+          follower_count: number | null
+          id: string
+          is_active: boolean | null
+          last_synced_at: string | null
+          name: string
+          notes: string | null
+          platform: string | null
+        }
+        Insert: {
+          account_handle?: string | null
+          created_at?: string | null
+          credibility_score?: number | null
+          follower_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_synced_at?: string | null
+          name: string
+          notes?: string | null
+          platform?: string | null
+        }
+        Update: {
+          account_handle?: string | null
+          created_at?: string | null
+          credibility_score?: number | null
+          follower_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_synced_at?: string | null
+          name?: string
+          notes?: string | null
+          platform?: string | null
+        }
+        Relationships: []
       }
       trend_stylepack_mappings: {
         Row: {
@@ -721,6 +886,18 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      match_stylepacks: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          id: string
+          name: string
+          similarity: number
+        }[]
       }
     }
     Enums: {
