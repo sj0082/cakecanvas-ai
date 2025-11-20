@@ -10,6 +10,7 @@ import { StylePacksManager } from "@/components/admin/StylePacksManager";
 import { SizeCategoriesManager } from "@/components/admin/SizeCategoriesManager";
 import { RealityRulesManager } from "@/components/admin/RealityRulesManager";
 import TrendsManager from "@/components/admin/TrendsManager";
+import { TrendsManagerTabs } from "@/components/admin/TrendsManagerTabs";
 
 type AdminView = "dashboard" | "stylepacks" | "sizes" | "rules" | "requests" | "admins" | "deposit" | "trends";
 
@@ -51,7 +52,11 @@ const Admin = () => {
           {currentView === "stylepacks" && <StylePacksManager />}
           {currentView === "sizes" && <SizeCategoriesManager />}
           {currentView === "rules" && <RealityRulesManager />}
-          {currentView === "trends" && <TrendsManager />}
+          {currentView === "trends" && (
+            <div className="space-y-6">
+              <TrendsManagerTabs />
+            </div>
+          )}
         </div>
         
         <Button 

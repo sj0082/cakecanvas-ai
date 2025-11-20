@@ -48,10 +48,13 @@ serve(async (req) => {
     const payload = await req.json();
     const imagePaths: string[] = Array.isArray(payload?.imagePaths) ? payload.imagePaths : [];
     const stylepackId = payload.stylepackId;
+    const imageType = payload.imageType || 'stylepack'; // 'stylepack' or 'trend'
+    const trendImageIds: string[] = Array.isArray(payload?.trendImageIds) ? payload.trendImageIds : [];
 
     if (!imagePaths.length) return respondError({ status: 400, requestId, corsHeaders, code: "INVALID_BODY", message: "imagePaths required" });
-    if (imagePaths.length < 3) return respondError({ status: 400, requestId, corsHeaders, code: "AT_LEAST_3_IMAGES", message: "At least 3 images required" });
-    if (!stylepackId) return respondError({ status: 400, requestId, corsHeaders, code: "INVALID_BODY", message: "stylepackId required" });
+    if (imageType === 'stylepack' && imagePaths.length < 3) return respondError({ status: 400, requestId, corsHeaders, code: "AT_LEAST_3_IMAGES", message: "At least 3 images required" });
+    if (imageType === 'stylepack' && !stylepackId) return respondError({ status: 400, requestId, corsHeaders, code: "INVALID_BODY", message: "stylepackId required" });
+    if (imageType === 'trend' && !trendImageIds.length) return respondError({ status: 400, requestId, corsHeaders, code: "INVALID_BODY", message: "trendImageIds required for trend images" });
 
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
     
@@ -143,7 +146,8 @@ CRITICAL:
     const errors: Array<{ imagePath: string; error: string }> = [];
     let successCount = 0;
     
-    for (const imagePath of imagePaths) {
+    for (let index = 0; index < imagePaths.length; index++) {
+      const imagePath = imagePaths[index];
       const fileName = imagePath.split('/').pop();
       
       try {
@@ -190,32 +194,71 @@ CRITICAL:
             }
           });
 
-          // Phase 4.1: UPSERT stylepack_ref_images with analysis results
-          const { error: upsertError } = await supabase
-            .from('stylepack_ref_images')
-            .upsert({
-              stylepack_id: stylepackId,
-              key: imagePath,
-              url: publicUrl,
-              palette: paletteWithRatios,
-              texture_tags: textures,
-              density,
-              embedding: embedding,
-              meta: { 
-                analyzed_at: new Date().toISOString(), 
-                request_id: requestId,
-                description: description
-              },
-              mime: imagePath.endsWith('.png') ? 'image/png' : 
-                    imagePath.endsWith('.webp') ? 'image/webp' : 'image/jpeg',
-              size_bytes: 0,
-              uploaded_by: null
-            }, {
-              onConflict: 'stylepack_id,key'
-            });
+          // Phase 4.1: UPSERT stylepack_ref_images OR trend_images based on imageType
+          if (imageType === 'trend' && trendImageIds[index]) {
+            // For trend images, update trend_images table
+            const trendImageId = trendImageIds[index];
+            
+            // Find similar stylepacks using embeddings
+            let categorySuggestions = [];
+            if (embedding) {
+              const { data: similarStylepacks } = await supabase.rpc('match_stylepacks', {
+                query_embedding: embedding,
+                match_threshold: 0.7,
+                match_count: 3
+              });
+              
+              categorySuggestions = (similarStylepacks || []).map((sp: any) => ({
+                stylepack_id: sp.id,
+                stylepack_name: sp.name,
+                similarity: sp.similarity
+              }));
+            }
 
-          if (upsertError) {
-            throw new Error(`UPSERT failed: ${upsertError.message}`);
+            const { error: updateError } = await supabase
+              .from('trend_images')
+              .update({
+                embedding: embedding,
+                palette: paletteWithRatios,
+                texture_tags: textures,
+                density,
+                category_suggestions: categorySuggestions
+              })
+              .eq('id', trendImageId);
+
+            if (updateError) {
+              throw new Error(`UPDATE trend_images failed: ${updateError.message}`);
+            }
+
+            console.log(`[${requestId}] ✓ Updated trend_images for ${trendImageId} with ${categorySuggestions.length} suggestions`);
+          } else {
+            // For stylepack reference images, use existing logic
+            const { error: upsertError } = await supabase
+              .from('stylepack_ref_images')
+              .upsert({
+                stylepack_id: stylepackId,
+                key: imagePath,
+                url: publicUrl,
+                palette: paletteWithRatios,
+                texture_tags: textures,
+                density,
+                embedding: embedding,
+                meta: { 
+                  analyzed_at: new Date().toISOString(), 
+                  request_id: requestId,
+                  description: description
+                },
+                mime: imagePath.endsWith('.png') ? 'image/png' : 
+                      imagePath.endsWith('.webp') ? 'image/webp' : 'image/jpeg',
+                size_bytes: 0,
+                uploaded_by: null
+              }, {
+                onConflict: 'stylepack_id,key'
+              });
+
+            if (upsertError) {
+              throw new Error(`UPSERT failed: ${upsertError.message}`);
+            }
           }
 
           successCount++;
@@ -228,16 +271,18 @@ CRITICAL:
       }
     }
 
-    // Update stylepacks.reference_stats with actual success count
-    await supabase.from('stylepacks').update({
-      reference_stats: { 
-        palette_colors: palette, 
-        common_textures: textures, 
-        avg_density: density, 
-        analyzed_count: successCount, 
-        last_analyzed: new Date().toISOString() 
-      }
-    }).eq('id', stylepackId);
+    // Update stylepacks.reference_stats only for stylepack images
+    if (imageType === 'stylepack') {
+      await supabase.from('stylepacks').update({
+        reference_stats: { 
+          palette_colors: palette, 
+          common_textures: textures, 
+          avg_density: density, 
+          analyzed_count: successCount, 
+          last_analyzed: new Date().toISOString() 
+        }
+      }).eq('id', stylepackId);
+    }
 
     // Return response with success/error info (Phase 4.1)
     if (errors.length > 0) {

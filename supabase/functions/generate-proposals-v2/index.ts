@@ -69,18 +69,34 @@ serve(async (req) => {
       .select('key, message, severity')
       .eq('is_active', true);
 
+    // Fetch trend images for this stylepack
+    const { data: trendMappings } = await supabase
+      .from('trend_image_stylepack_mappings')
+      .select(`
+        weight,
+        trend_images!inner(
+          id, image_path, palette, texture_tags, density,
+          trend_sources(name, credibility_score)
+        )
+      `)
+      .eq('stylepack_id', stylepack.id)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
     const context = {
       request,
       stylepack,
       sizeCategory,
       refImages,
+      trendImages: trendMappings || [],
       realityRules: realityRules || [],
       userText: request.user_text || '',
       trendKeywords: (stylepack.trend_keywords as string[]) || [],
       trendTechniques: (stylepack.trend_techniques as string[]) || []
     };
 
-    console.log(`✅ Context collected: ${refImages.length} ref images, ${realityRules?.length || 0} reality rules`);
+    console.log(`✅ Context collected: ${refImages.length} ref images, ${trendMappings?.length || 0} trend images, ${realityRules?.length || 0} reality rules`);
 
     // Step 2: Conflict Detection
     console.log('🔍 Step 2: Detecting style conflicts...');
@@ -123,6 +139,7 @@ serve(async (req) => {
       layoutMaskUrl,
       forbiddenReplacements: filterResult.replacements,
       refImages: refImages.slice(0, 3),
+      trendImages: context.trendImages || [],
       negativePrompt: getFullNegativePrompt(),
       paletteLock: stylepack.palette_lock ?? 0.9
     };
@@ -292,40 +309,58 @@ async function optimizePromptsWithLLM(context: any, constraints: any, apiKey: st
     const colorStr = Array.isArray(paletteColors) 
       ? paletteColors.map((c: any) => `${c.hex || c} (${((c.ratio || 0.1) * 100).toFixed(0)}%)`).join(', ')
       : 'not analyzed';
-    return `Reference ${i + 1}:
+    return `Reference ${i + 1} (StylePack - 70% weight):
 - Colors: ${colorStr}
 - Textures: ${img.texture_tags?.join(', ') || 'smooth fondant'}
+- Density: ${img.density || 'medium'}`;
+  }).join('\n');
+
+  // Extract trend image information
+  const trendInfo = context.trendImages.map((mapping: any, i: number) => {
+    const img = mapping.trend_images;
+    const paletteColors = img.palette?.colors || img.palette || [];
+    const colorStr = Array.isArray(paletteColors) 
+      ? paletteColors.map((c: any) => `${c.hex || c} (${((c.ratio || 0.1) * 100).toFixed(0)}%)`).join(', ')
+      : 'not analyzed';
+    const sourceName = img.trend_sources?.name || 'Unknown';
+    const credibility = img.trend_sources?.credibility_score || 0.5;
+    return `Trend ${i + 1} (${sourceName}, Credibility ${(credibility * 100).toFixed(0)}% - 30% weight):
+- Colors: ${colorStr}
+- Textures: ${img.texture_tags?.join(', ') || 'modern finish'}
 - Density: ${img.density || 'medium'}`;
   }).join('\n');
 
   const systemPrompt = `You are an expert cake designer prompt engineer specializing in wedding cake design.
 
 Your task is to generate 3 creative prompts (Conservative, Standard, Bold) that:
-1. STRICTLY match the visual style from the reference images provided
-2. Incorporate 2025 trending elements from Instagram and Pinterest
+1. STRICTLY match the visual style from the StylePack reference images (70% influence)
+2. Subtly incorporate 2025 trending elements from approved trend images (30% influence)
 3. Blend user preferences with the seller's signature style
 4. Ensure commercial viability and bakeability
 
 CONTEXT:
 - User request: "${context.userText || 'No specific request'}"
 - Style pack: "${context.stylepack.name}" - ${context.stylepack.description || 'Elegant wedding cake style'}
-- Reference images analyzed: ${context.refImages.length} images
+- Reference images analyzed: ${context.refImages.length} StylePack + ${context.trendImages.length} Trend images
 ${styleInfo}
+${trendInfo ? '\nTREND IMAGES:\n' + trendInfo : ''}
 - Trend keywords (2025): ${context.trendKeywords.length > 0 ? context.trendKeywords.join(', ') : 'Modern elegance, textured buttercream, natural botanicals'}
 - Trend techniques: ${context.trendTechniques.length > 0 ? context.trendTechniques.join(', ') : 'Textured buttercream, wafer paper flowers, gold leaf accents'}
 - Tier structure: ${context.sizeCategory.tiers_spec?.tiers || 1} tiers
 - Palette lock: ${context.stylepack.palette_lock >= 0.9 ? 'STRICT - colors must match exactly' : 'Flexible - inspired by palette'}
 
 STYLE REQUIREMENTS:
-- Match the color palette proportions from reference images
+- PRIMARY: Match the color palette proportions from StylePack reference images (70%)
+- SECONDARY: Incorporate trend elements subtly (30% influence)
 - Replicate texture techniques (${context.refImages[0]?.texture_tags?.join(', ') || 'smooth fondant'})
 - Follow decoration density (${context.refImages[0]?.density || 'medium'})
-- Maintain the seller's signature aesthetic while adding 2025 trends
+- Maintain the seller's signature aesthetic while adding subtle 2025 trends
 
 TREND INTEGRATION (2025):
 - Instagram-worthy: Natural lighting, organic textures, contemporary color palettes
 - Pinterest trending: Textured buttercream, fresh botanicals, geometric patterns, ombré effects
 - Modern techniques: Wafer paper flowers, gold leaf accents, sculptural elements
+- IMPORTANT: Trends should complement, not overpower, the StylePack's core identity
 - Avoid: Outdated 2010s-2020s styles, overly ornate traditional piping, dated color schemes
 
 Generate 3 prompts as JSON:
@@ -387,12 +422,34 @@ async function generateStage1(
 
   const proposals = [];
 
-  // Get reference image URLs
-  const referenceImageUrls = constraints.refImages
-    ? constraints.refImages.map((img: any) => img.url).filter(Boolean)
+  // Get reference image URLs (StylePack + Trend)
+  const stylepackRefs = constraints.refImages
+    ? constraints.refImages.slice(0, 3).map((img: any) => ({
+        url: img.url,
+        type: 'stylepack',
+        palette: img.palette,
+        texture_tags: img.texture_tags,
+        density: img.density,
+        weight: 0.7
+      }))
     : [];
 
-  console.log(`📸 Using ${referenceImageUrls.length} reference images for generation`);
+  const trendRefs = constraints.trendImages
+    ? constraints.trendImages.slice(0, 1).map((mapping: any) => ({
+        url: mapping.trend_images.image_path,
+        type: 'trend',
+        palette: mapping.trend_images.palette,
+        texture_tags: mapping.trend_images.texture_tags,
+        density: mapping.trend_images.density,
+        weight: mapping.weight || 0.3,
+        source: mapping.trend_images.trend_sources?.name
+      }))
+    : [];
+
+  const allRefs = [...stylepackRefs, ...trendRefs].slice(0, 4); // Max 4 images total
+  const referenceImageUrls = allRefs.map(ref => ref.url).filter(Boolean);
+
+  console.log(`📸 Using ${stylepackRefs.length} StylePack refs + ${trendRefs.length} trend refs = ${referenceImageUrls.length} total images`);
 
   for (const variant of variants) {
     // Generate 2-3 images per variant
@@ -404,8 +461,8 @@ async function generateStage1(
       
       // Add reference image analysis instructions if images available
       if (referenceImageUrls.length > 0) {
-        // Extract detailed palette information from analyzed images
-        const paletteInfo = constraints.refImages.map((img: any, i: number) => {
+        // Extract detailed palette information from all refs (StylePack + Trend)
+        const stylepackInfo = stylepackRefs.map((img: any, i: number) => {
           const paletteColors = img.palette?.colors || img.palette || [];
           const colorStr = Array.isArray(paletteColors) 
             ? paletteColors.map((c: any) => {
@@ -414,7 +471,19 @@ async function generateStage1(
                 return `${hex} ${(ratio * 100).toFixed(0)}%`;
               }).join(', ')
             : 'not analyzed';
-          return `Reference ${i + 1}: Colors (${colorStr}), Textures (${img.texture_tags?.join(', ') || 'smooth fondant'}), Density (${img.density || 'medium'})`;
+          return `StylePack ${i + 1} (PRIMARY, 70% weight): Colors (${colorStr}), Textures (${img.texture_tags?.join(', ') || 'smooth fondant'}), Density (${img.density || 'medium'})`;
+        }).join('\n');
+
+        const trendInfo = trendRefs.map((img: any, i: number) => {
+          const paletteColors = img.palette?.colors || img.palette || [];
+          const colorStr = Array.isArray(paletteColors) 
+            ? paletteColors.map((c: any) => {
+                const hex = c.hex || c.color || c;
+                const ratio = c.ratio || 0.1;
+                return `${hex} ${(ratio * 100).toFixed(0)}%`;
+              }).join(', ')
+            : 'not analyzed';
+          return `Trend ${i + 1} from ${img.source || 'social'} (SECONDARY, 30% weight): Colors (${colorStr}), Textures (${img.texture_tags?.join(', ') || 'modern'}), Density (${img.density || 'medium'})`;
         }).join('\n');
         
         messageContent.push({
@@ -422,67 +491,25 @@ async function generateStage1(
           text: `REFERENCE IMAGE ANALYSIS INSTRUCTIONS:
 Study these reference images carefully and extract:
 
-COLOR ANALYSIS:
-${paletteInfo}
-- Extract the EXACT color palette with proportions (hex codes and percentages)
-- Match these colors PRECISELY in the generated design
-- Palette lock is ${constraints.paletteLock >= 0.9 ? 'ACTIVE - colors must match exactly' : 'flexible - inspired by palette'}
+PRIMARY STYLE (70% influence - StylePack references):
+${stylepackInfo}
 
-TEXTURE ANALYSIS:
-- Texture techniques: ${constraints.refImages[0]?.texture_tags?.join(', ') || 'smooth fondant'}
-- Replicate these texture techniques in the generated design
-- Note surface finishes: matte, satin, glossy, metallic
+${trendInfo ? `TREND INFLUENCE (30% - subtle incorporation):
+${trendInfo}` : ''}
 
-DENSITY ANALYSIS:
-- Decoration density: ${constraints.refImages[0]?.density || 'medium'}
-- Maintain similar density level in the generated design
-- Note placement patterns and visual weight distribution
-
-STYLE ANALYSIS:
-- Overall aesthetic style and visual language
-- Modern trending elements that would work well on Instagram and Pinterest
-- Identify the seller's signature aesthetic
-
-CRITICAL: The generated design must match the seller's signature style from these references while incorporating 2025 trends.`
+GENERATION REQUIREMENTS:
+1. PRIMARY: Match StylePack palette, textures, and density (70% weight)
+2. SECONDARY: Subtly incorporate trend elements (30% weight) - DO NOT overpower the base style
+3. Maintain the seller's signature aesthetic while adding modern touches
+4. Ensure colors, textures, and decoration density follow the weighted priorities above`
         });
         
         // Add reference images
-        for (const refUrl of referenceImageUrls.slice(0, 3)) {
+        allRefs.forEach((ref, i) => {
           messageContent.push({
             type: "image_url",
-            image_url: { url: refUrl }
+            image_url: { url: ref.url }
           });
-        }
-        
-        messageContent.push({
-          type: "text",
-          text: `GENERATION REQUIREMENTS:
-Create a NEW, TREND-FORWARD cake design that:
-1. Matches the visual style, color palette, and texture techniques from the reference images above
-
-2. Incorporates 2025 trending elements:
-   • Textured buttercream finishes (modern, organic textures)
-   • Natural botanicals and fresh flower arrangements (eucalyptus, pampas grass, dried florals)
-   • Contemporary color palettes:
-     - Sage green + terracotta + cream
-     - Dusty rose + champagne + gold
-     - Muted lavender + grey + white
-   • Geometric patterns and clean lines
-   • Ombré gradients and watercolor effects
-   • Wafer paper flowers and edible gold leaf accents
-   • Sculptural elements and artistic brushstrokes
-   • Minimalist negative space design
-
-3. Creates an Instagram-worthy, Pinterest-pinnable design
-4. Maintains commercial viability - achievable by a skilled baker
-5. Preserves the seller's signature style while adding modern 2025 updates
-6. Avoids outdated design elements from 2010s-2020s:
-   ❌ Overly ornate traditional piping
-   ❌ Dated color schemes (bright primary colors, pastel overload)
-   ❌ Heavy fondant cascades
-   ❌ Excessive sugar flowers covering entire tiers
-
-Now generate the design based on this prompt:`
         });
       }
       
@@ -528,3 +555,4 @@ Now generate the design based on this prompt:`
 
   return proposals;
 }
+
