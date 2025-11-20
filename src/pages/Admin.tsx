@@ -11,8 +11,9 @@ import { SizeCategoriesManager } from "@/components/admin/SizeCategoriesManager"
 import { RealityRulesManager } from "@/components/admin/RealityRulesManager";
 import TrendsManager from "@/components/admin/TrendsManager";
 import { TrendsManagerTabs } from "@/components/admin/TrendsManagerTabs";
+import { DataMigration } from "@/components/admin/DataMigration";
 
-type AdminView = "dashboard" | "stylepacks" | "sizes" | "rules" | "requests" | "admins" | "deposit" | "trends";
+type AdminView = "dashboard" | "stylepacks" | "sizes" | "rules" | "requests" | "admins" | "deposit" | "trends" | "migration";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -57,6 +58,7 @@ const Admin = () => {
               <TrendsManagerTabs />
             </div>
           )}
+          {currentView === "migration" && <DataMigration />}
         </div>
         
         <Button 
@@ -157,6 +159,20 @@ const Admin = () => {
               <CardTitle>{t("admin.realityRules.title")}</CardTitle>
               <CardDescription>
                 {t("admin.realityRules.description")}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" variant="secondary">
+                {t("admin.manage")}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setCurrentView("migration")}>
+            <CardHeader>
+              <CardTitle>Data Migration</CardTitle>
+              <CardDescription>
+                Export and import data to another Supabase project
               </CardDescription>
             </CardHeader>
             <CardContent>
