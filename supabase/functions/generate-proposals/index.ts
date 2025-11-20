@@ -299,7 +299,8 @@ serve(async (req) => {
         );
         
         if (maskError) {
-          console.error('⚠️ Failed to generate layout mask:', maskError);
+          // ✅ PHASE 1: Make layout mask MANDATORY - fail generation if mask creation fails
+          throw new Error(`Layout mask generation failed (required): ${maskError.message || 'Unknown error'}`);
         } else if (maskData?.maskUrl) {
           layoutMaskUrl = maskData.maskUrl;
           console.log('✅ Layout mask generated:', layoutMaskUrl);
@@ -435,15 +436,47 @@ serve(async (req) => {
     }
     
     // Reference images for style guidance - use analyzed images from stylepack_ref_images
-    const referenceImages = refImages.map((img: any) => img.url).filter(Boolean);
+    const stylepackRefImages = refImages.map((img: any) => img.url).filter(Boolean);
     
-    if (referenceImages.length === 0) {
+    if (stylepackRefImages.length === 0) {
       console.warn('⚠️ No reference image URLs found from stylepack_ref_images, falling back to stylepack.images');
       const fallbackImages = stylepack.images || [];
-      referenceImages.push(...fallbackImages);
+      stylepackRefImages.push(...fallbackImages);
     }
     
-    console.log(`📸 Using ${referenceImages.length} analyzed reference image URLs for generation`);
+    console.log(`📸 Using ${stylepackRefImages.length} StylePack reference images`);
+    
+    // ✅ Fetch trend images (30% weight) - PHASE 1 IMPROVEMENT
+    let trendRefImages: string[] = [];
+    try {
+      const { data: trendMappings } = await supabase
+        .from('trend_image_stylepack_mappings')
+        .select(`
+          weight,
+          trend_images!inner(
+            id, image_path, palette, texture_tags, density
+          )
+        `)
+        .eq('stylepack_id', stylepack.id)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      
+      if (trendMappings && trendMappings.length > 0) {
+        trendRefImages = trendMappings.map((m: any) => m.trend_images.image_path);
+        console.log(`✅ Loaded ${trendRefImages.length} trend images (30% weight)`);
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to fetch trend images:', error);
+    }
+    
+    // Combine: StylePack 70% (first 3) + Trend 30% (max 1), total max 4 images
+    const referenceImages = [
+      ...stylepackRefImages.slice(0, 3),
+      ...trendRefImages
+    ].slice(0, 4);
+    
+    console.log(`📸 Final reference mix: ${stylepackRefImages.slice(0, 3).length} StylePack + ${trendRefImages.length} Trend = ${referenceImages.length} total`);
     
     // ✅ Fetch latest trends from database (with fallback to hardcoded trends)
     console.log('📊 Fetching latest 2025 trends...');
@@ -768,55 +801,100 @@ These reference images represent the seller's signature style. The generated des
       throw error;
     }
 
-    const proposalsToInsert = generatedProposals.map((imgData: any, index: number) => ({
-      request_id: requestId,
-      variant: imgData.variant,
-      image_url: imgData.url,
-      spec_json: {
-        prompt: imgData.prompt,
-        negativePrompt,
-        seed: imgData.seed,
-        provider,
-        variantType: imgData.variantType,
-        variantLabel: imgData.variantLabel,  // Store UI-friendly label
-        description: imgData.description
-      },
-      generator_request: {
-        prompt: imgData.prompt,
-        negative_prompt: negativePrompt,
-        reference_images: referenceImages,
-        seed: imgData.seed,
-        provider,
-        variant: imgData.variantType
-      },
-      generator_response: imgData.metadata || {},
-      seed: imgData.seed,
-      // New fields for improved tracking
-      seed_class: Math.floor((imgData.seed % 5) + 1), // Map seed to 1-5 class
-      stage: 1, // Stage 1: Initial generation (will be 2 for refinement, 3 for upscaling)
-      engine: provider === 'gemini' ? 'google/gemini-2.5-flash-image' : provider,
-      payload: {
-        stylepack_id: request.stylepack_id,
-        size_category_id: request.size_category_id,
-        user_text: userText,
-        variant_type: imgData.variantType,
-        style_params: {
-          style_strength: styleStrength,
-          sharpness,
-          realism,
-          complexity,
-          palette_lock: paletteLock
+    // ✅ PHASE 1: Add quality evaluation for each proposal
+    console.log('📊 Starting quality evaluation for all proposals...');
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    const { data: realityRules } = await supabase
+      .from('rules_reality')
+      .select('*')
+      .eq('is_active', true);
+    
+    // Import quality evaluation
+    const { evaluateProposal } = await import('../_shared/quality-evaluation.ts');
+    
+    // Evaluate all proposals in parallel
+    const evaluationPromises = generatedProposals.map(async (imgData: any) => {
+      if (!lovableApiKey) {
+        console.warn('⚠️ LOVABLE_API_KEY not set, skipping quality evaluation');
+        return null;
+      }
+      
+      try {
+        const scores = await evaluateProposal(
+          imgData.url,
+          userText,
+          stylepack.name,
+          paletteRange.primary || [],
+          realityRules || [],
+          lovableApiKey
+        );
+        return scores;
+      } catch (error) {
+        console.error(`Failed to evaluate proposal ${imgData.variant}:`, error);
+        return null;
+      }
+    });
+    
+    const evaluationResults = await Promise.all(evaluationPromises);
+    
+    const proposalsToInsert = generatedProposals.map((imgData: any, index: number) => {
+      const scores = evaluationResults[index];
+      
+      return {
+        request_id: requestId,
+        variant: imgData.variant,
+        image_url: imgData.url,
+        spec_json: {
+          prompt: imgData.prompt,
+          negativePrompt,
+          seed: imgData.seed,
+          provider,
+          variantType: imgData.variantType,
+          variantLabel: imgData.variantLabel,
+          description: imgData.description
         },
-        trend_keywords: styleTrendKeywords,
-        trend_techniques: styleTrendTechniques,
-        reference_images: referenceImages
-      },
-      scores: null, // Will be populated by quality evaluation
-      rank_score: null, // Will be populated by reranking
-      price_range_min: sizeCategory.base_price_min,
-      price_range_max: sizeCategory.base_price_max,
-      badges: []
-    }));
+        generator_request: {
+          prompt: imgData.prompt,
+          negative_prompt: negativePrompt,
+          reference_images: referenceImages,
+          seed: imgData.seed,
+          provider,
+          variant: imgData.variantType
+        },
+        generator_response: imgData.metadata || {},
+        seed: imgData.seed,
+        seed_class: Math.floor((imgData.seed % 5) + 1),
+        stage: 1,
+        engine: provider === 'gemini' ? 'google/gemini-2.5-flash-image' : provider,
+        payload: {
+          stylepack_id: request.stylepack_id,
+          size_category_id: request.size_category_id,
+          user_text: userText,
+          variant_type: imgData.variantType,
+          style_params: {
+            style_strength: styleStrength,
+            sharpness,
+            realism,
+            complexity,
+            palette_lock: paletteLock
+          },
+          trend_keywords: styleTrendKeywords,
+          trend_techniques: styleTrendTechniques,
+          reference_images: referenceImages
+        },
+        scores: scores ? {
+          onBrief: scores.onBrief,
+          paletteFit: scores.paletteFit,
+          bakeability: scores.bakeability,
+          aesthetic: scores.aesthetic,
+          overall: scores.overall
+        } : null,
+        rank_score: scores?.overall || null,
+        price_range_min: sizeCategory.base_price_min,
+        price_range_max: sizeCategory.base_price_max,
+        badges: []
+      };
+    });
 
     const { data: inserted, error: insertError } = await supabase
       .from('proposals')
@@ -1075,6 +1153,19 @@ function buildDetailedPrompt(params: {
     `- Image quality: ${sharpnessText}`,
     `- Color accuracy: ${paletteText}`,
     '',
+    // ✅ PHASE 1: Enhanced palette lock enforcement
+    ...(paletteLock >= 0.9 && primaryColors.length > 0 ? [
+      '🔴 CRITICAL COLOR CONSTRAINT (PALETTE LOCK ACTIVE):',
+      `YOU MUST use ONLY these exact colors (ΔE ≤ 10 tolerance):`,
+      ...primaryColors.map(c => `  - ${c}`),
+      '',
+      'PALETTE LOCK RULES:',
+      '- If user requests colors NOT in this list, IGNORE them and use closest match from palette',
+      '- Color accuracy is MORE IMPORTANT than user color preferences',
+      '- Any deviation from these colors will be rejected',
+      '- Palette lock score will measure your adherence to these exact colors',
+      ''
+    ] : []),
     // ✅ PRIORITY 3: Structure requirements (FIXED from size category, NOT customer)
     'STRUCTURE REQUIREMENTS (FIXED - from size category, NOT from customer input):',
     `- ${tierCount} tier${tierCount > 1 ? 's' : ''} cake (serving ${servingRange} people) - THIS IS MANDATORY AND CANNOT BE CHANGED`,
