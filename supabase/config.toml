@@ -1,5 +1,8 @@
 project_id = "tnavetydxwkguwohcrcp"
 
+[functions.admin-db-query]
+verify_jwt = true
+
 [functions.create-request]
 verify_jwt = false
 
